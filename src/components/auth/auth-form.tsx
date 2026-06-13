@@ -13,8 +13,28 @@ export function AuthForm() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
+  const [googleLoading, setGoogleLoading] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+
+  async function handleGoogleSignIn() {
+    setGoogleLoading(true);
+    setError(null);
+    setMessage(null);
+
+    const supabase = createClient();
+    const { error: oauthError } = await supabase.auth.signInWithOAuth({
+      provider: "google",
+      options: {
+        redirectTo: `${window.location.origin}/auth/callback`,
+      },
+    });
+
+    if (oauthError) {
+      setError(oauthError.message);
+      setGoogleLoading(false);
+    }
+  }
 
   async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -64,10 +84,10 @@ export function AuthForm() {
           H
         </div>
         <h1 className="text-2xl font-semibold tracking-tight text-stone-900">
-          Home Tasks
+          Work Hard / Play Hard
         </h1>
         <p className="mt-2 text-sm text-stone-500">
-          Private task management for your household
+            a lifestyle Task Management tool
         </p>
       </div>
 
@@ -104,6 +124,15 @@ export function AuthForm() {
             Sign up
           </button>
         </div>
+
+        <button
+          type="button"
+          onClick={handleGoogleSignIn}
+          disabled={googleLoading || loading}
+          className="mb-4 w-full rounded-xl border border-stone-200 bg-white px-4 py-2.5 text-sm font-medium text-stone-700 transition hover:bg-stone-50 disabled:cursor-not-allowed disabled:opacity-60"
+        >
+          {googleLoading ? "Redirecting..." : "Continue with Google"}
+        </button>
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>

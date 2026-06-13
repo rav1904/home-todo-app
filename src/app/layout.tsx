@@ -13,8 +13,8 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Home Tasks",
-  description: "Private home task management for your household",
+  title: "Work Hard / Play Hard",
+  description: "a lifestyle Task Management tool",
 };
 
 export default function RootLayout({
