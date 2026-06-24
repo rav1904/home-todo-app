@@ -8,7 +8,7 @@ Last updated: 2026-06-13
 
 ## Current milestone
 
-**Basic tasks — create and list** (add tasks in-app; read-only list verified)
+**Basic tasks — create, list, and complete** (toggle in progress)
 
 ## What is working
 
@@ -19,10 +19,11 @@ Last updated: 2026-06-13
 - Sign out
 - Tasks page reads and displays the current user's tasks from Supabase (title, description, due date, completed, created date)
 - Add task form (title required; description and due date optional)
+- Mark complete toggle (checkbox updates `completed` via Supabase)
 
 ## What is not built yet
 
-- Task edit, delete, or mark-complete in the app
+- Task edit or delete in the app
 - Dashboard stats (still hardcoded zeros)
 - Labels, categories, reminders, recurrence, assignment, permissions / household sharing
 - Supabase migration files in the repo
@@ -36,7 +37,7 @@ Last updated: 2026-06-13
 | Google OAuth provider | Done |
 | Redirect URLs (`/auth/callback`) | Done |
 | Email/password auth | Disabled in UI; disable in Supabase dashboard if not already |
-| RLS on `tasks` | Verified locally (users only see own rows) |
+| RLS on `tasks` | Verified locally (select + insert; update policy needed for toggle) |
 | CLI / migrations in repo | Not set up |
 
 ## Database tables created so far
@@ -57,14 +58,14 @@ Last updated: 2026-06-13
 
 | Commit | Summary |
 |--------|---------|
+| `324827b` | Task list UI, AddTaskForm, read from Supabase |
 | `3d34137` | Add environment variable example file |
 | `f3262c2` | Make login Google-only |
 | `79b0456` | Added Google sign-in button |
 | `9241ce9` | Add Supabase client dependencies for authentication |
-| `23070d6` | Dashboard redirect, layout, and UI shell |
 
-**Uncommitted:** task creation form, read-only tasks page updates, `PROJECT_STATUS.md`
+**Uncommitted:** mark-complete toggle
 
 ## Next recommended step
 
-Add **mark complete / toggle** on the tasks list (update `completed` only). Keep edit and delete for later.
+Verify toggle locally (check/uncheck, RLS on update). Then add **task delete** or wire **dashboard stats** from real task counts.
