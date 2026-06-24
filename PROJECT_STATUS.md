@@ -8,7 +8,7 @@ Last updated: 2026-06-13
 
 ## Current milestone
 
-**Basic tasks — create and list** (add tasks in-app; read-only list verified)
+**Basic tasks — create and list** — verified locally (read, insert, RLS, edge cases)
 
 ## What is working
 
@@ -36,7 +36,7 @@ Last updated: 2026-06-13
 | Google OAuth provider | Done |
 | Redirect URLs (`/auth/callback`) | Done |
 | Email/password auth | Disabled in UI; disable in Supabase dashboard if not already |
-| RLS on `tasks` | Verified locally (users only see own rows) |
+| RLS on `tasks` | Verified locally (select + insert; users only see own rows) |
 | CLI / migrations in repo | Not set up |
 
 ## Database tables created so far
@@ -57,13 +57,11 @@ Last updated: 2026-06-13
 
 | Commit | Summary |
 |--------|---------|
+| `324827b` | Task list UI, AddTaskForm, read from Supabase |
 | `3d34137` | Add environment variable example file |
 | `f3262c2` | Make login Google-only |
 | `79b0456` | Added Google sign-in button |
 | `9241ce9` | Add Supabase client dependencies for authentication |
-| `23070d6` | Dashboard redirect, layout, and UI shell |
-
-**Uncommitted:** task creation form, read-only tasks page updates, `PROJECT_STATUS.md`
 
 ## Next recommended step
 
