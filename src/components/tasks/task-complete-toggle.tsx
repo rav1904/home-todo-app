@@ -43,7 +43,7 @@ export function TaskCompleteToggle({
       onChange={handleToggle}
       disabled={loading}
       aria-label={`Mark "${title}" as ${completed ? "incomplete" : "complete"}`}
-      className="mt-1 h-5 w-5 shrink-0 rounded border-stone-300 text-emerald-600 focus:ring-emerald-500/20 disabled:cursor-not-allowed disabled:opacity-60"
+      className="mt-1 h-5 w-5 shrink-0 cursor-pointer rounded border-stone-300 text-emerald-600 focus:ring-emerald-500/20 disabled:cursor-not-allowed disabled:opacity-60"
     />
   );
 }

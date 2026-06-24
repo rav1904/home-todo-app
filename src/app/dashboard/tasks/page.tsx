@@ -1,5 +1,6 @@
 import { AddTaskForm } from "@/components/tasks/add-task-form";
 import { TaskCompleteToggle } from "@/components/tasks/task-complete-toggle";
+import { TaskDeleteButton } from "@/components/tasks/task-delete-button";
 import { DashboardHeader } from "@/components/dashboard/header";
 import { createClient } from "@/lib/supabase/server";
 
@@ -85,19 +86,24 @@ export default async function TasksPage() {
                   </span>
                   </div>
                 </div>
-                <dl className="mt-4 flex flex-wrap gap-x-6 gap-y-2 text-sm text-stone-500">
-                  <div>
-                    <dt className="sr-only">Due</dt>
-                    <dd>
-                      Due:{" "}
-                      {task.due_at ? formatDateTime(task.due_at) : "No due date"}
-                    </dd>
-                  </div>
-                  <div>
-                    <dt className="sr-only">Created</dt>
-                    <dd>Created: {formatDate(task.created_at)}</dd>
-                  </div>
-                </dl>
+                <div className="mt-4 flex items-center justify-between gap-4">
+                  <dl className="flex flex-wrap gap-x-6 gap-y-2 text-sm text-stone-500">
+                    <div>
+                      <dt className="sr-only">Due</dt>
+                      <dd>
+                        Due:{" "}
+                        {task.due_at
+                          ? formatDateTime(task.due_at)
+                          : "No due date"}
+                      </dd>
+                    </div>
+                    <div>
+                      <dt className="sr-only">Created</dt>
+                      <dd>Created: {formatDate(task.created_at)}</dd>
+                    </div>
+                  </dl>
+                  <TaskDeleteButton id={task.id} title={task.title} />
+                </div>
               </li>
             ))}
           </ul>

@@ -124,7 +124,7 @@ export function AddTaskForm() {
       <button
         type="submit"
         disabled={loading}
-        className="mt-4 rounded-xl bg-emerald-600 px-4 py-2.5 text-sm font-medium text-white transition hover:bg-emerald-700 disabled:cursor-not-allowed disabled:opacity-60"
+        className="mt-4 cursor-pointer rounded-xl bg-emerald-600 px-4 py-2.5 text-sm font-medium text-white transition hover:bg-emerald-700 disabled:cursor-not-allowed disabled:opacity-60"
       >
         {loading ? "Adding..." : "Add task"}
       </button>
