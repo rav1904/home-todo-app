@@ -1,26 +1,7 @@
 import { AddTaskForm } from "@/components/tasks/add-task-form";
-import { TaskCompleteToggle } from "@/components/tasks/task-complete-toggle";
-import { TaskDeleteButton } from "@/components/tasks/task-delete-button";
+import { TaskListItem } from "@/components/tasks/task-list-item";
 import { DashboardHeader } from "@/components/dashboard/header";
 import { createClient } from "@/lib/supabase/server";
-
-function formatDate(value: string) {
-  return new Date(value).toLocaleDateString(undefined, {
-    year: "numeric",
-    month: "short",
-    day: "numeric",
-  });
-}
-
-function formatDateTime(value: string) {
-  return new Date(value).toLocaleString(undefined, {
-    year: "numeric",
-    month: "short",
-    day: "numeric",
-    hour: "numeric",
-    minute: "2-digit",
-  });
-}
 
 export default async function TasksPage() {
   const supabase = await createClient();
@@ -50,61 +31,15 @@ export default async function TasksPage() {
         ) : tasks && tasks.length > 0 ? (
           <ul className="space-y-3">
             {tasks.map((task) => (
-              <li
+              <TaskListItem
                 key={task.id}
-                className="rounded-2xl border border-stone-200 bg-white p-5 shadow-sm"
-              >
-                <div className="flex items-start gap-3">
-                  <TaskCompleteToggle
-                    id={task.id}
-                    completed={task.completed}
-                    title={task.title}
-                  />
-                  <div className="flex min-w-0 flex-1 items-start justify-between gap-4">
-                    <div className="min-w-0 flex-1">
-                    <h2
-                      className={`text-base font-semibold text-stone-900 ${
-                        task.completed ? "line-through text-stone-400" : ""
-                      }`}
-                    >
-                      {task.title}
-                    </h2>
-                    {task.description ? (
-                      <p className="mt-1 text-sm text-stone-600">
-                        {task.description}
-                      </p>
-                    ) : null}
-                  </div>
-                  <span
-                    className={`shrink-0 rounded-full px-2.5 py-1 text-xs font-medium ${
-                      task.completed
-                        ? "bg-stone-100 text-stone-600"
-                        : "bg-emerald-50 text-emerald-700"
-                    }`}
-                  >
-                    {task.completed ? "Completed" : "Open"}
-                  </span>
-                  </div>
-                </div>
-                <div className="mt-4 flex items-center justify-between gap-4">
-                  <dl className="flex flex-wrap gap-x-6 gap-y-2 text-sm text-stone-500">
-                    <div>
-                      <dt className="sr-only">Due</dt>
-                      <dd>
-                        Due:{" "}
-                        {task.due_at
-                          ? formatDateTime(task.due_at)
-                          : "No due date"}
-                      </dd>
-                    </div>
-                    <div>
-                      <dt className="sr-only">Created</dt>
-                      <dd>Created: {formatDate(task.created_at)}</dd>
-                    </div>
-                  </dl>
-                  <TaskDeleteButton id={task.id} title={task.title} />
-                </div>
-              </li>
+                id={task.id}
+                title={task.title}
+                description={task.description}
+                dueAt={task.due_at}
+                completed={task.completed}
+                createdAt={task.created_at}
+              />
             ))}
           </ul>
         ) : (
