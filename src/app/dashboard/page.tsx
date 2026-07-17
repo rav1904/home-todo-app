@@ -22,6 +22,16 @@ function endOfLocalDay(date = new Date()) {
   return end;
 }
 
+function addDays(date: Date, days: number) {
+  const result = new Date(date);
+  result.setDate(result.getDate() + days);
+  return result;
+}
+
+function endOfWeekAhead(today = new Date()) {
+  return endOfLocalDay(addDays(today, 7));
+}
+
 function isDueToday(dueAt: string, today = new Date()) {
   const due = new Date(dueAt);
   return due >= startOfLocalDay(today) && due <= endOfLocalDay(today);
@@ -31,8 +41,13 @@ function isOverdue(dueAt: string, today = new Date()) {
   return new Date(dueAt) < startOfLocalDay(today);
 }
 
+function isDueWithinWeek(dueAt: string, today = new Date()) {
+  const due = new Date(dueAt);
+  return due > endOfLocalDay(today) && due <= endOfWeekAhead(today);
+}
+
 function isUpcoming(dueAt: string, today = new Date()) {
-  return new Date(dueAt) > endOfLocalDay(today);
+  return new Date(dueAt) > endOfWeekAhead(today);
 }
 
 function formatDate(value: string) {
@@ -118,6 +133,11 @@ export default async function DashboardPage() {
     .sort(
       (a, b) => new Date(a.due_at!).getTime() - new Date(b.due_at!).getTime(),
     );
+  const dueWithinWeekTasks = openTasks
+    .filter((task) => task.due_at && isDueWithinWeek(task.due_at, today))
+    .sort(
+      (a, b) => new Date(a.due_at!).getTime() - new Date(b.due_at!).getTime(),
+    );
   const overdueTasks = openTasks.filter(
     (task) => task.due_at && isOverdue(task.due_at, today),
   );
@@ -158,7 +178,7 @@ export default async function DashboardPage() {
     <>
       <DashboardHeader
         title="Overview"
-        description="A quick look at your household tasks"
+        description="A quick look at your tasks"
         email={user?.email}
       />
       <div className="flex-1 overflow-auto p-8">
@@ -186,7 +206,7 @@ export default async function DashboardPage() {
             ))}
           </section>
 
-          <section className="grid gap-6 lg:grid-cols-2">
+          <section className="grid gap-6 lg:grid-cols-3">
             <article className="rounded-2xl border border-stone-200 bg-white p-6 shadow-sm">
               <h2 className="text-lg font-semibold text-stone-900">Due today</h2>
               <p className="mt-1 text-sm text-stone-500">
@@ -203,10 +223,26 @@ export default async function DashboardPage() {
 
             <article className="rounded-2xl border border-stone-200 bg-white p-6 shadow-sm">
               <h2 className="text-lg font-semibold text-stone-900">
+                Due within a week
+              </h2>
+              <p className="mt-1 text-sm text-stone-500">
+                Open tasks due in the next 7 days after today
+              </p>
+              <div className="mt-4">
+                <TaskList
+                  tasks={dueWithinWeekTasks}
+                  emptyMessage="Nothing due in the next week."
+                  showDueDate
+                />
+              </div>
+            </article>
+
+            <article className="rounded-2xl border border-stone-200 bg-white p-6 shadow-sm">
+              <h2 className="text-lg font-semibold text-stone-900">
                 Upcoming tasks
               </h2>
               <p className="mt-1 text-sm text-stone-500">
-                Next open tasks with a future due date
+                Open tasks due after the next 7 days
               </p>
               <div className="mt-4">
                 <TaskList
