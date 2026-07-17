@@ -18,8 +18,8 @@ export function Sidebar() {
           H
         </div>
         <div>
-          <p className="text-sm font-semibold text-stone-900">Home Tasks</p>
-          <p className="text-xs text-stone-500">Your household</p>
+          <p className="text-sm font-semibold text-stone-900">Workspace</p>
+          <p className="text-xs text-stone-500">Your To Do List</p>
         </div>
       </div>
 
