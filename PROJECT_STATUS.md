@@ -8,7 +8,7 @@ Last updated: 2026-06-13
 
 ## Current milestone
 
-**Basic tasks — create, list, and complete** (toggle in progress)
+**Basic tasks — create, list, complete, and delete** (delete in progress)
 
 ## What is working
 
@@ -20,10 +20,11 @@ Last updated: 2026-06-13
 - Tasks page reads and displays the current user's tasks from Supabase (title, description, due date, completed, created date)
 - Add task form (title required; description and due date optional)
 - Mark complete toggle (checkbox updates `completed` via Supabase)
+- Delete task button (with confirm dialog; pending local verification)
 
 ## What is not built yet
 
-- Task edit or delete in the app
+- Task edit in the app
 - Dashboard stats (still hardcoded zeros)
 - Labels, categories, reminders, recurrence, assignment, permissions / household sharing
 - Supabase migration files in the repo
@@ -37,7 +38,7 @@ Last updated: 2026-06-13
 | Google OAuth provider | Done |
 | Redirect URLs (`/auth/callback`) | Done |
 | Email/password auth | Disabled in UI; disable in Supabase dashboard if not already |
-| RLS on `tasks` | Verified locally (select + insert; update policy needed for toggle) |
+| RLS on `tasks` | Verified locally (select, insert, update) |
 | CLI / migrations in repo | Not set up |
 
 ## Database tables created so far
@@ -58,14 +59,13 @@ Last updated: 2026-06-13
 
 | Commit | Summary |
 |--------|---------|
+| `b30e737` | Mark complete toggle |
 | `324827b` | Task list UI, AddTaskForm, read from Supabase |
 | `3d34137` | Add environment variable example file |
 | `f3262c2` | Make login Google-only |
-| `79b0456` | Added Google sign-in button |
-| `9241ce9` | Add Supabase client dependencies for authentication |
 
-**Uncommitted:** mark-complete toggle
+**Uncommitted:** task delete button
 
 ## Next recommended step
 
-Verify toggle locally (check/uncheck, RLS on update). Then add **task delete** or wire **dashboard stats** from real task counts.
+Verify delete locally (confirm dialog, task removed from list, RLS on delete). Then wire **dashboard stats** from real task counts.

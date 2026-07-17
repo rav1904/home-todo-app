@@ -44,7 +44,7 @@ export function AuthForm() {
           type="button"
           onClick={handleGoogleSignIn}
           disabled={loading}
-          className="w-full rounded-xl border border-stone-200 bg-white px-4 py-2.5 text-sm font-medium text-stone-700 transition hover:bg-stone-50 disabled:cursor-not-allowed disabled:opacity-60"
+          className="w-full cursor-pointer rounded-xl border border-stone-200 bg-white px-4 py-2.5 text-sm font-medium text-stone-700 transition hover:bg-stone-50 disabled:cursor-not-allowed disabled:opacity-60"
         >
           {loading ? "Redirecting..." : "Continue with Google"}
         </button>
