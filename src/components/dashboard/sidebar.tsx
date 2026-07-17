@@ -3,13 +3,26 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 
-const navItems = [
+const baseNavItems = [
   { href: "/dashboard", label: "Overview", icon: "◫" },
   { href: "/dashboard/tasks", label: "Tasks", icon: "☑" },
 ];
 
-export function Sidebar() {
+const adminNavItem = {
+  href: "/dashboard/admin",
+  label: "Admin",
+  icon: "⚙",
+};
+
+type SidebarProps = {
+  showAdminLink?: boolean;
+};
+
+export function Sidebar({ showAdminLink = false }: SidebarProps) {
   const pathname = usePathname();
+  const navItems = showAdminLink
+    ? [...baseNavItems, adminNavItem]
+    : baseNavItems;
 
   return (
     <aside className="flex w-64 shrink-0 flex-col border-r border-stone-200 bg-white">
