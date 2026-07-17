@@ -57,7 +57,7 @@ export function AuthForm() {
       </div>
 
       <p className="mt-6 text-center text-xs text-stone-400">
-        Only invited household members should have access.
+        Only invited users should have access.
       </p>
     </div>
   );

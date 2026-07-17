@@ -48,7 +48,7 @@ export function Sidebar() {
       </nav>
 
       <div className="border-t border-stone-200 p-4">
-        <p className="text-xs text-stone-400">Private home workspace</p>
+        <p className="text-xs text-stone-400">Private task management app</p>
       </div>
     </aside>
   );

@@ -7,7 +7,7 @@ Last updated: 2026-06-13
 `feature/task-schema`
 
 ## Current milestone
-
+ 
 **Basic tasks — create, list, complete, and delete** (delete in progress)
 
 ## What is working
@@ -26,7 +26,7 @@ Last updated: 2026-06-13
 
 - Task edit in the app
 - Dashboard stats (still hardcoded zeros)
-- Labels, categories, reminders, recurrence, assignment, permissions / household sharing
+- Labels, categories, reminders, recurrence, assignment, permissions / workspace sharing
 - Supabase migration files in the repo
 - Deployment docs beyond default Next.js README
 

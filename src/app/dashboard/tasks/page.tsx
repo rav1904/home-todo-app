@@ -37,7 +37,7 @@ export default async function TasksPage() {
     <>
       <DashboardHeader
         title="Tasks"
-        description="View and manage household to-dos"
+        description="View and manage tasks"
         email={user?.email}
       />
       <div className="flex-1 space-y-6 overflow-auto p-8">
