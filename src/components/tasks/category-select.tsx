@@ -1,10 +1,17 @@
 import { CategoryIcon } from "@/lib/categories/icons";
 import type { Category } from "@/lib/categories/types";
-import { buildCategoryTree } from "@/lib/categories/tree";
+import {
+  buildCategoryLookup,
+  buildCategoryTree,
+  resolveCategoryIdForSave,
+  splitCategorySelection,
+} from "@/lib/categories/tree";
+
+const defaultSelectClassName =
+  "w-full rounded-xl border border-stone-200 bg-stone-50 px-3 py-2.5 text-sm text-stone-900 outline-none transition focus:border-emerald-500 focus:bg-white focus:ring-2 focus:ring-emerald-500/20";
 
 type CategorySelectProps = {
   id: string;
-  label?: string;
   value: string | null;
   onChange: (categoryId: string | null) => void;
   categories: Category[];
@@ -14,7 +21,6 @@ type CategorySelectProps = {
 
 export function CategorySelect({
   id,
-  label = "Category",
   value,
   onChange,
   categories,
@@ -22,50 +28,71 @@ export function CategorySelect({
   className,
 }: CategorySelectProps) {
   const { mains, subsByParent } = buildCategoryTree(categories);
+  const lookup = buildCategoryLookup(categories);
+  const { mainCategoryId, subCategoryId } = splitCategorySelection(value, lookup);
+  const subcategories = mainCategoryId
+    ? (subsByParent[mainCategoryId] ?? [])
+    : [];
+  const showSubSelect = subcategories.length > 0;
+  const selectClassName = className ?? defaultSelectClassName;
 
   return (
-    <div>
-      <label htmlFor={id} className="mb-1.5 block text-sm font-medium text-stone-700">
-        {label}{" "}
-        {optional ? (
-          <span className="font-normal text-stone-400">(optional)</span>
-        ) : null}
-      </label>
-      <select
-        id={id}
-        value={value ?? ""}
-        onChange={(event) =>
-          onChange(event.target.value ? event.target.value : null)
-        }
-        className={
-          className ??
-          "w-full rounded-xl border border-stone-200 bg-stone-50 px-3 py-2.5 text-sm text-stone-900 outline-none transition focus:border-emerald-500 focus:bg-white focus:ring-2 focus:ring-emerald-500/20"
-        }
-      >
-        <option value="">None</option>
-        {mains.map((main) => {
-          const subcategories = subsByParent[main.id] ?? [];
+    <div className="space-y-3">
+      <div>
+        <label
+          htmlFor={`${id}-main`}
+          className="mb-1.5 block text-sm font-medium text-stone-700"
+        >
+          Main category{" "}
+          {optional ? (
+            <span className="font-normal text-stone-400">(optional)</span>
+          ) : null}
+        </label>
+        <select
+          id={`${id}-main`}
+          value={mainCategoryId ?? ""}
+          onChange={(event) => {
+            const nextMainId = event.target.value ? event.target.value : null;
+            onChange(nextMainId);
+          }}
+          className={selectClassName}
+        >
+          <option value="">None</option>
+          {mains.map((main) => (
+            <option key={main.id} value={main.id}>
+              {main.name}
+            </option>
+          ))}
+        </select>
+      </div>
 
-          if (subcategories.length === 0) {
-            return (
-              <option key={main.id} value={main.id}>
-                {main.name}
+      {showSubSelect ? (
+        <div>
+          <label
+            htmlFor={`${id}-sub`}
+            className="mb-1.5 block text-sm font-medium text-stone-700"
+          >
+            Subcategory{" "}
+            <span className="font-normal text-stone-400">(optional)</span>
+          </label>
+          <select
+            id={`${id}-sub`}
+            value={subCategoryId ?? ""}
+            onChange={(event) => {
+              const nextSubId = event.target.value ? event.target.value : null;
+              onChange(resolveCategoryIdForSave(mainCategoryId, nextSubId));
+            }}
+            className={selectClassName}
+          >
+            <option value="">None</option>
+            {subcategories.map((subcategory) => (
+              <option key={subcategory.id} value={subcategory.id}>
+                {subcategory.name}
               </option>
-            );
-          }
-
-          return (
-            <optgroup key={main.id} label={main.name}>
-              <option value={main.id}>{main.name}</option>
-              {subcategories.map((subcategory) => (
-                <option key={subcategory.id} value={subcategory.id}>
-                  {subcategory.name}
-                </option>
-              ))}
-            </optgroup>
-          );
-        })}
-      </select>
+            ))}
+          </select>
+        </div>
+      ) : null}
     </div>
   );
 }

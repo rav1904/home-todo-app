@@ -41,6 +41,50 @@ export function buildCategoryTree(categories: Category[]): CategoryTree {
   return { mains, subsByParent };
 }
 
+export type CategorySelection = {
+  mainCategoryId: string | null;
+  subCategoryId: string | null;
+};
+
+export function splitCategorySelection(
+  categoryId: string | null,
+  lookup: Map<string, Category>,
+): CategorySelection {
+  if (!categoryId) {
+    return { mainCategoryId: null, subCategoryId: null };
+  }
+
+  const category = lookup.get(categoryId);
+
+  if (!category) {
+    return { mainCategoryId: null, subCategoryId: null };
+  }
+
+  if (category.parent_id) {
+    return {
+      mainCategoryId: category.parent_id,
+      subCategoryId: category.id,
+    };
+  }
+
+  return { mainCategoryId: category.id, subCategoryId: null };
+}
+
+export function resolveCategoryIdForSave(
+  mainCategoryId: string | null,
+  subCategoryId: string | null,
+): string | null {
+  if (!mainCategoryId) {
+    return null;
+  }
+
+  if (subCategoryId) {
+    return subCategoryId;
+  }
+
+  return mainCategoryId;
+}
+
 export function buildCategoryLookup(categories: Category[]) {
   return new Map(categories.map((category) => [category.id, category]));
 }
@@ -66,7 +110,7 @@ export function getCategoryDisplay(
       name: category.name,
       colour: category.colour,
       icon_name: category.icon_name,
-      label: parent ? `${parent.name} › ${category.name}` : category.name,
+      label: parent ? `${parent.name} > ${category.name}` : category.name,
     };
   }
 
