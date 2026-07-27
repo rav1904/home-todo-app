@@ -3,6 +3,13 @@
 import { TaskCompleteToggle } from "@/components/tasks/task-complete-toggle";
 import { TaskDeleteButton } from "@/components/tasks/task-delete-button";
 import { createClient } from "@/lib/supabase/client";
+import {
+  dueAtValuesEqual,
+  getChangeDirection,
+  getDueDateHistoryLines,
+  MOVED_LATER_NUDGE,
+  type DueDateHistoryCounts,
+} from "@/lib/tasks/due-date-change";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 
@@ -13,6 +20,7 @@ type TaskListItemProps = {
   dueAt: string | null;
   completed: boolean;
   createdAt: string;
+  dueDateHistory: DueDateHistoryCounts;
 };
 
 function formatDate(value: string) {
@@ -77,6 +85,7 @@ export function TaskListItem({
   dueAt,
   completed,
   createdAt,
+  dueDateHistory,
 }: TaskListItemProps) {
   const router = useRouter();
   const [isEditing, setIsEditing] = useState(false);
@@ -114,12 +123,15 @@ export function TaskListItem({
     }
 
     const supabase = createClient();
+    const newDueAt = editDueAt ? new Date(editDueAt).toISOString() : null;
+    const dueAtChanged = !dueAtValuesEqual(dueAt, newDueAt);
+
     const { error: updateError } = await supabase
       .from("tasks")
       .update({
         title: trimmedTitle,
         description: editDescription.trim() || null,
-        due_at: editDueAt ? new Date(editDueAt).toISOString() : null,
+        due_at: newDueAt,
         completed: editCompleted,
       })
       .eq("id", id);
@@ -128,6 +140,34 @@ export function TaskListItem({
       setError(updateError.message);
       setLoading(false);
       return;
+    }
+
+    if (dueAtChanged) {
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+
+      if (!user) {
+        setError("You must be signed in to save due date history.");
+        setLoading(false);
+        return;
+      }
+
+      const { error: historyError } = await supabase
+        .from("task_due_date_changes")
+        .insert({
+          task_id: id,
+          user_id: user.id,
+          previous_due_at: dueAt,
+          new_due_at: newDueAt,
+          change_direction: getChangeDirection(dueAt, newDueAt),
+        });
+
+      if (historyError) {
+        setError(historyError.message);
+        setLoading(false);
+        return;
+      }
     }
 
     setIsEditing(false);
@@ -228,6 +268,9 @@ export function TaskListItem({
     );
   }
 
+  const historyLines = getDueDateHistoryLines(dueDateHistory);
+  const showMovedLaterNudge = dueDateHistory.movedLaterCount >= 3;
+
   return (
     <li className="rounded-2xl border border-stone-200 bg-white p-5 shadow-sm">
       <div className="flex items-start gap-3">
@@ -247,6 +290,14 @@ export function TaskListItem({
             </h2>
             {description ? (
               <p className="mt-1 text-sm text-stone-600">{description}</p>
+            ) : null}
+            {historyLines.length > 0 || showMovedLaterNudge ? (
+              <div className="mt-2 space-y-1 text-xs text-stone-500">
+                {historyLines.map((line) => (
+                  <p key={line}>{line}</p>
+                ))}
+                {showMovedLaterNudge ? <p>{MOVED_LATER_NUDGE}</p> : null}
+              </div>
             ) : null}
           </div>
           <span
