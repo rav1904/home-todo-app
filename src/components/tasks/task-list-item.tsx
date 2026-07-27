@@ -2,10 +2,8 @@
 
 import { TaskCompleteToggle } from "@/components/tasks/task-complete-toggle";
 import { TaskDeleteButton } from "@/components/tasks/task-delete-button";
-import {
-  CategoryBadge,
-  CategorySelect,
-} from "@/components/tasks/category-select";
+import { CategoryBadge } from "@/components/tasks/category-badge";
+import { CategorySelect } from "@/components/tasks/category-select";
 import { LabelBadges } from "@/components/tasks/label-badges";
 import { LabelSelect } from "@/components/tasks/label-select";
 import type { CategoryDisplay } from "@/lib/categories/tree";
@@ -358,23 +356,23 @@ export function TaskListItem({
         />
         <div className="flex min-w-0 flex-1 items-start justify-between gap-4">
           <div className="min-w-0 flex-1">
-            <h2
-              className={`text-base font-semibold text-stone-900 ${
-                completed ? "line-through text-stone-400" : ""
-              }`}
-            >
-              {title}
-            </h2>
-            {description ? (
-              <p className="mt-1 text-sm text-stone-600">{description}</p>
-            ) : null}
-            {(category || categoryUnavailable) ? (
-              <div className="mt-2">
+            <div className="flex flex-wrap items-center gap-2">
+              {(category || categoryUnavailable) ? (
                 <CategoryBadge
                   category={category}
                   unavailable={categoryUnavailable}
                 />
-              </div>
+              ) : null}
+              <h2
+                className={`text-base font-semibold text-stone-900 ${
+                  completed ? "line-through text-stone-400" : ""
+                }`}
+              >
+                {title}
+              </h2>
+            </div>
+            {description ? (
+              <p className="mt-1 text-sm text-stone-600">{description}</p>
             ) : null}
             {taskLabels.labels.length > 0 || taskLabels.unavailableCount > 0 ? (
               <div className="mt-2">

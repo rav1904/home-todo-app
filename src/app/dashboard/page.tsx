@@ -1,4 +1,10 @@
+import { CategoryBadge } from "@/components/tasks/category-badge";
 import { DashboardHeader } from "@/components/dashboard/header";
+import {
+  buildCategoryLookup,
+  getCategoryDisplay,
+} from "@/lib/categories/tree";
+import type { Category } from "@/lib/categories/types";
 import { createClient } from "@/lib/supabase/server";
 
 type Task = {
@@ -8,6 +14,7 @@ type Task = {
   due_at: string | null;
   completed: boolean;
   created_at: string;
+  category_id: string | null;
 };
 
 function startOfLocalDay(date = new Date()) {
@@ -72,10 +79,14 @@ function TaskList({
   tasks,
   emptyMessage,
   showDueDate = false,
+  showCategory = false,
+  categoryLookup,
 }: {
   tasks: Task[];
   emptyMessage: string;
   showDueDate?: boolean;
+  showCategory?: boolean;
+  categoryLookup?: Map<string, Category>;
 }) {
   if (tasks.length === 0) {
     return <p className="text-sm text-stone-500">{emptyMessage}</p>;
@@ -83,32 +94,51 @@ function TaskList({
 
   return (
     <ul className="space-y-2">
-      {tasks.map((task) => (
-        <li
-          key={task.id}
-          className="flex items-start justify-between gap-4 rounded-xl bg-stone-50 px-4 py-3"
-        >
-          <div className="min-w-0">
-            <p
-              className={`text-sm font-medium text-stone-900 ${
-                task.completed ? "line-through text-stone-400" : ""
-              }`}
-            >
-              {task.title}
-            </p>
-            {task.description ? (
-              <p className="mt-0.5 truncate text-xs text-stone-500">
-                {task.description}
-              </p>
-            ) : null}
-          </div>
-          <span className="shrink-0 text-xs text-stone-400">
-            {showDueDate && task.due_at
-              ? formatDateTime(task.due_at)
-              : formatDate(task.created_at)}
-          </span>
-        </li>
-      ))}
+      {tasks.map((task) => {
+        const category =
+          showCategory && categoryLookup
+            ? getCategoryDisplay(task.category_id, categoryLookup)
+            : null;
+        const categoryUnavailable =
+          showCategory &&
+          task.category_id !== null &&
+          category === null;
+
+        return (
+          <li
+            key={task.id}
+            className="flex items-start justify-between gap-4 rounded-xl bg-stone-50 px-4 py-3"
+          >
+            <div className="min-w-0">
+              <div className="flex flex-wrap items-center gap-2">
+                {showCategory && (category || categoryUnavailable) ? (
+                  <CategoryBadge
+                    category={category}
+                    unavailable={categoryUnavailable}
+                  />
+                ) : null}
+                <p
+                  className={`text-sm font-medium text-stone-900 ${
+                    task.completed ? "line-through text-stone-400" : ""
+                  }`}
+                >
+                  {task.title}
+                </p>
+              </div>
+              {task.description ? (
+                <p className="mt-0.5 truncate text-xs text-stone-500">
+                  {task.description}
+                </p>
+              ) : null}
+            </div>
+            <span className="shrink-0 text-xs text-stone-400">
+              {showDueDate && task.due_at
+                ? formatDateTime(task.due_at)
+                : formatDate(task.created_at)}
+            </span>
+          </li>
+        );
+      })}
     </ul>
   );
 }
@@ -119,10 +149,22 @@ export default async function DashboardPage() {
     data: { user },
   } = await supabase.auth.getUser();
 
-  const { data: tasks, error } = await supabase
-    .from("tasks")
-    .select("id, title, description, due_at, completed, created_at")
-    .order("created_at", { ascending: false });
+  const [{ data: tasks, error }, { data: categories }] = await Promise.all([
+    supabase
+      .from("tasks")
+      .select(
+        "id, title, description, due_at, completed, created_at, category_id",
+      )
+      .order("created_at", { ascending: false }),
+    supabase
+      .from("categories")
+      .select(
+        "id, parent_id, name, colour, icon_name, sort_order, active, created_at, updated_at",
+      )
+      .eq("active", true),
+  ]);
+
+  const categoryLookup = buildCategoryLookup((categories ?? []) as Category[]);
 
   const allTasks = (tasks ?? []) as Task[];
   const today = new Date();
@@ -265,6 +307,8 @@ export default async function DashboardPage() {
               <TaskList
                 tasks={recentlyAddedTasks}
                 emptyMessage="No tasks yet. Add one from the Tasks page."
+                showCategory
+                categoryLookup={categoryLookup}
               />
             </div>
           </section>
