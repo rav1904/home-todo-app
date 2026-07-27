@@ -6,8 +6,13 @@ import {
   CategoryBadge,
   CategorySelect,
 } from "@/components/tasks/category-select";
+import { LabelBadges } from "@/components/tasks/label-badges";
+import { LabelSelect } from "@/components/tasks/label-select";
 import type { CategoryDisplay } from "@/lib/categories/tree";
 import type { Category } from "@/lib/categories/types";
+import type { TaskLabelDisplay } from "@/lib/labels/display";
+import type { Label } from "@/lib/labels/types";
+import { syncTaskLabels } from "@/lib/labels/sync-task-labels";
 import { createClient } from "@/lib/supabase/client";
 import {
   dueAtValuesEqual,
@@ -17,7 +22,7 @@ import {
   type DueDateHistoryCounts,
 } from "@/lib/tasks/due-date-change";
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 
 type TaskListItemProps = {
   id: string;
@@ -30,6 +35,9 @@ type TaskListItemProps = {
   category: CategoryDisplay | null;
   categoryUnavailable: boolean;
   categories: Category[];
+  labels: Label[];
+  labelIds: string[];
+  taskLabels: TaskLabelDisplay;
   dueDateHistory: DueDateHistoryCounts;
 };
 
@@ -99,6 +107,9 @@ export function TaskListItem({
   category,
   categoryUnavailable,
   categories,
+  labels,
+  labelIds,
+  taskLabels,
   dueDateHistory,
 }: TaskListItemProps) {
   const router = useRouter();
@@ -107,15 +118,34 @@ export function TaskListItem({
   const [editDescription, setEditDescription] = useState(description ?? "");
   const [editDueAt, setEditDueAt] = useState(toDatetimeLocalValue(dueAt));
   const [editCategoryId, setEditCategoryId] = useState<string | null>(categoryId);
+  const [editLabelIds, setEditLabelIds] = useState<string[]>(labelIds);
+  const [extraLabels, setExtraLabels] = useState<Label[]>([]);
   const [editCompleted, setEditCompleted] = useState(completed);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  const availableLabels = useMemo(() => {
+    const merged = new Map<string, Label>();
+
+    for (const label of [...labels, ...extraLabels]) {
+      merged.set(label.id, label);
+    }
+
+    return [...merged.values()];
+  }, [extraLabels, labels]);
+
+  const attachableLabelIds = useMemo(() => {
+    const allowedIds = new Set(availableLabels.map((label) => label.id));
+    return editLabelIds.filter((labelId) => allowedIds.has(labelId));
+  }, [availableLabels, editLabelIds]);
 
   function startEditing() {
     setEditTitle(title);
     setEditDescription(description ?? "");
     setEditDueAt(toDatetimeLocalValue(dueAt));
     setEditCategoryId(categoryId);
+    setEditLabelIds(labelIds);
+    setExtraLabels([]);
     setEditCompleted(completed);
     setError(null);
     setIsEditing(true);
@@ -155,6 +185,18 @@ export function TaskListItem({
 
     if (updateError) {
       setError(updateError.message);
+      setLoading(false);
+      return;
+    }
+
+    const labelsError = await syncTaskLabels(
+      supabase,
+      id,
+      attachableLabelIds,
+    );
+
+    if (labelsError) {
+      setError(labelsError.message);
       setLoading(false);
       return;
     }
@@ -255,6 +297,16 @@ export function TaskListItem({
             className={fieldClassName}
           />
 
+          <LabelSelect
+            id={`edit-labels-${id}`}
+            labels={availableLabels}
+            value={editLabelIds}
+            onChange={setEditLabelIds}
+            onLabelCreated={(label) =>
+              setExtraLabels((current) => [...current, label])
+            }
+          />
+
           <label className="flex cursor-pointer items-center gap-2 text-sm text-stone-700">
             <input
               type="checkbox"
@@ -321,6 +373,14 @@ export function TaskListItem({
                 <CategoryBadge
                   category={category}
                   unavailable={categoryUnavailable}
+                />
+              </div>
+            ) : null}
+            {taskLabels.labels.length > 0 || taskLabels.unavailableCount > 0 ? (
+              <div className="mt-2">
+                <LabelBadges
+                  labels={taskLabels.labels}
+                  unavailableCount={taskLabels.unavailableCount}
                 />
               </div>
             ) : null}

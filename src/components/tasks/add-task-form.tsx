@@ -1,23 +1,39 @@
 "use client";
 
 import { CategorySelect } from "@/components/tasks/category-select";
+import { LabelSelect } from "@/components/tasks/label-select";
 import type { Category } from "@/lib/categories/types";
+import type { Label } from "@/lib/labels/types";
+import { syncTaskLabels } from "@/lib/labels/sync-task-labels";
 import { createClient } from "@/lib/supabase/client";
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 
 type AddTaskFormProps = {
   categories: Category[];
+  labels: Label[];
 };
 
-export function AddTaskForm({ categories }: AddTaskFormProps) {
+export function AddTaskForm({ categories, labels }: AddTaskFormProps) {
   const router = useRouter();
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [dueAt, setDueAt] = useState("");
   const [categoryId, setCategoryId] = useState<string | null>(null);
+  const [labelIds, setLabelIds] = useState<string[]>([]);
+  const [extraLabels, setExtraLabels] = useState<Label[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  const availableLabels = useMemo(() => {
+    const merged = new Map<string, Label>();
+
+    for (const label of [...labels, ...extraLabels]) {
+      merged.set(label.id, label);
+    }
+
+    return [...merged.values()];
+  }, [extraLabels, labels]);
 
   async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -42,24 +58,49 @@ export function AddTaskForm({ categories }: AddTaskFormProps) {
       return;
     }
 
-    const { error: insertError } = await supabase.from("tasks").insert({
-      user_id: user.id,
-      title: trimmedTitle,
-      description: description.trim() || null,
-      due_at: dueAt ? new Date(dueAt).toISOString() : null,
-      category_id: categoryId,
-    });
+    const { data: createdTask, error: insertError } = await supabase
+      .from("tasks")
+      .insert({
+        user_id: user.id,
+        title: trimmedTitle,
+        description: description.trim() || null,
+        due_at: dueAt ? new Date(dueAt).toISOString() : null,
+        category_id: categoryId,
+      })
+      .select("id")
+      .single();
 
-    if (insertError) {
-      setError(insertError.message);
+    if (insertError || !createdTask) {
+      setError(insertError?.message ?? "Could not create task.");
       setLoading(false);
       return;
+    }
+
+    if (labelIds.length > 0) {
+      const allowedIds = new Set(availableLabels.map((label) => label.id));
+      const attachableLabelIds = labelIds.filter((labelId) =>
+        allowedIds.has(labelId),
+      );
+
+      const labelsError = await syncTaskLabels(
+        supabase,
+        createdTask.id,
+        attachableLabelIds,
+      );
+
+      if (labelsError) {
+        setError(labelsError.message);
+        setLoading(false);
+        return;
+      }
     }
 
     setTitle("");
     setDescription("");
     setDueAt("");
     setCategoryId(null);
+    setLabelIds([]);
+    setExtraLabels([]);
     setLoading(false);
     router.refresh();
   }
@@ -128,6 +169,16 @@ export function AddTaskForm({ categories }: AddTaskFormProps) {
           categories={categories}
           value={categoryId}
           onChange={setCategoryId}
+        />
+
+        <LabelSelect
+          id="task-labels"
+          labels={availableLabels}
+          value={labelIds}
+          onChange={setLabelIds}
+          onLabelCreated={(label) =>
+            setExtraLabels((current) => [...current, label])
+          }
         />
       </div>
 

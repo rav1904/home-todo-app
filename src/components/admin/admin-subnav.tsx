@@ -6,6 +6,7 @@ import { usePathname } from "next/navigation";
 const adminNavItems = [
   { href: "/dashboard/admin", label: "Users" },
   { href: "/dashboard/admin/categories", label: "Categories" },
+  { href: "/dashboard/admin/labels", label: "Labels" },
 ];
 
 export function AdminSubnav() {
