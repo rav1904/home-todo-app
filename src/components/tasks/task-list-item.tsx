@@ -2,6 +2,12 @@
 
 import { TaskCompleteToggle } from "@/components/tasks/task-complete-toggle";
 import { TaskDeleteButton } from "@/components/tasks/task-delete-button";
+import {
+  CategoryBadge,
+  CategorySelect,
+} from "@/components/tasks/category-select";
+import type { CategoryDisplay } from "@/lib/categories/tree";
+import type { Category } from "@/lib/categories/types";
 import { createClient } from "@/lib/supabase/client";
 import {
   dueAtValuesEqual,
@@ -20,6 +26,10 @@ type TaskListItemProps = {
   dueAt: string | null;
   completed: boolean;
   createdAt: string;
+  categoryId: string | null;
+  category: CategoryDisplay | null;
+  categoryUnavailable: boolean;
+  categories: Category[];
   dueDateHistory: DueDateHistoryCounts;
 };
 
@@ -85,6 +95,10 @@ export function TaskListItem({
   dueAt,
   completed,
   createdAt,
+  categoryId,
+  category,
+  categoryUnavailable,
+  categories,
   dueDateHistory,
 }: TaskListItemProps) {
   const router = useRouter();
@@ -92,6 +106,7 @@ export function TaskListItem({
   const [editTitle, setEditTitle] = useState(title);
   const [editDescription, setEditDescription] = useState(description ?? "");
   const [editDueAt, setEditDueAt] = useState(toDatetimeLocalValue(dueAt));
+  const [editCategoryId, setEditCategoryId] = useState<string | null>(categoryId);
   const [editCompleted, setEditCompleted] = useState(completed);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -100,6 +115,7 @@ export function TaskListItem({
     setEditTitle(title);
     setEditDescription(description ?? "");
     setEditDueAt(toDatetimeLocalValue(dueAt));
+    setEditCategoryId(categoryId);
     setEditCompleted(completed);
     setError(null);
     setIsEditing(true);
@@ -133,6 +149,7 @@ export function TaskListItem({
         description: editDescription.trim() || null,
         due_at: newDueAt,
         completed: editCompleted,
+        category_id: editCategoryId,
       })
       .eq("id", id);
 
@@ -230,6 +247,14 @@ export function TaskListItem({
             />
           </div>
 
+          <CategorySelect
+            id={`edit-category-${id}`}
+            categories={categories}
+            value={editCategoryId}
+            onChange={setEditCategoryId}
+            className={fieldClassName}
+          />
+
           <label className="flex cursor-pointer items-center gap-2 text-sm text-stone-700">
             <input
               type="checkbox"
@@ -290,6 +315,14 @@ export function TaskListItem({
             </h2>
             {description ? (
               <p className="mt-1 text-sm text-stone-600">{description}</p>
+            ) : null}
+            {(category || categoryUnavailable) ? (
+              <div className="mt-2">
+                <CategoryBadge
+                  category={category}
+                  unavailable={categoryUnavailable}
+                />
+              </div>
             ) : null}
             {historyLines.length > 0 || showMovedLaterNudge ? (
               <div className="mt-2 space-y-1 text-xs text-stone-500">

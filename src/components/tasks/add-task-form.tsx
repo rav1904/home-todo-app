@@ -1,14 +1,21 @@
 "use client";
 
+import { CategorySelect } from "@/components/tasks/category-select";
+import type { Category } from "@/lib/categories/types";
 import { createClient } from "@/lib/supabase/client";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 
-export function AddTaskForm() {
+type AddTaskFormProps = {
+  categories: Category[];
+};
+
+export function AddTaskForm({ categories }: AddTaskFormProps) {
   const router = useRouter();
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [dueAt, setDueAt] = useState("");
+  const [categoryId, setCategoryId] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -40,6 +47,7 @@ export function AddTaskForm() {
       title: trimmedTitle,
       description: description.trim() || null,
       due_at: dueAt ? new Date(dueAt).toISOString() : null,
+      category_id: categoryId,
     });
 
     if (insertError) {
@@ -51,6 +59,7 @@ export function AddTaskForm() {
     setTitle("");
     setDescription("");
     setDueAt("");
+    setCategoryId(null);
     setLoading(false);
     router.refresh();
   }
@@ -113,6 +122,13 @@ export function AddTaskForm() {
             className="w-full rounded-xl border border-stone-200 bg-stone-50 px-3 py-2.5 text-sm text-stone-900 outline-none transition focus:border-emerald-500 focus:bg-white focus:ring-2 focus:ring-emerald-500/20"
           />
         </div>
+
+        <CategorySelect
+          id="task-category"
+          categories={categories}
+          value={categoryId}
+          onChange={setCategoryId}
+        />
       </div>
 
       {error ? (
