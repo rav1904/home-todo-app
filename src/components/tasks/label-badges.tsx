@@ -62,7 +62,7 @@ export function LabelBadges({
         ),
       )}
       {unavailableCount > 0 ? (
-        <span className="inline-flex rounded-full bg-stone-100 px-2 py-0.5 text-xs font-medium text-stone-500">
+        <span className="inline-flex items-center rounded-full bg-stone-100 px-2 py-0.5 text-xs font-medium text-stone-500 dark:bg-stone-800 dark:text-stone-400">
           {unavailableCount === 1
             ? "Label unavailable"
             : `${unavailableCount} labels unavailable`}

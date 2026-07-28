@@ -5,6 +5,7 @@ import {
   listAppUsers,
   RECENT_JOIN_DAYS,
 } from "@/lib/admin/users";
+import { cardClassName } from "@/lib/ui/field-classes";
 import { createClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
 
@@ -53,63 +54,69 @@ export default async function AdminPage() {
       />
       <div className="flex-1 space-y-8 overflow-auto p-8">
         {usersError ? (
-          <div className="rounded-2xl border border-red-200 bg-red-50 p-6 text-sm text-red-700">
+          <div className="rounded-2xl border border-red-200 bg-red-50 p-6 text-sm text-red-700 dark:border-red-900/50 dark:bg-red-950/40 dark:text-red-300">
             Could not load users: {usersError}
           </div>
         ) : (
           <>
             <section className="grid gap-4 sm:grid-cols-2">
-              <article className="rounded-2xl border border-stone-200 bg-white p-5 shadow-sm">
-                <p className="text-sm font-medium text-stone-500">Total users</p>
-                <p className="mt-2 text-3xl font-semibold text-stone-900">
+              <article className={`${cardClassName} p-5`}>
+                <p className="text-sm font-medium text-stone-500 dark:text-stone-400">
+                  Total users
+                </p>
+                <p className="mt-2 text-3xl font-semibold text-stone-900 dark:text-stone-100">
                   {totalUsers}
                 </p>
-                <p className="mt-1 text-sm text-stone-400">
+                <p className="mt-1 text-sm text-stone-400 dark:text-stone-500">
                   Registered app accounts
                 </p>
               </article>
-              <article className="rounded-2xl border border-stone-200 bg-white p-5 shadow-sm">
-                <p className="text-sm font-medium text-stone-500">
+              <article className={`${cardClassName} p-5`}>
+                <p className="text-sm font-medium text-stone-500 dark:text-stone-400">
                   Recently joined
                 </p>
-                <p className="mt-2 text-3xl font-semibold text-stone-900">
+                <p className="mt-2 text-3xl font-semibold text-stone-900 dark:text-stone-100">
                   {recentlyJoined}
                 </p>
-                <p className="mt-1 text-sm text-stone-400">
+                <p className="mt-1 text-sm text-stone-400 dark:text-stone-500">
                   Joined in the last {RECENT_JOIN_DAYS} days
                 </p>
               </article>
             </section>
 
-            <section className="rounded-2xl border border-stone-200 bg-white p-6 shadow-sm">
-              <h2 className="text-lg font-semibold text-stone-900">Users</h2>
-              <p className="mt-1 text-sm text-stone-500">
+            <section className={`${cardClassName} p-6`}>
+              <h2 className="text-lg font-semibold text-stone-900 dark:text-stone-100">
+                Users
+              </h2>
+              <p className="mt-1 text-sm text-stone-500 dark:text-stone-400">
                 Read-only list of app users. Task data is not shown here.
               </p>
 
               {users.length === 0 ? (
-                <p className="mt-4 text-sm text-stone-500">No users found.</p>
+                <p className="mt-4 text-sm text-stone-500 dark:text-stone-400">
+                  No users found.
+                </p>
               ) : (
                 <div className="mt-4 overflow-x-auto">
                   <table className="w-full min-w-[640px] text-left text-sm">
                     <thead>
-                      <tr className="border-b border-stone-200 text-stone-500">
+                      <tr className="border-b border-stone-200 text-stone-500 dark:border-stone-700 dark:text-stone-400">
                         <th className="pb-3 pr-4 font-medium">Email</th>
                         <th className="pb-3 pr-4 font-medium">User ID</th>
                         <th className="pb-3 pr-4 font-medium">Created</th>
                         <th className="pb-3 font-medium">Last sign-in</th>
                       </tr>
                     </thead>
-                    <tbody className="text-stone-700">
+                    <tbody className="text-stone-700 dark:text-stone-300">
                       {users.map((appUser) => (
                         <tr
                           key={appUser.id}
-                          className="border-b border-stone-100 last:border-0"
+                          className="border-b border-stone-100 last:border-0 dark:border-stone-800"
                         >
-                          <td className="py-3 pr-4 font-medium text-stone-900">
+                          <td className="py-3 pr-4 font-medium text-stone-900 dark:text-stone-100">
                             {appUser.email ?? "—"}
                           </td>
-                          <td className="py-3 pr-4 font-mono text-xs text-stone-500">
+                          <td className="py-3 pr-4 font-mono text-xs text-stone-500 dark:text-stone-400">
                             {appUser.id}
                           </td>
                           <td className="py-3 pr-4">

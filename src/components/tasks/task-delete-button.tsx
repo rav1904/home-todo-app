@@ -60,7 +60,7 @@ export function TaskDeleteButton({ id, title }: TaskDeleteButtonProps) {
       onClick={handleDelete}
       disabled={loading}
       aria-label={loading ? `Deleting "${title}"` : `Delete "${title}"`}
-      className="shrink-0 cursor-pointer rounded-lg border border-stone-200 bg-white p-2 text-stone-500 transition hover:border-red-200 hover:bg-red-50 hover:text-red-700 disabled:cursor-not-allowed disabled:opacity-60"
+      className="shrink-0 cursor-pointer rounded-lg border border-stone-200 bg-white p-2 text-stone-500 transition hover:border-red-200 hover:bg-red-50 hover:text-red-700 disabled:cursor-not-allowed disabled:opacity-60 dark:border-stone-600 dark:bg-stone-800 dark:text-stone-400 dark:hover:border-red-900/50 dark:hover:bg-red-950/40 dark:hover:text-red-400"
     >
       <TrashIcon />
     </button>

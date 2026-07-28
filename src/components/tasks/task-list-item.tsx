@@ -13,6 +13,7 @@ import type { Category } from "@/lib/categories/types";
 import type { TaskLabelDisplay } from "@/lib/labels/display";
 import type { Label } from "@/lib/labels/types";
 import { syncTaskLabels } from "@/lib/labels/sync-task-labels";
+import { cardClassName, fieldClassName } from "@/lib/ui/field-classes";
 import { createClient } from "@/lib/supabase/client";
 import {
   dueAtValuesEqual,
@@ -73,9 +74,6 @@ function toDatetimeLocalValue(iso: string | null) {
 
   return `${year}-${month}-${day}T${hours}:${minutes}`;
 }
-
-const fieldClassName =
-  "w-full rounded-xl border border-stone-200 bg-stone-50 px-3 py-2.5 text-sm text-stone-900 outline-none transition focus:border-emerald-500 focus:bg-white focus:ring-2 focus:ring-emerald-500/20";
 
 function PencilIcon() {
   return (
@@ -236,7 +234,7 @@ export function TaskListItem({
 
   if (isEditing) {
     return (
-      <li className="rounded-2xl border border-emerald-200 bg-white p-5 shadow-sm">
+      <li className="rounded-2xl border border-emerald-200 bg-white p-5 shadow-sm dark:border-emerald-900/50 dark:bg-stone-900">
         <form onSubmit={handleSave} className="space-y-3">
           <div>
             <label
@@ -349,7 +347,7 @@ export function TaskListItem({
   const showMovedLaterNudge = dueDateHistory.movedLaterCount >= 3;
 
   return (
-    <li className="rounded-2xl border border-stone-200 bg-white p-5 shadow-sm">
+    <li className={`${cardClassName} p-5`}>
       <div className="flex items-start gap-3">
         <TaskCompleteToggle
           id={id}
@@ -359,14 +357,14 @@ export function TaskListItem({
         <div className="flex min-w-0 flex-1 items-start justify-between gap-4">
           <div className="min-w-0 flex-1">
             <h2
-              className={`text-base font-semibold text-stone-900 ${
-                completed ? "line-through text-stone-400" : ""
-              }`}
+              className={`min-w-0 text-base font-semibold leading-snug text-stone-900 dark:text-stone-100 ${
+                  completed ? "line-through text-stone-400 dark:text-stone-500" : ""
+                }`}
             >
               {title}
             </h2>
             {description ? (
-              <p className="mt-1 text-sm text-stone-600">{description}</p>
+              <p className="mt-1 text-sm text-stone-600 dark:text-stone-400">{description}</p>
             ) : null}
             {(category || categoryUnavailable) ? (
               <div className="mt-2">
@@ -396,8 +394,8 @@ export function TaskListItem({
           <span
             className={`shrink-0 rounded-full px-2.5 py-1 text-xs font-medium ${
               completed
-                ? "bg-stone-100 text-stone-600"
-                : "bg-emerald-50 text-emerald-700"
+                ? "bg-stone-100 text-stone-600 dark:bg-stone-800 dark:text-stone-400"
+                : "bg-emerald-50 text-emerald-700 dark:bg-emerald-950/50 dark:text-emerald-300"
             }`}
           >
             {completed ? "Completed" : "Open"}
@@ -405,7 +403,7 @@ export function TaskListItem({
         </div>
       </div>
       <div className="mt-4 flex items-center justify-between gap-4">
-        <dl className="flex flex-wrap gap-x-6 gap-y-2 text-sm text-stone-500">
+        <dl className="flex flex-wrap gap-x-6 gap-y-2 text-sm text-stone-500 dark:text-stone-400">
           <div>
             <dt className="sr-only">Due</dt>
             <dd>Due: {dueAt ? formatDateTime(dueAt) : "No due date"}</dd>
@@ -420,7 +418,7 @@ export function TaskListItem({
             type="button"
             onClick={startEditing}
             aria-label={`Edit "${title}"`}
-            className="shrink-0 cursor-pointer rounded-lg border border-stone-200 bg-white p-2 text-stone-500 transition hover:bg-stone-50 hover:text-stone-900"
+            className="shrink-0 cursor-pointer rounded-lg border border-stone-200 bg-white p-2 text-stone-500 transition hover:bg-stone-50 hover:text-stone-900 dark:border-stone-700 dark:bg-stone-800 dark:text-stone-400 dark:hover:bg-stone-700 dark:hover:text-stone-100"
           >
             <PencilIcon />
           </button>

@@ -9,9 +9,7 @@ import {
   CategoryIcon,
 } from "@/lib/categories/icons";
 import type { CategoryFormValues } from "@/lib/categories/types";
-
-const fieldClassName =
-  "w-full rounded-xl border border-stone-200 bg-stone-50 px-3 py-2.5 text-sm text-stone-900 outline-none transition focus:border-emerald-500 focus:bg-white focus:ring-2 focus:ring-emerald-500/20";
+import { fieldClassName } from "@/lib/ui/field-classes";
 
 type CategoryFormFieldsProps = {
   values: CategoryFormValues;
@@ -34,7 +32,7 @@ export function CategoryFormFields({
         <div>
           <label
             htmlFor={`${idPrefix}-parent`}
-            className="mb-1.5 block text-sm font-medium text-stone-700"
+            className="mb-1.5 block text-sm font-medium text-stone-700 dark:text-stone-300"
           >
             Parent category
           </label>
@@ -62,7 +60,7 @@ export function CategoryFormFields({
       <div>
         <label
           htmlFor={`${idPrefix}-name`}
-          className="mb-1.5 block text-sm font-medium text-stone-700"
+          className="mb-1.5 block text-sm font-medium text-stone-700 dark:text-stone-300"
         >
           Name
         </label>
@@ -80,7 +78,7 @@ export function CategoryFormFields({
       </div>
 
       <div>
-        <p className="mb-2 text-sm font-medium text-stone-700">Icon</p>
+        <p className="mb-2 text-sm font-medium text-stone-700 dark:text-stone-300">Icon</p>
         <div className="grid grid-cols-5 gap-2 sm:grid-cols-10">
           {CATEGORY_ICON_NAMES.map((iconName) => {
             const isSelected = values.icon_name === iconName;
@@ -94,8 +92,8 @@ export function CategoryFormFields({
                 onClick={() => onChange({ ...values, icon_name: iconName })}
                 className={`flex h-10 items-center justify-center rounded-xl border transition ${
                   isSelected
-                    ? "border-emerald-500 bg-emerald-50 text-emerald-700"
-                    : "border-stone-200 bg-white text-stone-600 hover:bg-stone-50"
+                    ? "border-emerald-500 bg-emerald-50 text-emerald-700 dark:border-emerald-500 dark:bg-emerald-950/50 dark:text-emerald-300"
+                    : "border-stone-200 bg-white text-stone-600 hover:bg-stone-50 dark:border-stone-600 dark:bg-stone-800 dark:text-stone-300 dark:hover:bg-stone-700"
                 }`}
               >
                 <CategoryIcon iconName={iconName} className="h-4 w-4" />
@@ -106,7 +104,7 @@ export function CategoryFormFields({
       </div>
 
       <div>
-        <p className="mb-2 text-sm font-medium text-stone-700">Colour</p>
+        <p className="mb-2 text-sm font-medium text-stone-700 dark:text-stone-300">Colour</p>
         <div className="flex flex-wrap gap-2">
           {CATEGORY_COLOUR_PRESETS.map((preset) => {
             const isSelected = values.colour === preset.value;
@@ -119,7 +117,9 @@ export function CategoryFormFields({
                 aria-pressed={isSelected}
                 onClick={() => onChange({ ...values, colour: preset.value })}
                 className={`h-8 w-8 rounded-full border-2 transition ${
-                  isSelected ? "border-stone-900" : "border-transparent"
+                  isSelected
+                    ? "border-stone-900 dark:border-stone-100"
+                    : "border-transparent"
                 }`}
                 style={{ backgroundColor: preset.value }}
               />

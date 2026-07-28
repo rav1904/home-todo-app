@@ -22,12 +22,11 @@ import {
 } from "@/lib/labels/filter";
 import { groupLabelsForPicker } from "@/lib/labels/display";
 import type { Label } from "@/lib/labels/types";
+import { fieldClassName } from "@/lib/ui/field-classes";
 import { buildTasksFilterUrl } from "@/lib/tasks/filter";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useMemo } from "react";
 
-const selectClassName =
-  "w-full rounded-xl border border-stone-200 bg-stone-50 px-3 py-2.5 text-sm text-stone-900 outline-none transition focus:border-emerald-500 focus:bg-white focus:ring-2 focus:ring-emerald-500/20";
 
 type TaskFiltersBarProps = {
   categories: Category[];
@@ -150,11 +149,11 @@ export function TaskFiltersBar({ categories, labels }: TaskFiltersBarProps) {
   }
 
   return (
-    <section className="rounded-2xl border border-stone-200 bg-white p-5 shadow-sm">
+    <section className="rounded-2xl border border-stone-200 bg-white p-5 shadow-sm dark:border-stone-700 dark:bg-stone-900">
       <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
         <div>
-          <h2 className="text-sm font-semibold text-stone-900">Filters</h2>
-          <p className="mt-1 text-sm text-stone-500">
+          <h2 className="text-sm font-semibold text-stone-900 dark:text-stone-100">Filters</h2>
+          <p className="mt-1 text-sm text-stone-500 dark:text-stone-400">
             Filter by category, label, or both. Multiple filters use AND logic.
           </p>
         </div>
@@ -163,7 +162,7 @@ export function TaskFiltersBar({ categories, labels }: TaskFiltersBarProps) {
           <button
             type="button"
             onClick={clearFilters}
-            className="shrink-0 cursor-pointer self-start rounded-lg border border-stone-200 bg-white px-3 py-1.5 text-sm font-medium text-stone-600 transition hover:bg-stone-50"
+            className="shrink-0 cursor-pointer self-start rounded-lg border border-stone-200 bg-white px-3 py-1.5 text-sm font-medium text-stone-600 transition hover:bg-stone-50 dark:border-stone-600 dark:bg-stone-800 dark:text-stone-300 dark:hover:bg-stone-700"
           >
             Clear filters
           </button>
@@ -184,7 +183,7 @@ export function TaskFiltersBar({ categories, labels }: TaskFiltersBarProps) {
                 id="task-filter-main"
                 value={mainSelectValue}
                 onChange={(event) => handleMainChange(event.target.value)}
-                className={selectClassName}
+                className={fieldClassName}
               >
                 <option value="all">All categories</option>
                 <option value={UNCategorized_FILTER_VALUE}>Uncategorized</option>
@@ -208,7 +207,7 @@ export function TaskFiltersBar({ categories, labels }: TaskFiltersBarProps) {
                   id="task-filter-sub"
                   value={subCategoryId ?? ""}
                   onChange={(event) => handleSubChange(event.target.value)}
-                  className={selectClassName}
+                  className={fieldClassName}
                 >
                   <option value="">{subLabel}</option>
                   {subcategories.map((subcategory) => (
@@ -234,7 +233,7 @@ export function TaskFiltersBar({ categories, labels }: TaskFiltersBarProps) {
               id="task-filter-label"
               value={labelSelectValue}
               onChange={(event) => handleLabelChange(event.target.value)}
-              className={selectClassName}
+              className={fieldClassName}
             >
               <option value="all">All labels</option>
               <option value={NO_LABEL_FILTER_VALUE}>No labels</option>

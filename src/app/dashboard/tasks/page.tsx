@@ -154,7 +154,7 @@ export default async function TasksPage({ searchParams }: TasksPageProps) {
         {activeCategories.length > 0 || activeLabels.length > 0 ? (
           <Suspense
             fallback={
-              <div className="rounded-2xl border border-stone-200 bg-white p-5 shadow-sm">
+              <div className="rounded-2xl border border-stone-200 bg-white dark:border-stone-700 dark:bg-stone-900 p-5 shadow-sm">
                 <p className="text-sm text-stone-500">Loading filters...</p>
               </div>
             }
@@ -232,7 +232,7 @@ export default async function TasksPage({ searchParams }: TasksPageProps) {
             })}
           </ul>
         ) : allTasks.length > 0 && filterActive ? (
-          <div className="rounded-2xl border border-dashed border-stone-300 bg-white p-10 text-center shadow-sm">
+          <div className="rounded-2xl border border-dashed border-stone-300 bg-white dark:border-stone-600 dark:bg-stone-900 p-10 text-center shadow-sm">
             <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-2xl bg-stone-100 text-xl text-stone-500">
               ☑
             </div>
@@ -246,7 +246,7 @@ export default async function TasksPage({ searchParams }: TasksPageProps) {
             </p>
           </div>
         ) : !error ? (
-          <div className="rounded-2xl border border-dashed border-stone-300 bg-white p-10 text-center shadow-sm">
+          <div className="rounded-2xl border border-dashed border-stone-300 bg-white dark:border-stone-600 dark:bg-stone-900 p-10 text-center shadow-sm">
             <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-2xl bg-stone-100 text-xl text-stone-500">
               ☑
             </div>

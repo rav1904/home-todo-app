@@ -1,3 +1,5 @@
+"use client";
+
 import { CategoryIcon } from "@/lib/categories/icons";
 import type { Category } from "@/lib/categories/types";
 import {
@@ -6,9 +8,7 @@ import {
   resolveCategoryIdForSave,
   splitCategorySelection,
 } from "@/lib/categories/tree";
-
-const defaultSelectClassName =
-  "w-full rounded-xl border border-stone-200 bg-stone-50 px-3 py-2.5 text-sm text-stone-900 outline-none transition focus:border-emerald-500 focus:bg-white focus:ring-2 focus:ring-emerald-500/20";
+import { fieldClassName } from "@/lib/ui/field-classes";
 
 type CategorySelectProps = {
   id: string;
@@ -34,18 +34,20 @@ export function CategorySelect({
     ? (subsByParent[mainCategoryId] ?? [])
     : [];
   const showSubSelect = subcategories.length > 0;
-  const selectClassName = className ?? defaultSelectClassName;
+  const selectClassName = className ?? fieldClassName;
 
   return (
     <div className="space-y-3">
       <div>
         <label
           htmlFor={`${id}-main`}
-          className="mb-1.5 block text-sm font-medium text-stone-700"
+          className="mb-1.5 block text-sm font-medium text-stone-700 dark:text-stone-300"
         >
           Main category{" "}
           {optional ? (
-            <span className="font-normal text-stone-400">(optional)</span>
+            <span className="font-normal text-stone-400 dark:text-stone-500">
+              (optional)
+            </span>
           ) : null}
         </label>
         <select
@@ -70,10 +72,12 @@ export function CategorySelect({
         <div>
           <label
             htmlFor={`${id}-sub`}
-            className="mb-1.5 block text-sm font-medium text-stone-700"
+            className="mb-1.5 block text-sm font-medium text-stone-700 dark:text-stone-300"
           >
             Subcategory{" "}
-            <span className="font-normal text-stone-400">(optional)</span>
+            <span className="font-normal text-stone-400 dark:text-stone-500">
+              (optional)
+            </span>
           </label>
           <select
             id={`${id}-sub`}
@@ -109,7 +113,7 @@ type CategoryBadgeProps = {
 export function CategoryBadge({ category, unavailable = false }: CategoryBadgeProps) {
   if (unavailable) {
     return (
-      <span className="inline-flex items-center rounded-full bg-stone-100 px-2.5 py-1 text-xs font-medium text-stone-500">
+      <span className="inline-flex shrink-0 items-center rounded-full bg-stone-100 px-2.5 py-0.5 text-xs font-medium leading-none text-stone-500 dark:bg-stone-800 dark:text-stone-400">
         Category unavailable
       </span>
     );
@@ -121,7 +125,7 @@ export function CategoryBadge({ category, unavailable = false }: CategoryBadgePr
 
   return (
     <span
-      className="inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-medium text-white"
+      className="inline-flex shrink-0 items-center gap-1.5 rounded-full px-2.5 py-0.5 text-xs font-medium leading-none text-white"
       style={{ backgroundColor: category.colour }}
     >
       <CategoryIcon iconName={category.icon_name} className="h-3.5 w-3.5" />

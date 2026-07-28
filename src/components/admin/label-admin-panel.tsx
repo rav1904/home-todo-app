@@ -15,6 +15,15 @@ import {
 import type { Label, LabelFormValues } from "@/lib/labels/types";
 import { validateLabelFormValues } from "@/lib/labels/validation";
 import { createClient } from "@/lib/supabase/client";
+import {
+  adminCancelButtonClassName,
+  adminEditCardClassName,
+  adminErrorBannerClassName,
+  adminIconButtonClassName,
+  adminRowClassName,
+  adminSecondaryButtonClassName,
+  adminSectionClassName,
+} from "@/lib/ui/field-classes";
 import { ChevronDown, ChevronUp, GripVertical } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useMemo, useState } from "react";
@@ -244,7 +253,7 @@ export function LabelAdminPanel({ labels }: LabelAdminPanelProps) {
           onDragStart={() => setDraggedLabelId(label.id)}
           onDragEnd={() => setDraggedLabelId(null)}
           aria-label={`Drag ${label.name}`}
-          className="cursor-grab rounded-lg border border-stone-200 bg-white p-1.5 text-stone-500 transition hover:bg-stone-50 active:cursor-grabbing"
+          className={`cursor-grab ${adminIconButtonClassName} p-1.5 active:cursor-grabbing`}
         >
           <GripVertical className="h-4 w-4" />
         </button>
@@ -253,7 +262,7 @@ export function LabelAdminPanel({ labels }: LabelAdminPanelProps) {
           onClick={() => handleMoveLabel(label, "up")}
           disabled={loading || index === 0}
           aria-label={`Move ${label.name} up`}
-          className="cursor-pointer rounded-lg border border-stone-200 bg-white p-1 text-stone-500 transition hover:bg-stone-50 disabled:cursor-not-allowed disabled:opacity-40"
+          className={`cursor-pointer ${adminIconButtonClassName} p-1`}
         >
           <ChevronUp className="h-4 w-4" />
         </button>
@@ -262,7 +271,7 @@ export function LabelAdminPanel({ labels }: LabelAdminPanelProps) {
           onClick={() => handleMoveLabel(label, "down")}
           disabled={loading || index === sortedLabels.length - 1}
           aria-label={`Move ${label.name} down`}
-          className="cursor-pointer rounded-lg border border-stone-200 bg-white p-1 text-stone-500 transition hover:bg-stone-50 disabled:cursor-not-allowed disabled:opacity-40"
+          className={`cursor-pointer ${adminIconButtonClassName} p-1`}
         >
           <ChevronDown className="h-4 w-4" />
         </button>
@@ -277,10 +286,10 @@ export function LabelAdminPanel({ labels }: LabelAdminPanelProps) {
       return (
         <li
           key={label.id}
-          className="rounded-2xl border border-emerald-200 bg-white p-5 shadow-sm"
+          className={adminEditCardClassName}
         >
           <form onSubmit={handleSaveEdit} className="space-y-4">
-            <h3 className="text-sm font-semibold text-stone-900">Edit label</h3>
+            <h3 className="text-sm font-semibold text-stone-900 dark:text-stone-100">Edit label</h3>
             <LabelFormFields
               idPrefix={`edit-${label.id}`}
               values={editValues}
@@ -298,7 +307,7 @@ export function LabelAdminPanel({ labels }: LabelAdminPanelProps) {
                 type="button"
                 onClick={cancelEditing}
                 disabled={loading}
-                className="cursor-pointer rounded-xl border border-stone-200 bg-white px-4 py-2 text-sm font-medium text-stone-700 transition hover:bg-stone-50 disabled:cursor-not-allowed disabled:opacity-60"
+                className={adminCancelButtonClassName}
               >
                 Cancel
               </button>
@@ -320,8 +329,8 @@ export function LabelAdminPanel({ labels }: LabelAdminPanelProps) {
           event.preventDefault();
           void handleDropLabel(label);
         }}
-        className={`rounded-2xl border bg-white p-4 shadow-sm ${
-          label.active ? "border-stone-200" : "border-stone-200 opacity-70"
+        className={`${adminRowClassName} ${
+          label.active ? "" : "opacity-70"
         } ${draggedLabelId === label.id ? "opacity-60" : ""}`}
       >
         <div className="flex items-start gap-3">
@@ -335,7 +344,7 @@ export function LabelAdminPanel({ labels }: LabelAdminPanelProps) {
                 {label.name}
               </span>
               {!label.active ? (
-                <p className="mt-2 text-xs text-stone-500">Archived</p>
+                <p className="mt-2 text-xs text-stone-500 dark:text-stone-400">Archived</p>
               ) : null}
             </div>
             <div className="flex shrink-0 flex-wrap items-center gap-2">
@@ -343,7 +352,7 @@ export function LabelAdminPanel({ labels }: LabelAdminPanelProps) {
                 type="button"
                 onClick={() => startEditing(label)}
                 disabled={loading}
-                className="cursor-pointer rounded-lg border border-stone-200 bg-white px-3 py-1.5 text-xs font-medium text-stone-600 transition hover:bg-stone-50 disabled:cursor-not-allowed disabled:opacity-60"
+                className={adminSecondaryButtonClassName}
               >
                 Edit
               </button>
@@ -352,7 +361,7 @@ export function LabelAdminPanel({ labels }: LabelAdminPanelProps) {
                   type="button"
                   onClick={() => setLabelActive(label, false)}
                   disabled={loading}
-                  className="cursor-pointer rounded-lg border border-stone-200 bg-white px-3 py-1.5 text-xs font-medium text-stone-600 transition hover:bg-stone-50 disabled:cursor-not-allowed disabled:opacity-60"
+                  className={adminSecondaryButtonClassName}
                 >
                   Archive
                 </button>
@@ -361,7 +370,7 @@ export function LabelAdminPanel({ labels }: LabelAdminPanelProps) {
                   type="button"
                   onClick={() => setLabelActive(label, true)}
                   disabled={loading}
-                  className="cursor-pointer rounded-lg border border-stone-200 bg-white px-3 py-1.5 text-xs font-medium text-stone-600 transition hover:bg-stone-50 disabled:cursor-not-allowed disabled:opacity-60"
+                  className={adminSecondaryButtonClassName}
                 >
                   Reactivate
                 </button>
@@ -375,9 +384,9 @@ export function LabelAdminPanel({ labels }: LabelAdminPanelProps) {
 
   return (
     <div className="space-y-8">
-      <section className="rounded-2xl border border-stone-200 bg-white p-6 shadow-sm">
-        <h2 className="text-lg font-semibold text-stone-900">Create global label</h2>
-        <p className="mt-1 text-sm text-stone-500">
+      <section className={adminSectionClassName}>
+        <h2 className="text-lg font-semibold text-stone-900 dark:text-stone-100">Create global label</h2>
+        <p className="mt-1 text-sm text-stone-500 dark:text-stone-400">
           Add a shared marker such as Urgent, Waiting, or Follow Up. Global
           labels are visible to all users. New labels are appended to the custom
           order automatically.
@@ -391,7 +400,7 @@ export function LabelAdminPanel({ labels }: LabelAdminPanelProps) {
           />
 
           {error ? (
-            <p className="rounded-xl bg-red-50 px-3 py-2 text-sm text-red-700">
+            <p className={adminErrorBannerClassName}>
               {error}
             </p>
           ) : null}
@@ -406,11 +415,11 @@ export function LabelAdminPanel({ labels }: LabelAdminPanelProps) {
         </form>
       </section>
 
-      <section className="rounded-2xl border border-stone-200 bg-white p-6 shadow-sm">
+      <section className={adminSectionClassName}>
         <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div>
-            <h2 className="text-lg font-semibold text-stone-900">Global labels</h2>
-            <p className="mt-1 text-sm text-stone-500">
+            <h2 className="text-lg font-semibold text-stone-900 dark:text-stone-100">Global labels</h2>
+            <p className="mt-1 text-sm text-stone-500 dark:text-stone-400">
               Manage shared labels for all users. Personal labels are created
               from the task form and are not shown here.
             </p>
@@ -429,8 +438,8 @@ export function LabelAdminPanel({ labels }: LabelAdminPanelProps) {
                 onClick={() => setSortMode(mode)}
                 className={`cursor-pointer rounded-lg px-3 py-1.5 text-sm font-medium transition ${
                   sortMode === mode
-                    ? "bg-emerald-50 text-emerald-800"
-                    : "border border-stone-200 bg-white text-stone-600 hover:bg-stone-50"
+                    ? "bg-emerald-50 text-emerald-800 dark:bg-emerald-950/50 dark:text-emerald-300"
+                    : "border border-stone-200 bg-white text-stone-600 hover:bg-stone-50 dark:border-stone-600 dark:bg-stone-800 dark:text-stone-300 dark:hover:bg-stone-700"
                 }`}
               >
                 {labelText}
@@ -440,7 +449,7 @@ export function LabelAdminPanel({ labels }: LabelAdminPanelProps) {
         </div>
 
         {labels.length === 0 ? (
-          <p className="mt-4 text-sm text-stone-500">No labels yet.</p>
+          <p className="mt-4 text-sm text-stone-500 dark:text-stone-400">No labels yet.</p>
         ) : (
           <ul className="mt-4 space-y-3">
             {sortedLabels.map((label) => renderLabelRow(label))}

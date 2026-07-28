@@ -78,7 +78,7 @@ function TaskList({
   showDueDate?: boolean;
 }) {
   if (tasks.length === 0) {
-    return <p className="text-sm text-stone-500">{emptyMessage}</p>;
+    return <p className="text-sm text-stone-500 dark:text-stone-400">{emptyMessage}</p>;
   }
 
   return (
@@ -86,23 +86,23 @@ function TaskList({
       {tasks.map((task) => (
         <li
           key={task.id}
-          className="flex items-start justify-between gap-4 rounded-xl bg-stone-50 px-4 py-3"
+          className="flex items-start justify-between gap-4 rounded-xl bg-stone-50 px-4 py-3 dark:bg-stone-900/60"
         >
           <div className="min-w-0">
             <p
-              className={`text-sm font-medium text-stone-900 ${
-                task.completed ? "line-through text-stone-400" : ""
+              className={`text-sm font-medium text-stone-900 dark:text-stone-100 ${
+                task.completed ? "line-through text-stone-400 dark:text-stone-500" : ""
               }`}
             >
               {task.title}
             </p>
             {task.description ? (
-              <p className="mt-0.5 truncate text-xs text-stone-500">
+              <p className="mt-0.5 truncate text-xs text-stone-500 dark:text-stone-400">
                 {task.description}
               </p>
             ) : null}
           </div>
-          <span className="shrink-0 text-xs text-stone-400">
+          <span className="shrink-0 text-xs text-stone-400 dark:text-stone-500">
             {showDueDate && task.due_at
               ? formatDateTime(task.due_at)
               : formatDate(task.created_at)}
@@ -184,7 +184,7 @@ export default async function DashboardPage() {
       <div className="flex-1 overflow-auto p-8">
         <div className="space-y-8">
           {error ? (
-            <div className="rounded-2xl border border-red-200 bg-red-50 p-6 text-sm text-red-700">
+            <div className="rounded-2xl border border-red-200 bg-red-50 p-6 text-sm text-red-700 dark:border-red-900/50 dark:bg-red-950/40 dark:text-red-300">
               Could not load dashboard data: {error.message}
             </div>
           ) : null}
@@ -193,23 +193,23 @@ export default async function DashboardPage() {
             {stats.map((stat) => (
               <article
                 key={stat.label}
-                className="rounded-2xl border border-stone-200 bg-white p-5 shadow-sm"
+                className="rounded-2xl border border-stone-200 bg-white p-5 shadow-sm dark:border-stone-700 dark:bg-stone-900"
               >
-                <p className="text-sm font-medium text-stone-500">
+                <p className="text-sm font-medium text-stone-500 dark:text-stone-400">
                   {stat.label}
                 </p>
-                <p className="mt-2 text-3xl font-semibold text-stone-900">
+                <p className="mt-2 text-3xl font-semibold text-stone-900 dark:text-stone-100">
                   {stat.value}
                 </p>
-                <p className="mt-1 text-sm text-stone-400">{stat.hint}</p>
+                <p className="mt-1 text-sm text-stone-400 dark:text-stone-500">{stat.hint}</p>
               </article>
             ))}
           </section>
 
           <section className="grid gap-6 lg:grid-cols-3">
-            <article className="rounded-2xl border border-stone-200 bg-white p-6 shadow-sm">
-              <h2 className="text-lg font-semibold text-stone-900">Due today</h2>
-              <p className="mt-1 text-sm text-stone-500">
+            <article className="rounded-2xl border border-stone-200 bg-white p-6 shadow-sm dark:border-stone-700 dark:bg-stone-900">
+              <h2 className="text-lg font-semibold text-stone-900 dark:text-stone-100">Due today</h2>
+              <p className="mt-1 text-sm text-stone-500 dark:text-stone-400">
                 Open tasks due by end of today
               </p>
               <div className="mt-4">
@@ -221,11 +221,11 @@ export default async function DashboardPage() {
               </div>
             </article>
 
-            <article className="rounded-2xl border border-stone-200 bg-white p-6 shadow-sm">
-              <h2 className="text-lg font-semibold text-stone-900">
+            <article className="rounded-2xl border border-stone-200 bg-white p-6 shadow-sm dark:border-stone-700 dark:bg-stone-900">
+              <h2 className="text-lg font-semibold text-stone-900 dark:text-stone-100">
                 Due within a week
               </h2>
-              <p className="mt-1 text-sm text-stone-500">
+              <p className="mt-1 text-sm text-stone-500 dark:text-stone-400">
                 Open tasks due in the next 7 days after today
               </p>
               <div className="mt-4">
@@ -237,11 +237,11 @@ export default async function DashboardPage() {
               </div>
             </article>
 
-            <article className="rounded-2xl border border-stone-200 bg-white p-6 shadow-sm">
-              <h2 className="text-lg font-semibold text-stone-900">
+            <article className="rounded-2xl border border-stone-200 bg-white p-6 shadow-sm dark:border-stone-700 dark:bg-stone-900">
+              <h2 className="text-lg font-semibold text-stone-900 dark:text-stone-100">
                 Upcoming tasks
               </h2>
-              <p className="mt-1 text-sm text-stone-500">
+              <p className="mt-1 text-sm text-stone-500 dark:text-stone-400">
                 Open tasks due after the next 7 days
               </p>
               <div className="mt-4">
@@ -254,11 +254,11 @@ export default async function DashboardPage() {
             </article>
           </section>
 
-          <section className="rounded-2xl border border-stone-200 bg-white p-6 shadow-sm">
-            <h2 className="text-lg font-semibold text-stone-900">
+          <section className="rounded-2xl border border-stone-200 bg-white p-6 shadow-sm dark:border-stone-700 dark:bg-stone-900">
+            <h2 className="text-lg font-semibold text-stone-900 dark:text-stone-100">
               Recently added
             </h2>
-            <p className="mt-1 text-sm text-stone-500">
+            <p className="mt-1 text-sm text-stone-500 dark:text-stone-400">
               Your latest tasks, newest first
             </p>
             <div className="mt-4">

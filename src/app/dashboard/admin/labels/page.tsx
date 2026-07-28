@@ -2,6 +2,7 @@ import { LabelAdminPanel } from "@/components/admin/label-admin-panel";
 import { DashboardHeader } from "@/components/dashboard/header";
 import { isAdminUser } from "@/lib/admin";
 import type { Label } from "@/lib/labels/types";
+import { adminPageErrorClassName } from "@/lib/ui/field-classes";
 import { createClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
 
@@ -31,7 +32,7 @@ export default async function AdminLabelsPage() {
       />
       <div className="flex-1 overflow-auto p-8">
         {error ? (
-          <div className="rounded-2xl border border-red-200 bg-red-50 p-6 text-sm text-red-700">
+          <div className={adminPageErrorClassName}>
             Could not load labels: {error.message}
           </div>
         ) : (

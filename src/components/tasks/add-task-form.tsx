@@ -5,6 +5,7 @@ import { LabelSelect } from "@/components/tasks/label-select";
 import type { Category } from "@/lib/categories/types";
 import type { Label } from "@/lib/labels/types";
 import { syncTaskLabels } from "@/lib/labels/sync-task-labels";
+import { cardClassName, fieldClassName } from "@/lib/ui/field-classes";
 import { createClient } from "@/lib/supabase/client";
 import { useRouter } from "next/navigation";
 import { useMemo, useState } from "react";
@@ -12,9 +13,18 @@ import { useMemo, useState } from "react";
 type AddTaskFormProps = {
   categories: Category[];
   labels: Label[];
+  showHeading?: boolean;
+  embedded?: boolean;
+  onSuccess?: () => void;
 };
 
-export function AddTaskForm({ categories, labels }: AddTaskFormProps) {
+export function AddTaskForm({
+  categories,
+  labels,
+  showHeading = true,
+  embedded = false,
+  onSuccess,
+}: AddTaskFormProps) {
   const router = useRouter();
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
@@ -103,20 +113,25 @@ export function AddTaskForm({ categories, labels }: AddTaskFormProps) {
     setExtraLabels([]);
     setLoading(false);
     router.refresh();
+    onSuccess?.();
   }
 
   return (
     <form
       onSubmit={handleSubmit}
-      className="rounded-2xl border border-stone-200 bg-white p-5 shadow-sm"
+      className={embedded ? "space-y-3" : `${cardClassName} p-5`}
     >
-      <h2 className="text-sm font-semibold text-stone-900">Add task</h2>
+      {showHeading ? (
+        <h2 className="text-sm font-semibold text-stone-900 dark:text-stone-100">
+          Add task
+        </h2>
+      ) : null}
 
-      <div className="mt-4 space-y-3">
+      <div className={showHeading ? "mt-4 space-y-3" : "space-y-3"}>
         <div>
           <label
             htmlFor="task-title"
-            className="mb-1.5 block text-sm font-medium text-stone-700"
+            className="mb-1.5 block text-sm font-medium text-stone-700 dark:text-stone-300"
           >
             Title
           </label>
@@ -126,7 +141,7 @@ export function AddTaskForm({ categories, labels }: AddTaskFormProps) {
             required
             value={title}
             onChange={(event) => setTitle(event.target.value)}
-            className="w-full rounded-xl border border-stone-200 bg-stone-50 px-3 py-2.5 text-sm text-stone-900 outline-none transition focus:border-emerald-500 focus:bg-white focus:ring-2 focus:ring-emerald-500/20"
+            className={fieldClassName}
             placeholder="What needs doing?"
           />
         </div>
@@ -134,16 +149,19 @@ export function AddTaskForm({ categories, labels }: AddTaskFormProps) {
         <div>
           <label
             htmlFor="task-description"
-            className="mb-1.5 block text-sm font-medium text-stone-700"
+            className="mb-1.5 block text-sm font-medium text-stone-700 dark:text-stone-300"
           >
-            Description <span className="font-normal text-stone-400">(optional)</span>
+            Description{" "}
+            <span className="font-normal text-stone-400 dark:text-stone-500">
+              (optional)
+            </span>
           </label>
           <textarea
             id="task-description"
             rows={2}
             value={description}
             onChange={(event) => setDescription(event.target.value)}
-            className="w-full resize-none rounded-xl border border-stone-200 bg-stone-50 px-3 py-2.5 text-sm text-stone-900 outline-none transition focus:border-emerald-500 focus:bg-white focus:ring-2 focus:ring-emerald-500/20"
+            className={`${fieldClassName} resize-none`}
             placeholder="Extra details"
           />
         </div>
@@ -151,16 +169,19 @@ export function AddTaskForm({ categories, labels }: AddTaskFormProps) {
         <div>
           <label
             htmlFor="task-due-at"
-            className="mb-1.5 block text-sm font-medium text-stone-700"
+            className="mb-1.5 block text-sm font-medium text-stone-700 dark:text-stone-300"
           >
-            Due date <span className="font-normal text-stone-400">(optional)</span>
+            Due date{" "}
+            <span className="font-normal text-stone-400 dark:text-stone-500">
+              (optional)
+            </span>
           </label>
           <input
             id="task-due-at"
             type="datetime-local"
             value={dueAt}
             onChange={(event) => setDueAt(event.target.value)}
-            className="w-full rounded-xl border border-stone-200 bg-stone-50 px-3 py-2.5 text-sm text-stone-900 outline-none transition focus:border-emerald-500 focus:bg-white focus:ring-2 focus:ring-emerald-500/20"
+            className={fieldClassName}
           />
         </div>
 
@@ -183,7 +204,7 @@ export function AddTaskForm({ categories, labels }: AddTaskFormProps) {
       </div>
 
       {error ? (
-        <p className="mt-3 rounded-xl bg-red-50 px-3 py-2 text-sm text-red-700">
+        <p className="mt-3 rounded-xl bg-red-50 px-3 py-2 text-sm text-red-700 dark:bg-red-950/50 dark:text-red-300">
           {error}
         </p>
       ) : null}

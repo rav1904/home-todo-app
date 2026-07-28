@@ -16,6 +16,15 @@ import {
 import type { Category, CategoryFormValues } from "@/lib/categories/types";
 import { validateCategoryFormValues } from "@/lib/categories/validation";
 import { createClient } from "@/lib/supabase/client";
+import {
+  adminCancelButtonClassName,
+  adminEditCardClassName,
+  adminErrorBannerClassName,
+  adminIconButtonClassName,
+  adminRowClassName,
+  adminSecondaryButtonClassName,
+  adminSectionClassName,
+} from "@/lib/ui/field-classes";
 import { ChevronDown, ChevronUp, GripVertical } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useMemo, useState } from "react";
@@ -292,7 +301,7 @@ export function CategoryAdminPanel({ categories }: CategoryAdminPanelProps) {
           onDragStart={() => setDraggedCategoryId(category.id)}
           onDragEnd={() => setDraggedCategoryId(null)}
           aria-label={`Drag ${category.name}`}
-          className="cursor-grab rounded-lg border border-stone-200 bg-white p-1.5 text-stone-500 transition hover:bg-stone-50 active:cursor-grabbing"
+          className={`cursor-grab ${adminIconButtonClassName} p-1.5 active:cursor-grabbing`}
         >
           <GripVertical className="h-4 w-4" />
         </button>
@@ -301,7 +310,7 @@ export function CategoryAdminPanel({ categories }: CategoryAdminPanelProps) {
           onClick={() => handleMoveCategory(category, siblings, "up")}
           disabled={loading || index === 0}
           aria-label={`Move ${category.name} up`}
-          className="cursor-pointer rounded-lg border border-stone-200 bg-white p-1 text-stone-500 transition hover:bg-stone-50 disabled:cursor-not-allowed disabled:opacity-40"
+          className={`cursor-pointer ${adminIconButtonClassName} p-1`}
         >
           <ChevronUp className="h-4 w-4" />
         </button>
@@ -310,7 +319,7 @@ export function CategoryAdminPanel({ categories }: CategoryAdminPanelProps) {
           onClick={() => handleMoveCategory(category, siblings, "down")}
           disabled={loading || index === siblings.length - 1}
           aria-label={`Move ${category.name} down`}
-          className="cursor-pointer rounded-lg border border-stone-200 bg-white p-1 text-stone-500 transition hover:bg-stone-50 disabled:cursor-not-allowed disabled:opacity-40"
+          className={`cursor-pointer ${adminIconButtonClassName} p-1`}
         >
           <ChevronDown className="h-4 w-4" />
         </button>
@@ -329,10 +338,10 @@ export function CategoryAdminPanel({ categories }: CategoryAdminPanelProps) {
       return (
         <li
           key={category.id}
-          className="rounded-2xl border border-emerald-200 bg-white p-5 shadow-sm"
+          className={adminEditCardClassName}
         >
           <form onSubmit={handleSaveEdit} className="space-y-4">
-            <h3 className="text-sm font-semibold text-stone-900">
+            <h3 className="text-sm font-semibold text-stone-900 dark:text-stone-100">
               Edit {isSubcategory ? "subcategory" : "category"}
             </h3>
             <CategoryFormFields
@@ -356,7 +365,7 @@ export function CategoryAdminPanel({ categories }: CategoryAdminPanelProps) {
                 type="button"
                 onClick={cancelEditing}
                 disabled={loading}
-                className="cursor-pointer rounded-xl border border-stone-200 bg-white px-4 py-2 text-sm font-medium text-stone-700 transition hover:bg-stone-50 disabled:cursor-not-allowed disabled:opacity-60"
+                className={adminCancelButtonClassName}
               >
                 Cancel
               </button>
@@ -378,8 +387,8 @@ export function CategoryAdminPanel({ categories }: CategoryAdminPanelProps) {
           event.preventDefault();
           void handleDropCategory(category, siblings);
         }}
-        className={`rounded-2xl border bg-white p-4 shadow-sm ${
-          category.active ? "border-stone-200" : "border-stone-200 opacity-70"
+        className={`${adminRowClassName} ${
+          category.active ? "" : "opacity-70"
         } ${isSubcategory ? "ml-6" : ""} ${
           draggedCategoryId === category.id ? "opacity-60" : ""
         }`}
@@ -395,9 +404,9 @@ export function CategoryAdminPanel({ categories }: CategoryAdminPanelProps) {
                 <CategoryIcon iconName={category.icon_name} className="h-4 w-4" />
               </span>
               <div className="min-w-0">
-                <p className="font-medium text-stone-900">{category.name}</p>
+                <p className="font-medium text-stone-900 dark:text-stone-100">{category.name}</p>
                 {!category.active ? (
-                  <p className="mt-1 text-xs text-stone-500">Archived</p>
+                  <p className="mt-1 text-xs text-stone-500 dark:text-stone-400">Archived</p>
                 ) : null}
               </div>
             </div>
@@ -406,7 +415,7 @@ export function CategoryAdminPanel({ categories }: CategoryAdminPanelProps) {
                 type="button"
                 onClick={() => startEditing(category)}
                 disabled={loading}
-                className="cursor-pointer rounded-lg border border-stone-200 bg-white px-3 py-1.5 text-xs font-medium text-stone-600 transition hover:bg-stone-50 disabled:cursor-not-allowed disabled:opacity-60"
+                className={adminSecondaryButtonClassName}
               >
                 Edit
               </button>
@@ -415,7 +424,7 @@ export function CategoryAdminPanel({ categories }: CategoryAdminPanelProps) {
                   type="button"
                   onClick={() => setCategoryActive(category, false)}
                   disabled={loading}
-                  className="cursor-pointer rounded-lg border border-stone-200 bg-white px-3 py-1.5 text-xs font-medium text-stone-600 transition hover:bg-stone-50 disabled:cursor-not-allowed disabled:opacity-60"
+                  className={adminSecondaryButtonClassName}
                 >
                   Archive
                 </button>
@@ -424,7 +433,7 @@ export function CategoryAdminPanel({ categories }: CategoryAdminPanelProps) {
                   type="button"
                   onClick={() => setCategoryActive(category, true)}
                   disabled={loading}
-                  className="cursor-pointer rounded-lg border border-stone-200 bg-white px-3 py-1.5 text-xs font-medium text-stone-600 transition hover:bg-stone-50 disabled:cursor-not-allowed disabled:opacity-60"
+                  className={adminSecondaryButtonClassName}
                 >
                   Reactivate
                 </button>
@@ -438,9 +447,9 @@ export function CategoryAdminPanel({ categories }: CategoryAdminPanelProps) {
 
   return (
     <div className="space-y-8">
-      <section className="rounded-2xl border border-stone-200 bg-white p-6 shadow-sm">
-        <h2 className="text-lg font-semibold text-stone-900">Create category</h2>
-        <p className="mt-1 text-sm text-stone-500">
+      <section className={adminSectionClassName}>
+        <h2 className="text-lg font-semibold text-stone-900 dark:text-stone-100">Create category</h2>
+        <p className="mt-1 text-sm text-stone-500 dark:text-stone-400">
           Add a top-level category or subcategory. New categories are appended to
           the custom order automatically.
         </p>
@@ -455,7 +464,7 @@ export function CategoryAdminPanel({ categories }: CategoryAdminPanelProps) {
           />
 
           {error ? (
-            <p className="rounded-xl bg-red-50 px-3 py-2 text-sm text-red-700">
+            <p className={adminErrorBannerClassName}>
               {error}
             </p>
           ) : null}
@@ -470,11 +479,11 @@ export function CategoryAdminPanel({ categories }: CategoryAdminPanelProps) {
         </form>
       </section>
 
-      <section className="rounded-2xl border border-stone-200 bg-white p-6 shadow-sm">
+      <section className={adminSectionClassName}>
         <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div>
-            <h2 className="text-lg font-semibold text-stone-900">Categories</h2>
-            <p className="mt-1 text-sm text-stone-500">
+            <h2 className="text-lg font-semibold text-stone-900 dark:text-stone-100">Categories</h2>
+            <p className="mt-1 text-sm text-stone-500 dark:text-stone-400">
               Sort alphabetically or use custom order with drag and arrows.
             </p>
           </div>
@@ -492,8 +501,8 @@ export function CategoryAdminPanel({ categories }: CategoryAdminPanelProps) {
                 onClick={() => setSortMode(mode)}
                 className={`cursor-pointer rounded-lg px-3 py-1.5 text-sm font-medium transition ${
                   sortMode === mode
-                    ? "bg-emerald-50 text-emerald-800"
-                    : "border border-stone-200 bg-white text-stone-600 hover:bg-stone-50"
+                    ? "bg-emerald-50 text-emerald-800 dark:bg-emerald-950/50 dark:text-emerald-300"
+                    : "border border-stone-200 bg-white text-stone-600 hover:bg-stone-50 dark:border-stone-600 dark:bg-stone-800 dark:text-stone-300 dark:hover:bg-stone-700"
                 }`}
               >
                 {label}
@@ -503,7 +512,7 @@ export function CategoryAdminPanel({ categories }: CategoryAdminPanelProps) {
         </div>
 
         {categories.length === 0 ? (
-          <p className="mt-4 text-sm text-stone-500">No categories yet.</p>
+          <p className="mt-4 text-sm text-stone-500 dark:text-stone-400">No categories yet.</p>
         ) : (
           <ul className="mt-4 space-y-3">
             {mainCategories.map((mainCategory) => {
