@@ -2,7 +2,6 @@
 
 import { CategoryIcon } from "@/lib/categories/icons";
 import {
-  categoryFilterToParam,
   getCategoryFilterDisplay,
   parseCategoryFilterParam,
   type TaskCategoryFilter,
@@ -15,18 +14,29 @@ import {
 } from "@/lib/categories/tree";
 import {
   getLabelFilterDisplay,
-  labelFilterToParam,
   NO_LABEL_FILTER_VALUE,
   parseLabelFilterParam,
   type TaskLabelFilter,
 } from "@/lib/labels/filter";
 import { groupLabelsForPicker } from "@/lib/labels/display";
 import type { Label } from "@/lib/labels/types";
+import {
+  buildTasksFilterUrl,
+  type TasksListQueryState,
+} from "@/lib/tasks/filter";
+import { parseSearchQueryParam } from "@/lib/tasks/search";
+import {
+  DEFAULT_TASK_SORT,
+  parseSortParam,
+  type TaskSortOption,
+} from "@/lib/tasks/sort";
+import {
+  parseStatusFilterParam,
+  type TaskStatusFilter,
+} from "@/lib/tasks/status";
 import { fieldClassName } from "@/lib/ui/field-classes";
-import { buildTasksFilterUrl } from "@/lib/tasks/filter";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
-import { useMemo } from "react";
-
+import { useEffect, useMemo, useRef, useState } from "react";
 
 type TaskFiltersBarProps = {
   categories: Category[];
@@ -39,6 +49,9 @@ export function TaskFiltersBar({ categories, labels }: TaskFiltersBarProps) {
   const searchParams = useSearchParams();
   const categoryParam = searchParams.get("category") ?? undefined;
   const labelParam = searchParams.get("label") ?? undefined;
+  const statusParam = searchParams.get("status") ?? undefined;
+  const sortParam = searchParams.get("sort") ?? undefined;
+  const qParam = searchParams.get("q") ?? undefined;
 
   const { mains, subsByParent } = useMemo(
     () => buildCategoryTree(categories),
@@ -59,6 +72,44 @@ export function TaskFiltersBar({ categories, labels }: TaskFiltersBarProps) {
 
   const categoryFilter = parseCategoryFilterParam(categoryParam, categoryLookup);
   const labelFilter = parseLabelFilterParam(labelParam, labelLookup);
+  const statusFilter = parseStatusFilterParam(statusParam);
+  const sort = parseSortParam(sortParam);
+  const searchQuery = parseSearchQueryParam(qParam);
+
+  const [searchDraft, setSearchDraft] = useState(searchQuery);
+  const searchParamsRef = useRef(searchParams);
+  searchParamsRef.current = searchParams;
+
+  useEffect(() => {
+    setSearchDraft(qParam ?? "");
+  }, [qParam]);
+
+  useEffect(() => {
+    const trimmedDraft = searchDraft.trim();
+    const trimmedCurrent = parseSearchQueryParam(qParam);
+
+    if (trimmedDraft === trimmedCurrent) {
+      return;
+    }
+
+    const timeoutId = window.setTimeout(() => {
+      const params = new URLSearchParams(searchParamsRef.current.toString());
+
+      if (trimmedDraft) {
+        params.set("q", trimmedDraft);
+      } else {
+        params.delete("q");
+      }
+
+      // Search/filter URL state should not keep a deep-link edit target.
+      params.delete("edit");
+
+      const query = params.toString();
+      router.push(query ? `${pathname}?${query}` : pathname);
+    }, 300);
+
+    return () => window.clearTimeout(timeoutId);
+  }, [searchDraft, qParam, pathname, router]);
 
   const mainSelectValue =
     categoryFilter.type === "all"
@@ -97,10 +148,29 @@ export function TaskFiltersBar({ categories, labels }: TaskFiltersBarProps) {
 
   const categoryFilterActive = categoryFilter.type !== "all";
   const labelFilterActive = labelFilter.type !== "all";
-  const anyFilterActive = categoryFilterActive || labelFilterActive;
+  const statusFilterActive = statusFilter !== "all";
+  const searchActive = searchQuery.length > 0;
+  const sortActive = sort !== DEFAULT_TASK_SORT;
+  const anyFilterActive =
+    categoryFilterActive ||
+    labelFilterActive ||
+    statusFilterActive ||
+    searchActive ||
+    sortActive;
 
-  function navigate(nextCategory: TaskCategoryFilter, nextLabel: TaskLabelFilter) {
-    router.push(buildTasksFilterUrl(pathname, nextCategory, nextLabel));
+  function navigate(next: TasksListQueryState) {
+    router.push(buildTasksFilterUrl(pathname, next));
+  }
+
+  function withCurrent(overrides: Partial<TasksListQueryState>) {
+    navigate({
+      categoryFilter,
+      labelFilter,
+      statusFilter,
+      searchQuery,
+      sort,
+      ...overrides,
+    });
   }
 
   function handleMainChange(value: string) {
@@ -112,7 +182,7 @@ export function TaskFiltersBar({ categories, labels }: TaskFiltersBarProps) {
       nextCategory = { type: "main", mainCategoryId: value };
     }
 
-    navigate(nextCategory, labelFilter);
+    withCurrent({ categoryFilter: nextCategory });
   }
 
   function handleSubChange(value: string) {
@@ -121,15 +191,16 @@ export function TaskFiltersBar({ categories, labels }: TaskFiltersBarProps) {
         mainSelectValue !== "all" &&
         mainSelectValue !== UNCategorized_FILTER_VALUE
       ) {
-        navigate(
-          { type: "main", mainCategoryId: mainSelectValue },
-          labelFilter,
-        );
+        withCurrent({
+          categoryFilter: { type: "main", mainCategoryId: mainSelectValue },
+        });
       }
       return;
     }
 
-    navigate({ type: "sub", subCategoryId: value }, labelFilter);
+    withCurrent({
+      categoryFilter: { type: "sub", subCategoryId: value },
+    });
   }
 
   function handleLabelChange(value: string) {
@@ -141,10 +212,23 @@ export function TaskFiltersBar({ categories, labels }: TaskFiltersBarProps) {
       nextLabel = { type: "label", labelId: value };
     }
 
-    navigate(categoryFilter, nextLabel);
+    withCurrent({ labelFilter: nextLabel });
+  }
+
+  function handleStatusChange(value: string) {
+    withCurrent({
+      statusFilter: parseStatusFilterParam(value) as TaskStatusFilter,
+    });
+  }
+
+  function handleSortChange(value: string) {
+    withCurrent({
+      sort: parseSortParam(value) as TaskSortOption,
+    });
   }
 
   function clearFilters() {
+    setSearchDraft("");
     router.push(pathname);
   }
 
@@ -152,9 +236,12 @@ export function TaskFiltersBar({ categories, labels }: TaskFiltersBarProps) {
     <section className="rounded-2xl border border-stone-200 bg-white p-5 shadow-sm dark:border-stone-700 dark:bg-stone-900">
       <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
         <div>
-          <h2 className="text-sm font-semibold text-stone-900 dark:text-stone-100">Filters</h2>
+          <h2 className="text-sm font-semibold text-stone-900 dark:text-stone-100">
+            Search & filters
+          </h2>
           <p className="mt-1 text-sm text-stone-500 dark:text-stone-400">
-            Filter by category, label, or both. Multiple filters use AND logic.
+            Search, status, category, and label use AND logic. Sort changes list
+            order.
           </p>
         </div>
 
@@ -170,12 +257,68 @@ export function TaskFiltersBar({ categories, labels }: TaskFiltersBarProps) {
       </div>
 
       <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+        <div className="sm:col-span-2 lg:col-span-3">
+          <label
+            htmlFor="task-filter-search"
+            className="mb-1.5 block text-sm font-medium text-stone-700 dark:text-stone-300"
+          >
+            Search
+          </label>
+          <input
+            id="task-filter-search"
+            type="search"
+            value={searchDraft}
+            onChange={(event) => setSearchDraft(event.target.value)}
+            placeholder="Search title or description"
+            className={fieldClassName}
+          />
+        </div>
+
+        <div>
+          <label
+            htmlFor="task-filter-status"
+            className="mb-1.5 block text-sm font-medium text-stone-700 dark:text-stone-300"
+          >
+            Status
+          </label>
+          <select
+            id="task-filter-status"
+            value={statusFilter}
+            onChange={(event) => handleStatusChange(event.target.value)}
+            className={fieldClassName}
+          >
+            <option value="all">All</option>
+            <option value="open">Open</option>
+            <option value="completed">Completed</option>
+          </select>
+        </div>
+
+        <div>
+          <label
+            htmlFor="task-filter-sort"
+            className="mb-1.5 block text-sm font-medium text-stone-700 dark:text-stone-300"
+          >
+            Sort
+          </label>
+          <select
+            id="task-filter-sort"
+            value={sort}
+            onChange={(event) => handleSortChange(event.target.value)}
+            className={fieldClassName}
+          >
+            <option value="due_asc">Due date soonest</option>
+            <option value="created_desc">Created newest</option>
+            <option value="created_asc">Created oldest</option>
+            <option value="title_asc">Title A–Z</option>
+          </select>
+        </div>
+
         {categories.length > 0 ? (
           <>
             <div>
               <label
                 htmlFor="task-filter-main"
-                className="mb-1.5 block text-sm font-medium text-stone-700"
+                className="mb-1.5 block text-sm font-medium text-stone-700 dark:text-stone-300"
               >
                 Category
               </label>
@@ -199,7 +342,7 @@ export function TaskFiltersBar({ categories, labels }: TaskFiltersBarProps) {
               <div>
                 <label
                   htmlFor="task-filter-sub"
-                  className="mb-1.5 block text-sm font-medium text-stone-700"
+                  className="mb-1.5 block text-sm font-medium text-stone-700 dark:text-stone-300"
                 >
                   Subcategory
                 </label>
@@ -225,7 +368,7 @@ export function TaskFiltersBar({ categories, labels }: TaskFiltersBarProps) {
           <div>
             <label
               htmlFor="task-filter-label"
-              className="mb-1.5 block text-sm font-medium text-stone-700"
+              className="mb-1.5 block text-sm font-medium text-stone-700 dark:text-stone-300"
             >
               Label
             </label>
@@ -261,19 +404,29 @@ export function TaskFiltersBar({ categories, labels }: TaskFiltersBarProps) {
       </div>
 
       {categoryFilter.type === "uncategorized" ? (
-        <p className="mt-3 text-sm text-stone-600">
+        <p className="mt-3 text-sm text-stone-600 dark:text-stone-400">
           Category filter: tasks with no category assigned.
         </p>
       ) : null}
 
       {labelFilter.type === "none" ? (
-        <p className="mt-3 text-sm text-stone-600">
+        <p className="mt-3 text-sm text-stone-600 dark:text-stone-400">
           Label filter: tasks with no labels assigned.
         </p>
       ) : null}
 
-      {categoryFilterDisplay || labelFilterDisplay ? (
-        <div className="mt-3 flex flex-wrap items-center gap-2 text-sm text-stone-600">
+      {categoryFilterDisplay || labelFilterDisplay || searchActive || statusFilterActive ? (
+        <div className="mt-3 flex flex-wrap items-center gap-2 text-sm text-stone-600 dark:text-stone-400">
+          {searchActive ? (
+            <span className="inline-flex rounded-full border border-stone-200 bg-stone-50 px-2.5 py-1 text-xs font-medium text-stone-700 dark:border-stone-600 dark:bg-stone-800 dark:text-stone-200">
+              Search: {searchQuery}
+            </span>
+          ) : null}
+          {statusFilterActive ? (
+            <span className="inline-flex rounded-full border border-stone-200 bg-stone-50 px-2.5 py-1 text-xs font-medium text-stone-700 dark:border-stone-600 dark:bg-stone-800 dark:text-stone-200">
+              {statusFilter === "open" ? "Open" : "Completed"}
+            </span>
+          ) : null}
           {categoryFilterDisplay ? (
             <span
               className="inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-medium text-white"
@@ -295,7 +448,7 @@ export function TaskFiltersBar({ categories, labels }: TaskFiltersBarProps) {
             </span>
           ) : null}
           {categoryFilterActive && labelFilterActive ? (
-            <span>matching both filters</span>
+            <span>matching both category and label</span>
           ) : null}
           {categoryFilter.type === "main" && subcategories.length > 0 ? (
             <span>including all subcategories</span>

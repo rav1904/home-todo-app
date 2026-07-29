@@ -22,6 +22,12 @@ import {
   getTaskFilterDescription,
   isAnyTaskFilterActive,
 } from "@/lib/tasks/filter";
+import { filterTasksBySearch, parseSearchQueryParam } from "@/lib/tasks/search";
+import { parseSortParam, sortTasks } from "@/lib/tasks/sort";
+import {
+  filterTasksByStatus,
+  parseStatusFilterParam,
+} from "@/lib/tasks/status";
 import { aggregateDueDateHistoryCounts } from "@/lib/tasks/due-date-change";
 import { fetchSubtasksByTaskId } from "@/lib/tasks/subtasks/group";
 import type { TaskSubtask } from "@/lib/tasks/subtasks/types";
@@ -29,12 +35,25 @@ import { createClient } from "@/lib/supabase/server";
 import { Suspense } from "react";
 
 type TasksPageProps = {
-  searchParams: Promise<{ category?: string; label?: string; edit?: string }>;
+  searchParams: Promise<{
+    category?: string;
+    label?: string;
+    edit?: string;
+    q?: string;
+    status?: string;
+    sort?: string;
+  }>;
 };
 
 export default async function TasksPage({ searchParams }: TasksPageProps) {
-  const { category: categoryParam, label: labelParam, edit: editParam } =
-    await searchParams;
+  const {
+    category: categoryParam,
+    label: labelParam,
+    edit: editParam,
+    q: searchParam,
+    status: statusParam,
+    sort: sortParam,
+  } = await searchParams;
   const supabase = await createClient();
   const {
     data: { user },
@@ -73,6 +92,16 @@ export default async function TasksPage({ searchParams }: TasksPageProps) {
   const { subsByParent } = buildCategoryTree(activeCategories);
   const categoryFilter = parseCategoryFilterParam(categoryParam, categoryLookup);
   const labelFilter = parseLabelFilterParam(labelParam, labelLookup);
+  const statusFilter = parseStatusFilterParam(statusParam);
+  const searchQuery = parseSearchQueryParam(searchParam);
+  const sort = parseSortParam(sortParam);
+  const listQueryState = {
+    categoryFilter,
+    labelFilter,
+    statusFilter,
+    searchQuery,
+    sort,
+  };
 
   let historyError: string | null = null;
   let historyByTaskId: ReturnType<typeof aggregateDueDateHistoryCounts> = {};
@@ -131,11 +160,14 @@ export default async function TasksPage({ searchParams }: TasksPageProps) {
     categoryFilter,
     subsByParent,
   );
-  const filteredTasks = filterTasksByLabel(
+  const filteredByLabel = filterTasksByLabel(
     filteredByCategory,
     labelFilter,
     labelIdsByTaskId,
   );
+  const filteredByStatus = filterTasksByStatus(filteredByLabel, statusFilter);
+  const filteredBySearch = filterTasksBySearch(filteredByStatus, searchQuery);
+  const filteredTasks = sortTasks(filteredBySearch, sort);
   const tasksToRender =
     editParam && !filteredTasks.some((task) => task.id === editParam)
       ? [
@@ -143,10 +175,9 @@ export default async function TasksPage({ searchParams }: TasksPageProps) {
           ...filteredTasks,
         ]
       : filteredTasks;
-  const filterActive = isAnyTaskFilterActive(categoryFilter, labelFilter);
+  const filterActive = isAnyTaskFilterActive(listQueryState);
   const filterDescription = getTaskFilterDescription(
-    categoryFilter,
-    labelFilter,
+    listQueryState,
     categoryLookup,
     labelLookup,
     subsByParent,
@@ -168,20 +199,20 @@ export default async function TasksPage({ searchParams }: TasksPageProps) {
           </div>
         ) : null}
 
-        {activeCategories.length > 0 || activeLabels.length > 0 ? (
-          <Suspense
-            fallback={
-              <div className="rounded-2xl border border-stone-200 bg-white dark:border-stone-700 dark:bg-stone-900 p-5 shadow-sm">
-                <p className="text-sm text-stone-500">Loading filters...</p>
-              </div>
-            }
-          >
-            <TaskFiltersBar
-              categories={activeCategories}
-              labels={activeLabels}
-            />
-          </Suspense>
-        ) : null}
+        <Suspense
+          fallback={
+            <div className="rounded-2xl border border-stone-200 bg-white p-5 shadow-sm dark:border-stone-700 dark:bg-stone-900">
+              <p className="text-sm text-stone-500 dark:text-stone-400">
+                Loading filters...
+              </p>
+            </div>
+          }
+        >
+          <TaskFiltersBar
+            categories={activeCategories}
+            labels={activeLabels}
+          />
+        </Suspense>
 
         {categoriesError ? (
           <div className="rounded-2xl border border-amber-200 bg-amber-50 p-6 text-sm text-amber-800">
@@ -257,28 +288,28 @@ export default async function TasksPage({ searchParams }: TasksPageProps) {
             })}
           </ul>
         ) : allTasks.length > 0 && filterActive ? (
-          <div className="rounded-2xl border border-dashed border-stone-300 bg-white dark:border-stone-600 dark:bg-stone-900 p-10 text-center shadow-sm">
-            <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-2xl bg-stone-100 text-xl text-stone-500">
+          <div className="rounded-2xl border border-dashed border-stone-300 bg-white p-10 text-center shadow-sm dark:border-stone-600 dark:bg-stone-900">
+            <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-2xl bg-stone-100 text-xl text-stone-500 dark:bg-stone-800 dark:text-stone-400">
               ☑
             </div>
-            <h2 className="mt-4 text-lg font-semibold text-stone-900">
+            <h2 className="mt-4 text-lg font-semibold text-stone-900 dark:text-stone-100">
               No matching tasks
             </h2>
-            <p className="mx-auto mt-2 max-w-md text-sm text-stone-500">
+            <p className="mx-auto mt-2 max-w-md text-sm text-stone-500 dark:text-stone-400">
               {filterDescription
-                ? `No tasks match the "${filterDescription}" filter. Try adjusting or clearing your filters.`
+                ? `No tasks match “${filterDescription}”. Try adjusting or clearing your filters.`
                 : "No tasks match these filters. Try adjusting or clearing your filters."}
             </p>
           </div>
         ) : !error ? (
-          <div className="rounded-2xl border border-dashed border-stone-300 bg-white dark:border-stone-600 dark:bg-stone-900 p-10 text-center shadow-sm">
-            <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-2xl bg-stone-100 text-xl text-stone-500">
+          <div className="rounded-2xl border border-dashed border-stone-300 bg-white p-10 text-center shadow-sm dark:border-stone-600 dark:bg-stone-900">
+            <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-2xl bg-stone-100 text-xl text-stone-500 dark:bg-stone-800 dark:text-stone-400">
               ☑
             </div>
-            <h2 className="mt-4 text-lg font-semibold text-stone-900">
+            <h2 className="mt-4 text-lg font-semibold text-stone-900 dark:text-stone-100">
               No tasks yet
             </h2>
-            <p className="mx-auto mt-2 max-w-md text-sm text-stone-500">
+            <p className="mx-auto mt-2 max-w-md text-sm text-stone-500 dark:text-stone-400">
               Use the form above to add your first task.
             </p>
           </div>
