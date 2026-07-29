@@ -8,6 +8,7 @@ const baseNavItems = [
   { href: "/dashboard", label: "Overview", icon: "◫" },
   { href: "/dashboard/tasks", label: "Tasks", icon: "☑" },
   { href: "/dashboard/calendar", label: "Calendar", icon: "▦" },
+  { href: "/dashboard/settings", label: "Settings", icon: "◎" },
 ];
 
 const adminNavItem = {
