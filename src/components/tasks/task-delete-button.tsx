@@ -7,6 +7,7 @@ import { useState } from "react";
 type TaskDeleteButtonProps = {
   id: string;
   title: string;
+  onDeleted?: () => void;
 };
 
 function TrashIcon() {
@@ -31,7 +32,7 @@ function TrashIcon() {
   );
 }
 
-export function TaskDeleteButton({ id, title }: TaskDeleteButtonProps) {
+export function TaskDeleteButton({ id, title, onDeleted }: TaskDeleteButtonProps) {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
 
@@ -51,6 +52,7 @@ export function TaskDeleteButton({ id, title }: TaskDeleteButtonProps) {
     }
 
     router.refresh();
+    onDeleted?.();
     setLoading(false);
   }
 

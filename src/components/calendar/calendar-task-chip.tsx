@@ -1,15 +1,21 @@
+"use client";
+
 import { CategoryBadge } from "@/components/tasks/category-select";
 import { LabelBadges } from "@/components/tasks/label-badges";
 import type { CalendarTask } from "@/lib/tasks/calendar";
 import { formatTaskTime } from "@/lib/tasks/local-dates";
-import Link from "next/link";
 
 type CalendarTaskChipProps = {
   task: CalendarTask;
   compact?: boolean;
+  onTaskSelect?: (taskId: string) => void;
 };
 
-export function CalendarTaskChip({ task, compact = false }: CalendarTaskChipProps) {
+export function CalendarTaskChip({
+  task,
+  compact = false,
+  onTaskSelect,
+}: CalendarTaskChipProps) {
   const visibleLabels = compact ? task.labels.slice(0, 1) : task.labels.slice(0, 2);
   const hiddenLabelCount =
     task.labels.length -
@@ -17,9 +23,10 @@ export function CalendarTaskChip({ task, compact = false }: CalendarTaskChipProp
     task.unavailableLabelCount;
 
   return (
-    <Link
-      href={`/dashboard/tasks?edit=${task.id}`}
-      className={`block rounded-md border border-stone-200 bg-stone-50 px-1.5 py-1 text-left transition hover:border-emerald-300 hover:bg-emerald-50/80 dark:border-stone-700 dark:bg-stone-800/80 dark:hover:border-emerald-800 dark:hover:bg-emerald-950/30 ${
+    <button
+      type="button"
+      onClick={() => onTaskSelect?.(task.id)}
+      className={`block w-full cursor-pointer rounded-md border border-stone-200 bg-stone-50 px-1.5 py-1 text-left transition hover:border-emerald-300 hover:bg-emerald-50/80 dark:border-stone-700 dark:bg-stone-800/80 dark:hover:border-emerald-800 dark:hover:bg-emerald-950/30 ${
         task.completed ? "opacity-70" : ""
       }`}
     >
@@ -51,6 +58,6 @@ export function CalendarTaskChip({ task, compact = false }: CalendarTaskChipProp
           +{hiddenLabelCount} label{hiddenLabelCount === 1 ? "" : "s"}
         </p>
       ) : null}
-    </Link>
+    </button>
   );
 }

@@ -18,6 +18,7 @@ type MonthCalendarProps = {
   todayHref: string;
   days: CalendarDayCell[];
   tasksByDay: Record<string, CalendarTask[]>;
+  onTaskSelect?: (taskId: string) => void;
 };
 
 function formatExpandedDayLabel(dayKey: string) {
@@ -44,6 +45,7 @@ export function MonthCalendar({
   todayHref,
   days,
   tasksByDay,
+  onTaskSelect,
 }: MonthCalendarProps) {
   const [expandedDayKey, setExpandedDayKey] = useState<string | null>(null);
 
@@ -135,7 +137,12 @@ export function MonthCalendar({
 
                 <div className="space-y-1">
                   {visibleTasks.map((task) => (
-                    <CalendarTaskChip key={task.id} task={task} compact />
+                    <CalendarTaskChip
+                      key={task.id}
+                      task={task}
+                      compact
+                      onTaskSelect={onTaskSelect}
+                    />
                   ))}
                   {hiddenCount > 0 ? (
                     <button
@@ -170,7 +177,7 @@ export function MonthCalendar({
           <ul className="mt-3 space-y-2">
             {expandedTasks.map((task) => (
               <li key={task.id}>
-                <CalendarTaskChip task={task} />
+                <CalendarTaskChip task={task} onTaskSelect={onTaskSelect} />
               </li>
             ))}
           </ul>

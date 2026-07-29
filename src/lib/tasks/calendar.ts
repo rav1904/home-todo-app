@@ -1,5 +1,7 @@
 import type { CategoryDisplay } from "@/lib/categories/tree";
+import type { TaskLabelDisplay } from "@/lib/labels/display";
 import type { Label } from "@/lib/labels/types";
+import type { DueDateHistoryCounts } from "@/lib/tasks/due-date-change";
 import {
   addDays,
   isSameLocalDay,
@@ -15,6 +17,21 @@ export type CalendarTask = {
   categoryUnavailable: boolean;
   labels: Label[];
   unavailableLabelCount: number;
+};
+
+export type CalendarModalTask = {
+  id: string;
+  title: string;
+  description: string | null;
+  dueAt: string;
+  completed: boolean;
+  createdAt: string;
+  categoryId: string | null;
+  category: CategoryDisplay | null;
+  categoryUnavailable: boolean;
+  labelIds: string[];
+  taskLabels: TaskLabelDisplay;
+  dueDateHistory: DueDateHistoryCounts;
 };
 
 export type CalendarDayCell = {

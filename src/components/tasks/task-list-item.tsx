@@ -41,6 +41,9 @@ type TaskListItemProps = {
   taskLabels: TaskLabelDisplay;
   dueDateHistory: DueDateHistoryCounts;
   initialEditing?: boolean;
+  embedded?: boolean;
+  onSuccess?: () => void;
+  onDeleted?: () => void;
 };
 
 function formatDate(value: string) {
@@ -111,6 +114,9 @@ export function TaskListItem({
   taskLabels,
   dueDateHistory,
   initialEditing = false,
+  embedded = false,
+  onSuccess,
+  onDeleted,
 }: TaskListItemProps) {
   const router = useRouter();
   const itemRef = useRef<HTMLLIElement>(null);
@@ -241,16 +247,18 @@ export function TaskListItem({
     setIsEditing(false);
     setLoading(false);
     router.refresh();
+    onSuccess?.();
   }
 
+  const wrapperClassName = embedded
+    ? ""
+    : isEditing
+      ? "rounded-2xl border border-emerald-200 bg-white p-5 shadow-sm dark:border-emerald-900/50 dark:bg-stone-900"
+      : `${cardClassName} p-5`;
+
   if (isEditing) {
-    return (
-      <li
-        ref={itemRef}
-        id={`task-${id}`}
-        className="rounded-2xl border border-emerald-200 bg-white p-5 shadow-sm dark:border-emerald-900/50 dark:bg-stone-900"
-      >
-        <form onSubmit={handleSave} className="space-y-3">
+    const editContent = (
+      <form onSubmit={handleSave} className="space-y-3">
           <div>
             <label
               htmlFor={`edit-title-${id}`}
@@ -354,6 +362,19 @@ export function TaskListItem({
             </button>
           </div>
         </form>
+    );
+
+    if (embedded) {
+      return (
+        <div id={`task-${id}`} className={wrapperClassName}>
+          {editContent}
+        </div>
+      );
+    }
+
+    return (
+      <li ref={itemRef} id={`task-${id}`} className={wrapperClassName}>
+        {editContent}
       </li>
     );
   }
@@ -361,8 +382,8 @@ export function TaskListItem({
   const historyLines = getDueDateHistoryLines(dueDateHistory);
   const showMovedLaterNudge = dueDateHistory.movedLaterCount >= 3;
 
-  return (
-    <li ref={itemRef} id={`task-${id}`} className={`${cardClassName} p-5`}>
+  const readContent = (
+    <>
       <div className="flex items-start gap-3">
         <TaskCompleteToggle
           id={id}
@@ -437,9 +458,23 @@ export function TaskListItem({
           >
             <PencilIcon />
           </button>
-          <TaskDeleteButton id={id} title={title} />
+          <TaskDeleteButton id={id} title={title} onDeleted={onDeleted} />
         </div>
       </div>
+    </>
+  );
+
+  if (embedded) {
+    return (
+      <div id={`task-${id}`} className={wrapperClassName}>
+        {readContent}
+      </div>
+    );
+  }
+
+  return (
+    <li ref={itemRef} id={`task-${id}`} className={wrapperClassName}>
+      {readContent}
     </li>
   );
 }
