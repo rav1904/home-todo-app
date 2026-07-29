@@ -1,6 +1,5 @@
 "use client";
 
-import { ThemeToggle } from "@/components/theme/theme-toggle";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 
@@ -67,8 +66,7 @@ export function Sidebar({ showAdminLink = false }: SidebarProps) {
         })}
       </nav>
 
-      <div className="space-y-3 border-t border-stone-200 p-4 dark:border-stone-800">
-        <ThemeToggle />
+      <div className="border-t border-stone-200 p-4 dark:border-stone-800">
         <p className="text-xs text-stone-400 dark:text-stone-500">
           Private task management app
         </p>
