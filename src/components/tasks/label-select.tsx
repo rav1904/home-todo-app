@@ -10,10 +10,8 @@ import { getNextLabelSortOrder } from "@/lib/labels/sort";
 import type { Label } from "@/lib/labels/types";
 import { validateLabelFormValues } from "@/lib/labels/validation";
 import { createClient } from "@/lib/supabase/client";
+import { fieldClassName } from "@/lib/ui/field-classes";
 import { useMemo, useState } from "react";
-
-const fieldClassName =
-  "w-full rounded-xl border border-stone-200 bg-stone-50 px-3 py-2.5 text-sm text-stone-900 outline-none transition focus:border-emerald-500 focus:bg-white focus:ring-2 focus:ring-emerald-500/20";
 
 type LabelSelectProps = {
   id: string;
@@ -47,6 +45,13 @@ export function LabelSelect({
   const [creating, setCreating] = useState(false);
   const [createError, setCreateError] = useState<string | null>(null);
 
+  function cancelCreatePersonalLabel() {
+    setShowCreateForm(false);
+    setNewName("");
+    setNewColour(CATEGORY_COLOUR_PRESETS[4].value);
+    setCreateError(null);
+  }
+
   const availableLabels = useMemo(() => {
     const merged = new Map<string, Label>();
 
@@ -70,10 +75,7 @@ export function LabelSelect({
     [availableLabels, value],
   );
 
-  async function handleCreatePersonalLabel(
-    event: React.FormEvent<HTMLFormElement>,
-  ) {
-    event.preventDefault();
+  async function handleCreatePersonalLabel() {
     setCreating(true);
     setCreateError(null);
 
@@ -176,32 +178,36 @@ export function LabelSelect({
   return (
     <div>
       <div className="mb-1.5 flex items-center justify-between gap-2">
-        <p className="text-sm font-medium text-stone-700">
+        <p className="text-sm font-medium text-stone-700 dark:text-stone-300">
           Labels{" "}
-          <span className="font-normal text-stone-400">(optional)</span>
+          <span className="font-normal text-stone-400 dark:text-stone-500">
+            (optional)
+          </span>
         </p>
-        <button
-          type="button"
-          onClick={() => {
-            setShowCreateForm((current) => !current);
-            setCreateError(null);
-          }}
-          className="cursor-pointer text-sm font-medium text-emerald-700 transition hover:text-emerald-800"
-        >
-          {showCreateForm ? "Cancel new label" : "+ New personal label"}
-        </button>
+        {!showCreateForm ? (
+          <button
+            type="button"
+            onClick={() => {
+              setShowCreateForm(true);
+              setCreateError(null);
+            }}
+            className="cursor-pointer text-sm font-medium text-emerald-700 transition hover:text-emerald-800 dark:text-emerald-400 dark:hover:text-emerald-300"
+          >
+            + New personal label
+          </button>
+        ) : null}
       </div>
 
       {selectedLabels.length > 0 ? (
-        <div className="mb-3 rounded-xl border border-stone-200 bg-stone-50 p-3">
+        <div className="mb-3 rounded-xl border border-stone-200 bg-stone-50 p-3 dark:border-stone-700 dark:bg-stone-800/50">
           <div className="mb-2 flex items-center justify-between gap-2">
-            <p className="text-xs font-medium uppercase tracking-wide text-stone-500">
+            <p className="text-xs font-medium uppercase tracking-wide text-stone-500 dark:text-stone-400">
               Selected for this task
             </p>
             <button
               type="button"
               onClick={() => onChange([])}
-              className="cursor-pointer text-xs font-medium text-stone-600 transition hover:text-stone-900"
+              className="cursor-pointer text-xs font-medium text-stone-600 transition hover:text-stone-900 dark:text-stone-400 dark:hover:text-stone-100"
             >
               Clear all
             </button>
@@ -216,10 +222,10 @@ export function LabelSelect({
 
       {global.length > 0 ? (
         <div className="mb-3">
-          <p className="mb-2 text-xs font-medium uppercase tracking-wide text-stone-500">
+          <p className="mb-2 text-xs font-medium uppercase tracking-wide text-stone-500 dark:text-stone-400">
             Shared labels
           </p>
-          <p className="mb-2 text-xs text-stone-500">
+          <p className="mb-2 text-xs text-stone-500 dark:text-stone-400">
             Click to add or remove from this task.
           </p>
           <div className="flex flex-wrap gap-1.5">{global.map(renderLabelChip)}</div>
@@ -228,10 +234,10 @@ export function LabelSelect({
 
       {personal.length > 0 ? (
         <div className="mb-3">
-          <p className="mb-2 text-xs font-medium uppercase tracking-wide text-stone-500">
+          <p className="mb-2 text-xs font-medium uppercase tracking-wide text-stone-500 dark:text-stone-400">
             My labels
           </p>
-          <p className="mb-2 text-xs text-stone-500">
+          <p className="mb-2 text-xs text-stone-500 dark:text-stone-400">
             Click to add or remove from this task.
           </p>
           <div className="flex flex-wrap gap-1.5">
@@ -241,21 +247,18 @@ export function LabelSelect({
       ) : null}
 
       {global.length === 0 && personal.length === 0 ? (
-        <p className="mb-3 text-sm text-stone-500">
+        <p className="mb-3 text-sm text-stone-500 dark:text-stone-400">
           No labels yet. Create a personal label or ask an admin to add shared
           labels.
         </p>
       ) : null}
 
       {showCreateForm ? (
-        <form
-          onSubmit={handleCreatePersonalLabel}
-          className="rounded-xl border border-stone-200 bg-stone-50 p-4"
-        >
-          <p className="text-sm font-medium text-stone-900">
+        <div className="rounded-xl border border-stone-200 bg-stone-50 p-4 dark:border-stone-700 dark:bg-stone-800/50">
+          <p className="text-sm font-medium text-stone-900 dark:text-stone-100">
             New personal label
           </p>
-          <p className="mt-1 text-xs text-stone-500">
+          <p className="mt-1 text-xs text-stone-500 dark:text-stone-400">
             Only you can see and use personal labels.
           </p>
 
@@ -263,7 +266,7 @@ export function LabelSelect({
             <div>
               <label
                 htmlFor={`${id}-new-label-name`}
-                className="mb-1.5 block text-sm font-medium text-stone-700"
+                className="mb-1.5 block text-sm font-medium text-stone-700 dark:text-stone-300"
               >
                 Name
               </label>
@@ -273,13 +276,21 @@ export function LabelSelect({
                 required
                 value={newName}
                 onChange={(event) => setNewName(event.target.value)}
+                onKeyDown={(event) => {
+                  if (event.key === "Enter") {
+                    event.preventDefault();
+                    void handleCreatePersonalLabel();
+                  }
+                }}
                 className={fieldClassName}
                 placeholder="e.g. Quick win"
               />
             </div>
 
             <div>
-              <p className="mb-2 text-sm font-medium text-stone-700">Colour</p>
+              <p className="mb-2 text-sm font-medium text-stone-700 dark:text-stone-300">
+                Colour
+              </p>
               <div className="flex flex-wrap gap-2">
                 {CATEGORY_COLOUR_PRESETS.map((preset) => {
                   const isSelected = newColour === preset.value;
@@ -292,7 +303,9 @@ export function LabelSelect({
                       aria-pressed={isSelected}
                       onClick={() => setNewColour(preset.value)}
                       className={`h-8 w-8 rounded-full border-2 transition ${
-                        isSelected ? "border-stone-900" : "border-transparent"
+                        isSelected
+                          ? "border-stone-900 dark:border-stone-100"
+                          : "border-transparent"
                       }`}
                       style={{ backgroundColor: preset.value }}
                     />
@@ -303,19 +316,30 @@ export function LabelSelect({
           </div>
 
           {createError ? (
-            <p className="mt-3 rounded-xl bg-red-50 px-3 py-2 text-sm text-red-700">
+            <p className="mt-3 rounded-xl bg-red-50 px-3 py-2 text-sm text-red-700 dark:bg-red-950/40 dark:text-red-300">
               {createError}
             </p>
           ) : null}
 
-          <button
-            type="submit"
-            disabled={creating}
-            className="mt-3 cursor-pointer rounded-xl bg-emerald-600 px-4 py-2 text-sm font-medium text-white transition hover:bg-emerald-700 disabled:cursor-not-allowed disabled:opacity-60"
-          >
-            {creating ? "Creating..." : "Create and select"}
-          </button>
-        </form>
+          <div className="mt-3 flex flex-wrap gap-2">
+            <button
+              type="button"
+              disabled={creating}
+              onClick={cancelCreatePersonalLabel}
+              className="cursor-pointer rounded-xl border border-stone-200 bg-white px-4 py-2 text-sm font-medium text-stone-700 transition hover:bg-stone-50 disabled:cursor-not-allowed disabled:opacity-60 dark:border-stone-600 dark:bg-stone-800 dark:text-stone-200 dark:hover:bg-stone-700"
+            >
+              Cancel
+            </button>
+            <button
+              type="button"
+              disabled={creating}
+              onClick={() => void handleCreatePersonalLabel()}
+              className="cursor-pointer rounded-xl bg-emerald-600 px-4 py-2 text-sm font-medium text-white transition hover:bg-emerald-700 disabled:cursor-not-allowed disabled:opacity-60"
+            >
+              {creating ? "Creating..." : "Create and select"}
+            </button>
+          </div>
+        </div>
       ) : null}
     </div>
   );

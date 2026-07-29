@@ -179,6 +179,7 @@ export function AddTaskForm({
           <input
             id="task-due-at"
             type="datetime-local"
+            step={300}
             value={dueAt}
             onChange={(event) => setDueAt(event.target.value)}
             className={fieldClassName}

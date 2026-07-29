@@ -310,6 +310,7 @@ export function TaskListItem({
             <input
               id={`edit-due-at-${id}`}
               type="datetime-local"
+              step={300}
               value={editDueAt}
               onChange={(event) => setEditDueAt(event.target.value)}
               className={fieldClassName}
