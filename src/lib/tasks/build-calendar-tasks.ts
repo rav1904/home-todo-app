@@ -10,6 +10,9 @@ import {
 import { LABEL_SELECT_FIELDS, type Label } from "@/lib/labels/types";
 import type { CalendarModalTask, CalendarTask } from "@/lib/tasks/calendar";
 import { aggregateDueDateHistoryCounts } from "@/lib/tasks/due-date-change";
+import { fetchSubtasksByTaskId } from "@/lib/tasks/subtasks/group";
+import { getSubtaskProgress } from "@/lib/tasks/subtasks/progress";
+import type { TaskSubtask } from "@/lib/tasks/subtasks/types";
 import type { SupabaseClient } from "@supabase/supabase-js";
 
 type RawTaskRow = {
@@ -33,6 +36,7 @@ export type CalendarFetchResult = {
   labelsError: string | null;
   taskLabelsError: string | null;
   historyError: string | null;
+  subtasksError: string | null;
   categories: Category[];
   labels: Label[];
 };
@@ -77,14 +81,17 @@ export async function fetchCalendarPageData(
 
   let taskLabelsError: string | null = null;
   let historyError: string | null = null;
+  let subtasksError: string | null = null;
   let labelIdsByTaskId: Record<string, string[]> = {};
   let historyByTaskId = aggregateDueDateHistoryCounts([]);
+  let subtasksByTaskId: Record<string, TaskSubtask[]> = {};
 
   if (tasks && tasks.length > 0) {
     const taskIds = tasks.map((task) => task.id);
     const [
       { data: taskLabelRows, error: taskLabelsFetchError },
       { data: changes, error: changesError },
+      subtasksResult,
     ] = await Promise.all([
       supabase
         .from("task_labels")
@@ -94,6 +101,7 @@ export async function fetchCalendarPageData(
         .from("task_due_date_changes")
         .select("task_id, change_direction")
         .in("task_id", taskIds),
+      fetchSubtasksByTaskId(supabase, taskIds),
     ]);
 
     if (taskLabelsFetchError) {
@@ -117,6 +125,9 @@ export async function fetchCalendarPageData(
     } else {
       historyByTaskId = aggregateDueDateHistoryCounts(changes ?? []);
     }
+
+    subtasksError = subtasksResult.error;
+    subtasksByTaskId = subtasksResult.subtasksByTaskId;
   }
 
   const calendarTasks: CalendarTask[] = [];
@@ -133,6 +144,8 @@ export async function fetchCalendarPageData(
       movedEarlierCount: 0,
     };
 
+    const taskSubtasks = subtasksByTaskId[task.id] ?? [];
+
     calendarTasks.push({
       id: task.id,
       title: task.title,
@@ -142,6 +155,7 @@ export async function fetchCalendarPageData(
       categoryUnavailable,
       labels: taskLabelDisplay.labels,
       unavailableLabelCount: taskLabelDisplay.unavailableCount,
+      subtaskProgress: getSubtaskProgress(taskSubtasks),
     });
 
     modalTasksById[task.id] = {
@@ -157,6 +171,7 @@ export async function fetchCalendarPageData(
       labelIds: taskLabelIds,
       taskLabels: taskLabelDisplay,
       dueDateHistory,
+      subtasks: taskSubtasks,
     };
   }
 
@@ -168,6 +183,7 @@ export async function fetchCalendarPageData(
     labelsError: labelsError?.message ?? null,
     taskLabelsError,
     historyError,
+    subtasksError,
     categories: activeCategories,
     labels: activeLabels,
   };

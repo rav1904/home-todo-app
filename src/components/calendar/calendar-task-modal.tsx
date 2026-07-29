@@ -77,6 +77,7 @@ export function CalendarTaskModal({
           labelIds={task.labelIds}
           taskLabels={task.taskLabels}
           dueDateHistory={task.dueDateHistory}
+          subtasks={task.subtasks}
           embedded
           onSuccess={onClose}
           onDeleted={onClose}

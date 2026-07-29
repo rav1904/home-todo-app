@@ -39,6 +39,11 @@ export function CalendarTaskChip({
       </p>
       <p className="mt-0.5 truncate text-[10px] text-stone-500 dark:text-stone-400 sm:text-[11px]">
         {formatTaskTime(task.dueAt)}
+        {task.subtaskProgress ? (
+          <span className="ml-1.5 text-stone-400 dark:text-stone-500">
+            · {task.subtaskProgress.completedCount}/{task.subtaskProgress.totalCount}
+          </span>
+        ) : null}
       </p>
       {!compact && (task.category || task.categoryUnavailable) ? (
         <div className="mt-1 hidden overflow-hidden sm:block">

@@ -23,6 +23,8 @@ import {
   isAnyTaskFilterActive,
 } from "@/lib/tasks/filter";
 import { aggregateDueDateHistoryCounts } from "@/lib/tasks/due-date-change";
+import { fetchSubtasksByTaskId } from "@/lib/tasks/subtasks/group";
+import type { TaskSubtask } from "@/lib/tasks/subtasks/types";
 import { createClient } from "@/lib/supabase/server";
 import { Suspense } from "react";
 
@@ -76,12 +78,15 @@ export default async function TasksPage({ searchParams }: TasksPageProps) {
   let historyByTaskId: ReturnType<typeof aggregateDueDateHistoryCounts> = {};
   let taskLabelsError: string | null = null;
   let labelIdsByTaskId: Record<string, string[]> = {};
+  let subtasksError: string | null = null;
+  let subtasksByTaskId: Record<string, TaskSubtask[]> = {};
 
   if (tasks && tasks.length > 0) {
     const taskIds = tasks.map((task) => task.id);
     const [
       { data: changes, error: changesError },
       { data: taskLabelRows, error: taskLabelsFetchError },
+      subtasksResult,
     ] = await Promise.all([
       supabase
         .from("task_due_date_changes")
@@ -91,6 +96,7 @@ export default async function TasksPage({ searchParams }: TasksPageProps) {
         .from("task_labels")
         .select("task_id, label_id")
         .in("task_id", taskIds),
+      fetchSubtasksByTaskId(supabase, taskIds),
     ]);
 
     if (changesError) {
@@ -114,6 +120,9 @@ export default async function TasksPage({ searchParams }: TasksPageProps) {
         {},
       );
     }
+
+    subtasksError = subtasksResult.error;
+    subtasksByTaskId = subtasksResult.subtasksByTaskId;
   }
 
   const allTasks = tasks ?? [];
@@ -198,6 +207,12 @@ export default async function TasksPage({ searchParams }: TasksPageProps) {
           </div>
         ) : null}
 
+        {subtasksError ? (
+          <div className="rounded-2xl border border-amber-200 bg-amber-50 p-6 text-sm text-amber-800 dark:border-amber-900/50 dark:bg-amber-950/40 dark:text-amber-300">
+            Could not load subtasks: {subtasksError}
+          </div>
+        ) : null}
+
         {allTasks.length > 0 && tasksToRender.length > 0 ? (
           <ul className="space-y-3">
             {tasksToRender.map((task) => {
@@ -235,6 +250,7 @@ export default async function TasksPage({ searchParams }: TasksPageProps) {
                   labelIds={taskLabelIds}
                   taskLabels={taskLabelDisplay}
                   dueDateHistory={dueDateHistory}
+                  subtasks={subtasksByTaskId[task.id] ?? []}
                   initialEditing={editParam === task.id}
                 />
               );

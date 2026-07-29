@@ -1,6 +1,8 @@
 "use client";
 
 import { TaskCompleteToggle } from "@/components/tasks/task-complete-toggle";
+import { TaskSubtaskList } from "@/components/tasks/task-subtask-list";
+import { TaskSubtaskProgress } from "@/components/tasks/task-subtask-progress";
 import { TaskDeleteButton } from "@/components/tasks/task-delete-button";
 import {
   CategoryBadge,
@@ -22,6 +24,8 @@ import {
   MOVED_LATER_NUDGE,
   type DueDateHistoryCounts,
 } from "@/lib/tasks/due-date-change";
+import { getSubtaskProgress } from "@/lib/tasks/subtasks/progress";
+import type { TaskSubtask } from "@/lib/tasks/subtasks/types";
 import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useRef, useState } from "react";
 
@@ -40,6 +44,7 @@ type TaskListItemProps = {
   labelIds: string[];
   taskLabels: TaskLabelDisplay;
   dueDateHistory: DueDateHistoryCounts;
+  subtasks?: TaskSubtask[];
   initialEditing?: boolean;
   embedded?: boolean;
   onSuccess?: () => void;
@@ -113,6 +118,7 @@ export function TaskListItem({
   labelIds,
   taskLabels,
   dueDateHistory,
+  subtasks = [],
   initialEditing = false,
   embedded = false,
   onSuccess,
@@ -381,6 +387,7 @@ export function TaskListItem({
 
   const historyLines = getDueDateHistoryLines(dueDateHistory);
   const showMovedLaterNudge = dueDateHistory.movedLaterCount >= 3;
+  const subtaskProgress = getSubtaskProgress(subtasks);
 
   const readContent = (
     <>
@@ -426,6 +433,9 @@ export function TaskListItem({
                 {showMovedLaterNudge ? <p>{MOVED_LATER_NUDGE}</p> : null}
               </div>
             ) : null}
+            {subtaskProgress ? (
+              <TaskSubtaskProgress progress={subtaskProgress} compact />
+            ) : null}
           </div>
           <span
             className={`shrink-0 rounded-full px-2.5 py-1 text-xs font-medium ${
@@ -438,6 +448,7 @@ export function TaskListItem({
           </span>
         </div>
       </div>
+      <TaskSubtaskList taskId={id} subtasks={subtasks} />
       <div className="mt-4 flex items-center justify-between gap-4">
         <dl className="flex flex-wrap gap-x-6 gap-y-2 text-sm text-stone-500 dark:text-stone-400">
           <div>

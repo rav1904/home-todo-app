@@ -39,6 +39,7 @@ export default async function CalendarPage({ searchParams }: CalendarPageProps) 
     labelsError,
     taskLabelsError,
     historyError,
+    subtasksError,
     categories,
     labels,
   } = await fetchCalendarPageData(supabase, { start, end });
@@ -81,6 +82,12 @@ export default async function CalendarPage({ searchParams }: CalendarPageProps) 
         {historyError ? (
           <div className="rounded-2xl border border-amber-200 bg-amber-50 p-6 text-sm text-amber-800 dark:border-amber-900/50 dark:bg-amber-950/40 dark:text-amber-300">
             Could not load due date history: {historyError}
+          </div>
+        ) : null}
+
+        {subtasksError ? (
+          <div className="rounded-2xl border border-amber-200 bg-amber-50 p-6 text-sm text-amber-800 dark:border-amber-900/50 dark:bg-amber-950/40 dark:text-amber-300">
+            Could not load subtasks: {subtasksError}
           </div>
         ) : null}
 
