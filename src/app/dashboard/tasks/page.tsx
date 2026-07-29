@@ -27,11 +27,12 @@ import { createClient } from "@/lib/supabase/server";
 import { Suspense } from "react";
 
 type TasksPageProps = {
-  searchParams: Promise<{ category?: string; label?: string }>;
+  searchParams: Promise<{ category?: string; label?: string; edit?: string }>;
 };
 
 export default async function TasksPage({ searchParams }: TasksPageProps) {
-  const { category: categoryParam, label: labelParam } = await searchParams;
+  const { category: categoryParam, label: labelParam, edit: editParam } =
+    await searchParams;
   const supabase = await createClient();
   const {
     data: { user },
@@ -126,6 +127,13 @@ export default async function TasksPage({ searchParams }: TasksPageProps) {
     labelFilter,
     labelIdsByTaskId,
   );
+  const tasksToRender =
+    editParam && !filteredTasks.some((task) => task.id === editParam)
+      ? [
+          ...allTasks.filter((task) => task.id === editParam),
+          ...filteredTasks,
+        ]
+      : filteredTasks;
   const filterActive = isAnyTaskFilterActive(categoryFilter, labelFilter);
   const filterDescription = getTaskFilterDescription(
     categoryFilter,
@@ -190,9 +198,9 @@ export default async function TasksPage({ searchParams }: TasksPageProps) {
           </div>
         ) : null}
 
-        {allTasks.length > 0 && filteredTasks.length > 0 ? (
+        {allTasks.length > 0 && tasksToRender.length > 0 ? (
           <ul className="space-y-3">
-            {filteredTasks.map((task) => {
+            {tasksToRender.map((task) => {
               const dueDateHistory = historyByTaskId[task.id] ?? {
                 dueDateUpdateCount: 0,
                 movedLaterCount: 0,
@@ -227,6 +235,7 @@ export default async function TasksPage({ searchParams }: TasksPageProps) {
                   labelIds={taskLabelIds}
                   taskLabels={taskLabelDisplay}
                   dueDateHistory={dueDateHistory}
+                  initialEditing={editParam === task.id}
                 />
               );
             })}

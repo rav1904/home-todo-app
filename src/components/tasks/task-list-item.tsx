@@ -23,7 +23,7 @@ import {
   type DueDateHistoryCounts,
 } from "@/lib/tasks/due-date-change";
 import { useRouter } from "next/navigation";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 
 type TaskListItemProps = {
   id: string;
@@ -40,6 +40,7 @@ type TaskListItemProps = {
   labelIds: string[];
   taskLabels: TaskLabelDisplay;
   dueDateHistory: DueDateHistoryCounts;
+  initialEditing?: boolean;
 };
 
 function formatDate(value: string) {
@@ -109,9 +110,11 @@ export function TaskListItem({
   labelIds,
   taskLabels,
   dueDateHistory,
+  initialEditing = false,
 }: TaskListItemProps) {
   const router = useRouter();
-  const [isEditing, setIsEditing] = useState(false);
+  const itemRef = useRef<HTMLLIElement>(null);
+  const [isEditing, setIsEditing] = useState(initialEditing);
   const [editTitle, setEditTitle] = useState(title);
   const [editDescription, setEditDescription] = useState(description ?? "");
   const [editDueAt, setEditDueAt] = useState(toDatetimeLocalValue(dueAt));
@@ -153,6 +156,14 @@ export function TaskListItem({
     setError(null);
     setIsEditing(false);
   }
+
+  useEffect(() => {
+    if (!initialEditing) {
+      return;
+    }
+
+    itemRef.current?.scrollIntoView({ behavior: "smooth", block: "center" });
+  }, [initialEditing]);
 
   async function handleSave(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -234,7 +245,11 @@ export function TaskListItem({
 
   if (isEditing) {
     return (
-      <li className="rounded-2xl border border-emerald-200 bg-white p-5 shadow-sm dark:border-emerald-900/50 dark:bg-stone-900">
+      <li
+        ref={itemRef}
+        id={`task-${id}`}
+        className="rounded-2xl border border-emerald-200 bg-white p-5 shadow-sm dark:border-emerald-900/50 dark:bg-stone-900"
+      >
         <form onSubmit={handleSave} className="space-y-3">
           <div>
             <label
@@ -347,7 +362,7 @@ export function TaskListItem({
   const showMovedLaterNudge = dueDateHistory.movedLaterCount >= 3;
 
   return (
-    <li className={`${cardClassName} p-5`}>
+    <li ref={itemRef} id={`task-${id}`} className={`${cardClassName} p-5`}>
       <div className="flex items-start gap-3">
         <TaskCompleteToggle
           id={id}
