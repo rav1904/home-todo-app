@@ -1,10 +1,12 @@
 "use client";
 
 import { CategorySelect } from "@/components/tasks/category-select";
+import { DueDatetimeFields } from "@/components/tasks/due-datetime-fields";
 import { LabelSelect } from "@/components/tasks/label-select";
 import type { Category } from "@/lib/categories/types";
 import type { Label } from "@/lib/labels/types";
 import { syncTaskLabels } from "@/lib/labels/sync-task-labels";
+import { datetimeLocalValueToIso } from "@/lib/tasks/due-datetime";
 import { cardClassName, fieldClassName } from "@/lib/ui/field-classes";
 import { createClient } from "@/lib/supabase/client";
 import { useRouter } from "next/navigation";
@@ -74,7 +76,7 @@ export function AddTaskForm({
         user_id: user.id,
         title: trimmedTitle,
         description: description.trim() || null,
-        due_at: dueAt ? new Date(dueAt).toISOString() : null,
+        due_at: datetimeLocalValueToIso(dueAt),
         category_id: categoryId,
       })
       .select("id")
@@ -166,25 +168,11 @@ export function AddTaskForm({
           />
         </div>
 
-        <div>
-          <label
-            htmlFor="task-due-at"
-            className="mb-1.5 block text-sm font-medium text-stone-700 dark:text-stone-300"
-          >
-            Due date{" "}
-            <span className="font-normal text-stone-400 dark:text-stone-500">
-              (optional)
-            </span>
-          </label>
-          <input
-            id="task-due-at"
-            type="datetime-local"
-            step={300}
-            value={dueAt}
-            onChange={(event) => setDueAt(event.target.value)}
-            className={fieldClassName}
-          />
-        </div>
+        <DueDatetimeFields
+          id="task-due-at"
+          value={dueAt}
+          onChange={setDueAt}
+        />
 
         <CategorySelect
           id="task-category"

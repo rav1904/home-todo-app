@@ -10,11 +10,16 @@ import {
 } from "@/components/tasks/category-select";
 import { LabelBadges } from "@/components/tasks/label-badges";
 import { LabelSelect } from "@/components/tasks/label-select";
+import { DueDatetimeFields } from "@/components/tasks/due-datetime-fields";
 import type { CategoryDisplay } from "@/lib/categories/tree";
 import type { Category } from "@/lib/categories/types";
 import type { TaskLabelDisplay } from "@/lib/labels/display";
 import type { Label } from "@/lib/labels/types";
 import { syncTaskLabels } from "@/lib/labels/sync-task-labels";
+import {
+  datetimeLocalValueToIso,
+  isoToDatetimeLocalValue,
+} from "@/lib/tasks/due-datetime";
 import { cardClassName, fieldClassName } from "@/lib/ui/field-classes";
 import { createClient } from "@/lib/supabase/client";
 import {
@@ -69,21 +74,6 @@ function formatDateTime(value: string) {
   });
 }
 
-function toDatetimeLocalValue(iso: string | null) {
-  if (!iso) {
-    return "";
-  }
-
-  const date = new Date(iso);
-  const year = date.getFullYear();
-  const month = String(date.getMonth() + 1).padStart(2, "0");
-  const day = String(date.getDate()).padStart(2, "0");
-  const hours = String(date.getHours()).padStart(2, "0");
-  const minutes = String(date.getMinutes()).padStart(2, "0");
-
-  return `${year}-${month}-${day}T${hours}:${minutes}`;
-}
-
 function PencilIcon() {
   return (
     <svg
@@ -129,7 +119,7 @@ export function TaskListItem({
   const [isEditing, setIsEditing] = useState(initialEditing);
   const [editTitle, setEditTitle] = useState(title);
   const [editDescription, setEditDescription] = useState(description ?? "");
-  const [editDueAt, setEditDueAt] = useState(toDatetimeLocalValue(dueAt));
+  const [editDueAt, setEditDueAt] = useState(isoToDatetimeLocalValue(dueAt));
   const [editCategoryId, setEditCategoryId] = useState<string | null>(categoryId);
   const [editLabelIds, setEditLabelIds] = useState<string[]>(labelIds);
   const [extraLabels, setExtraLabels] = useState<Label[]>([]);
@@ -155,7 +145,7 @@ export function TaskListItem({
   function startEditing() {
     setEditTitle(title);
     setEditDescription(description ?? "");
-    setEditDueAt(toDatetimeLocalValue(dueAt));
+    setEditDueAt(isoToDatetimeLocalValue(dueAt));
     setEditCategoryId(categoryId);
     setEditLabelIds(labelIds);
     setExtraLabels([]);
@@ -190,7 +180,7 @@ export function TaskListItem({
     }
 
     const supabase = createClient();
-    const newDueAt = editDueAt ? new Date(editDueAt).toISOString() : null;
+    const newDueAt = datetimeLocalValueToIso(editDueAt);
     const dueAtChanged = !dueAtValuesEqual(dueAt, newDueAt);
 
     const { error: updateError } = await supabase
@@ -299,23 +289,12 @@ export function TaskListItem({
             />
           </div>
 
-          <div>
-            <label
-              htmlFor={`edit-due-at-${id}`}
-              className="mb-1.5 block text-sm font-medium text-stone-700"
-            >
-              Due date{" "}
-              <span className="font-normal text-stone-400">(optional)</span>
-            </label>
-            <input
-              id={`edit-due-at-${id}`}
-              type="datetime-local"
-              step={300}
-              value={editDueAt}
-              onChange={(event) => setEditDueAt(event.target.value)}
-              className={fieldClassName}
-            />
-          </div>
+          <DueDatetimeFields
+            id={`edit-due-at-${id}`}
+            value={editDueAt}
+            onChange={setEditDueAt}
+            labelClassName="mb-1.5 block text-sm font-medium text-stone-700"
+          />
 
           <CategorySelect
             id={`edit-category-${id}`}
