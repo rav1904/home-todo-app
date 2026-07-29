@@ -1,31 +1,57 @@
 "use client";
 
 import { CalendarTaskModal } from "@/components/calendar/calendar-task-modal";
+import { CalendarViewSwitcher } from "@/components/calendar/calendar-view-switcher";
+import { DayCalendar } from "@/components/calendar/day-calendar";
+import { ListCalendar } from "@/components/calendar/list-calendar";
 import { MonthCalendar } from "@/components/calendar/month-calendar";
+import { WeekCalendar } from "@/components/calendar/week-calendar";
 import type { Category } from "@/lib/categories/types";
 import type { Label } from "@/lib/labels/types";
-import type { CalendarDayCell, CalendarModalTask, CalendarTask } from "@/lib/tasks/calendar";
+import type {
+  CalendarDayCell,
+  CalendarModalTask,
+  CalendarTask,
+} from "@/lib/tasks/calendar";
+import type {
+  CalendarNavLinks,
+  CalendarView,
+} from "@/lib/tasks/calendar-params";
 import { useEffect, useState } from "react";
 
+type ViewSwitcherLink = {
+  view: CalendarView;
+  href: string;
+  isActive: boolean;
+};
+
 type CalendarClientShellProps = {
-  monthLabel: string;
-  prevMonthHref: string;
-  nextMonthHref: string;
-  todayHref: string;
-  days: CalendarDayCell[];
+  view: CalendarView;
+  viewSwitcherLinks: ViewSwitcherLink[];
+  nav: CalendarNavLinks;
+  monthDays: CalendarDayCell[];
+  weekDays: CalendarDayCell[];
+  dateKey: string;
   tasksByDay: Record<string, CalendarTask[]>;
+  listOverdue: CalendarTask[];
+  listUpcomingByDay: Record<string, CalendarTask[]>;
+  listUpcomingDayKeys: string[];
   modalTasksById: Record<string, CalendarModalTask>;
   categories: Category[];
   labels: Label[];
 };
 
 export function CalendarClientShell({
-  monthLabel,
-  prevMonthHref,
-  nextMonthHref,
-  todayHref,
-  days,
+  view,
+  viewSwitcherLinks,
+  nav,
+  monthDays,
+  weekDays,
+  dateKey,
   tasksByDay,
+  listOverdue,
+  listUpcomingByDay,
+  listUpcomingDayKeys,
   modalTasksById,
   categories,
   labels,
@@ -41,15 +67,43 @@ export function CalendarClientShell({
 
   return (
     <>
-      <MonthCalendar
-        monthLabel={monthLabel}
-        prevMonthHref={prevMonthHref}
-        nextMonthHref={nextMonthHref}
-        todayHref={todayHref}
-        days={days}
-        tasksByDay={tasksByDay}
-        onTaskSelect={setSelectedTaskId}
-      />
+      <CalendarViewSwitcher links={viewSwitcherLinks} />
+
+      {view === "month" ? (
+        <MonthCalendar
+          nav={nav}
+          days={monthDays}
+          tasksByDay={tasksByDay}
+          onTaskSelect={setSelectedTaskId}
+        />
+      ) : null}
+
+      {view === "week" ? (
+        <WeekCalendar
+          nav={nav}
+          days={weekDays}
+          tasksByDay={tasksByDay}
+          onTaskSelect={setSelectedTaskId}
+        />
+      ) : null}
+
+      {view === "day" ? (
+        <DayCalendar
+          nav={nav}
+          tasks={tasksByDay[dateKey] ?? []}
+          onTaskSelect={setSelectedTaskId}
+        />
+      ) : null}
+
+      {view === "list" ? (
+        <ListCalendar
+          nav={nav}
+          overdue={listOverdue}
+          upcomingByDay={listUpcomingByDay}
+          upcomingDayKeys={listUpcomingDayKeys}
+          onTaskSelect={setSelectedTaskId}
+        />
+      ) : null}
 
       {selectedTask ? (
         <CalendarTaskModal

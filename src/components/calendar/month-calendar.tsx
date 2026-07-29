@@ -1,21 +1,19 @@
 "use client";
 
 import { CalendarTaskChip } from "@/components/calendar/calendar-task-chip";
+import { CalendarNav } from "@/components/calendar/calendar-nav";
 import { cardClassName } from "@/lib/ui/field-classes";
 import {
   CALENDAR_VISIBLE_TASK_LIMIT,
   type CalendarDayCell,
   type CalendarTask,
 } from "@/lib/tasks/calendar";
+import type { CalendarNavLinks } from "@/lib/tasks/calendar-params";
 import { formatShortWeekday } from "@/lib/tasks/local-dates";
-import Link from "next/link";
 import { useState } from "react";
 
 type MonthCalendarProps = {
-  monthLabel: string;
-  prevMonthHref: string;
-  nextMonthHref: string;
-  todayHref: string;
+  nav: CalendarNavLinks;
   days: CalendarDayCell[];
   tasksByDay: Record<string, CalendarTask[]>;
   onTaskSelect?: (taskId: string) => void;
@@ -39,10 +37,7 @@ const WEEKDAY_LABELS = Array.from({ length: 7 }, (_, index) => {
 });
 
 export function MonthCalendar({
-  monthLabel,
-  prevMonthHref,
-  nextMonthHref,
-  todayHref,
+  nav,
   days,
   tasksByDay,
   onTaskSelect,
@@ -57,31 +52,7 @@ export function MonthCalendar({
 
   return (
     <div className="space-y-4">
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <h2 className="text-lg font-semibold text-stone-900 dark:text-stone-100">
-          {monthLabel}
-        </h2>
-        <div className="flex flex-wrap items-center gap-2">
-          <Link
-            href={prevMonthHref}
-            className="cursor-pointer rounded-lg border border-stone-200 bg-white px-3 py-1.5 text-sm font-medium text-stone-600 transition hover:bg-stone-50 dark:border-stone-600 dark:bg-stone-800 dark:text-stone-300 dark:hover:bg-stone-700"
-          >
-            Previous
-          </Link>
-          <Link
-            href={todayHref}
-            className="cursor-pointer rounded-lg border border-stone-200 bg-white px-3 py-1.5 text-sm font-medium text-stone-600 transition hover:bg-stone-50 dark:border-stone-600 dark:bg-stone-800 dark:text-stone-300 dark:hover:bg-stone-700"
-          >
-            Today
-          </Link>
-          <Link
-            href={nextMonthHref}
-            className="cursor-pointer rounded-lg border border-stone-200 bg-white px-3 py-1.5 text-sm font-medium text-stone-600 transition hover:bg-stone-50 dark:border-stone-600 dark:bg-stone-800 dark:text-stone-300 dark:hover:bg-stone-700"
-          >
-            Next
-          </Link>
-        </div>
-      </div>
+      <CalendarNav nav={nav} />
 
       <div className={`${cardClassName} overflow-hidden`}>
         <div className="grid grid-cols-7 border-b border-stone-200 bg-stone-50 dark:border-stone-700 dark:bg-stone-800/50">

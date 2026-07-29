@@ -86,3 +86,117 @@ export function formatTaskTime(value: string) {
     minute: "2-digit",
   });
 }
+
+export function parseDateParam(
+  param: string | undefined,
+  now = new Date(),
+): string {
+  if (param && /^\d{4}-\d{2}-\d{2}$/.test(param)) {
+    const [yearPart, monthPart, dayPart] = param.split("-");
+    const year = Number(yearPart);
+    const month = Number(monthPart);
+    const day = Number(dayPart);
+
+    if (month >= 1 && month <= 12 && day >= 1 && day <= 31) {
+      const date = new Date(year, month - 1, day);
+
+      if (
+        date.getFullYear() === year &&
+        date.getMonth() === month - 1 &&
+        date.getDate() === day
+      ) {
+        return toLocalDayKey(date);
+      }
+    }
+  }
+
+  return toLocalDayKey(now);
+}
+
+export function formatDateParam(date: Date) {
+  return toLocalDayKey(date);
+}
+
+export function localDayKeyToDate(dayKey: string) {
+  const [yearPart, monthPart, dayPart] = dayKey.split("-").map(Number);
+  return new Date(yearPart, monthPart - 1, dayPart);
+}
+
+export function getDayBounds(dayKey: string) {
+  const date = localDayKeyToDate(dayKey);
+  return {
+    start: startOfLocalDay(date),
+    end: endOfLocalDay(date),
+  };
+}
+
+export function getWeekStartDayKey(dayKey: string) {
+  const date = localDayKeyToDate(dayKey);
+  const mondayOffset = (date.getDay() + 6) % 7;
+  return toLocalDayKey(addDays(date, -mondayOffset));
+}
+
+export function getWeekBounds(dayKey: string) {
+  const weekStartKey = getWeekStartDayKey(dayKey);
+  const weekStart = localDayKeyToDate(weekStartKey);
+  const weekEnd = addDays(weekStart, 6);
+
+  return {
+    start: startOfLocalDay(weekStart),
+    end: endOfLocalDay(weekEnd),
+    weekStartKey,
+  };
+}
+
+export function shiftDayKey(dayKey: string, delta: number) {
+  return toLocalDayKey(addDays(localDayKeyToDate(dayKey), delta));
+}
+
+export function formatDayLabel(dayKey: string) {
+  return localDayKeyToDate(dayKey).toLocaleDateString(undefined, {
+    weekday: "long",
+    month: "long",
+    day: "numeric",
+    year: "numeric",
+  });
+}
+
+export function formatWeekLabel(weekStartDayKey: string) {
+  const weekStart = localDayKeyToDate(weekStartDayKey);
+  const weekEnd = addDays(weekStart, 6);
+  const sameMonth = weekStart.getMonth() === weekEnd.getMonth();
+  const sameYear = weekStart.getFullYear() === weekEnd.getFullYear();
+
+  const startLabel = weekStart.toLocaleDateString(undefined, {
+    day: "numeric",
+    month: "short",
+    year: sameYear ? undefined : "numeric",
+  });
+  const endLabel = weekEnd.toLocaleDateString(undefined, {
+    day: "numeric",
+    month: sameMonth ? undefined : "short",
+    year: "numeric",
+  });
+
+  return `${startLabel} – ${endLabel}`;
+}
+
+export function formatShortDayLabel(dayKey: string) {
+  return localDayKeyToDate(dayKey).toLocaleDateString(undefined, {
+    weekday: "short",
+    month: "short",
+    day: "numeric",
+  });
+}
+
+export const LIST_UPCOMING_DAYS = 90;
+
+export function getListFetchBounds(now = new Date()) {
+  const todayStart = startOfLocalDay(now);
+  const upcomingEnd = endOfLocalDay(addDays(todayStart, LIST_UPCOMING_DAYS));
+
+  return {
+    todayStart,
+    upcomingEnd,
+  };
+}

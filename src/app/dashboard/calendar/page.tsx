@@ -1,13 +1,21 @@
 import { CalendarClientShell } from "@/components/calendar/calendar-client-shell";
 import { DashboardHeader } from "@/components/dashboard/header";
 import { fetchCalendarPageData } from "@/lib/tasks/build-calendar-tasks";
-import { buildMonthGrid, groupCalendarTasksByDay } from "@/lib/tasks/calendar";
 import {
-  formatMonthLabel,
-  formatMonthParam,
+  buildMonthGrid,
+  buildWeekDays,
+  groupCalendarTasksByDay,
+  splitListCalendarTasks,
+} from "@/lib/tasks/calendar";
+import {
+  buildCalendarNavLinks,
+  buildViewSwitcherLinks,
+  parseCalendarParams,
+} from "@/lib/tasks/calendar-params";
+import {
+  getDayBounds,
   getMonthBounds,
-  parseMonthParam,
-  shiftMonth,
+  getWeekBounds,
 } from "@/lib/tasks/local-dates";
 import { createClient } from "@/lib/supabase/server";
 
@@ -17,19 +25,46 @@ type CalendarPageProps = {
 
 export default async function CalendarPage({ searchParams }: CalendarPageProps) {
   const params = await searchParams;
-  const { year, month } = parseMonthParam(params.month);
-  const { start, end } = getMonthBounds(year, month);
-  const previousMonth = shiftMonth(year, month, -1);
-  const nextMonth = shiftMonth(year, month, 1);
-  const todayMonthParam = formatMonthParam(
-    new Date().getFullYear(),
-    new Date().getMonth(),
+  const calendarParams = parseCalendarParams(params);
+  const viewSwitcherLinks = buildViewSwitcherLinks(
+    calendarParams.view,
+    calendarParams.monthParam,
+    calendarParams.dateKey,
   );
+  const nav = buildCalendarNavLinks(calendarParams);
 
   const supabase = await createClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();
+
+  let fetchOptions:
+    | { mode: "range"; start: Date; end: Date }
+    | { mode: "list" };
+
+  switch (calendarParams.view) {
+    case "month": {
+      const { start, end } = getMonthBounds(
+        calendarParams.year,
+        calendarParams.month,
+      );
+      fetchOptions = { mode: "range", start, end };
+      break;
+    }
+    case "day": {
+      const { start, end } = getDayBounds(calendarParams.dateKey);
+      fetchOptions = { mode: "range", start, end };
+      break;
+    }
+    case "week": {
+      const { start, end } = getWeekBounds(calendarParams.dateKey);
+      fetchOptions = { mode: "range", start, end };
+      break;
+    }
+    case "list":
+      fetchOptions = { mode: "list" };
+      break;
+  }
 
   const {
     calendarTasks,
@@ -42,10 +77,13 @@ export default async function CalendarPage({ searchParams }: CalendarPageProps) 
     subtasksError,
     categories,
     labels,
-  } = await fetchCalendarPageData(supabase, { start, end });
+  } = await fetchCalendarPageData(supabase, fetchOptions);
 
-  const days = buildMonthGrid(year, month);
   const tasksByDay = groupCalendarTasksByDay(calendarTasks);
+  const listGroups =
+    calendarParams.view === "list"
+      ? splitListCalendarTasks(calendarTasks)
+      : { overdue: [], upcomingByDay: {}, upcomingDayKeys: [] };
 
   return (
     <>
@@ -93,21 +131,27 @@ export default async function CalendarPage({ searchParams }: CalendarPageProps) 
 
         {!error ? (
           <CalendarClientShell
-            monthLabel={formatMonthLabel(year, month)}
-            prevMonthHref={`/dashboard/calendar?month=${formatMonthParam(previousMonth.year, previousMonth.month)}`}
-            nextMonthHref={`/dashboard/calendar?month=${formatMonthParam(nextMonth.year, nextMonth.month)}`}
-            todayHref={`/dashboard/calendar?month=${todayMonthParam}`}
-            days={days}
+            view={calendarParams.view}
+            viewSwitcherLinks={viewSwitcherLinks}
+            nav={nav}
+            monthDays={buildMonthGrid(calendarParams.year, calendarParams.month)}
+            weekDays={buildWeekDays(calendarParams.dateKey)}
+            dateKey={calendarParams.dateKey}
             tasksByDay={tasksByDay}
+            listOverdue={listGroups.overdue}
+            listUpcomingByDay={listGroups.upcomingByDay}
+            listUpcomingDayKeys={listGroups.upcomingDayKeys}
             modalTasksById={modalTasksById}
             categories={categories}
             labels={labels}
           />
         ) : null}
 
-        {!error && calendarTasks.length === 0 ? (
+        {!error &&
+        calendarParams.view === "month" &&
+        calendarTasks.length === 0 ? (
           <p className="text-sm text-stone-500 dark:text-stone-400">
-            No tasks with due dates in {formatMonthLabel(year, month)}.
+            No tasks with due dates this month.
           </p>
         ) : null}
       </div>

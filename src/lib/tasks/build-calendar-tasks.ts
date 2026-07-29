@@ -10,6 +10,7 @@ import {
 import { LABEL_SELECT_FIELDS, type Label } from "@/lib/labels/types";
 import type { CalendarModalTask, CalendarTask } from "@/lib/tasks/calendar";
 import { aggregateDueDateHistoryCounts } from "@/lib/tasks/due-date-change";
+import { getListFetchBounds } from "@/lib/tasks/local-dates";
 import { fetchSubtasksByTaskId } from "@/lib/tasks/subtasks/group";
 import { getSubtaskProgress } from "@/lib/tasks/subtasks/progress";
 import type { TaskSubtask } from "@/lib/tasks/subtasks/types";
@@ -41,22 +42,35 @@ export type CalendarFetchResult = {
   labels: Label[];
 };
 
+type FetchCalendarPageDataOptions =
+  | { mode: "range"; start: Date; end: Date }
+  | { mode: "list"; now?: Date };
+
 export async function fetchCalendarPageData(
   supabase: SupabaseClient,
-  range: { start: Date; end: Date },
+  options: FetchCalendarPageDataOptions,
 ): Promise<CalendarFetchResult> {
+  let tasksQuery = supabase
+    .from("tasks")
+    .select(TASK_SELECT)
+    .not("due_at", "is", null)
+    .order("due_at", { ascending: true });
+
+  if (options.mode === "range") {
+    tasksQuery = tasksQuery
+      .gte("due_at", options.start.toISOString())
+      .lte("due_at", options.end.toISOString());
+  } else {
+    const { upcomingEnd } = getListFetchBounds(options.now);
+    tasksQuery = tasksQuery.lte("due_at", upcomingEnd.toISOString());
+  }
+
   const [
     { data: tasks, error },
     { data: categories, error: categoriesError },
     { data: labels, error: labelsError },
   ] = await Promise.all([
-    supabase
-      .from("tasks")
-      .select(TASK_SELECT)
-      .not("due_at", "is", null)
-      .gte("due_at", range.start.toISOString())
-      .lte("due_at", range.end.toISOString())
-      .order("due_at", { ascending: true }),
+    tasksQuery,
     supabase
       .from("categories")
       .select(

@@ -6,7 +6,10 @@ import type { SubtaskProgress } from "@/lib/tasks/subtasks/progress";
 import type { TaskSubtask } from "@/lib/tasks/subtasks/types";
 import {
   addDays,
+  getWeekStartDayKey,
   isSameLocalDay,
+  localDayKeyToDate,
+  startOfLocalDay,
   toLocalDayKey,
 } from "@/lib/tasks/local-dates";
 
@@ -92,6 +95,65 @@ export function groupCalendarTasksByDay(tasks: CalendarTask[]) {
   }
 
   return grouped;
+}
+
+export function buildWeekDays(
+  anchorDayKey: string,
+  today = new Date(),
+): CalendarDayCell[] {
+  const weekStartKey = getWeekStartDayKey(anchorDayKey);
+  const weekStart = localDayKeyToDate(weekStartKey);
+  const cells: CalendarDayCell[] = [];
+
+  for (let index = 0; index < 7; index += 1) {
+    const date = addDays(weekStart, index);
+
+    cells.push({
+      dayKey: toLocalDayKey(date),
+      date: date.toISOString(),
+      dayNumber: date.getDate(),
+      isCurrentMonth: true,
+      isToday: isSameLocalDay(date, today),
+    });
+  }
+
+  return cells;
+}
+
+export function splitListCalendarTasks(
+  tasks: CalendarTask[],
+  today = new Date(),
+) {
+  const todayStart = startOfLocalDay(today);
+  const overdue: CalendarTask[] = [];
+  const upcoming: CalendarTask[] = [];
+
+  for (const task of tasks) {
+    if (new Date(task.dueAt) < todayStart) {
+      overdue.push(task);
+    } else {
+      upcoming.push(task);
+    }
+  }
+
+  overdue.sort(
+    (left, right) =>
+      new Date(left.dueAt).getTime() - new Date(right.dueAt).getTime(),
+  );
+
+  upcoming.sort(
+    (left, right) =>
+      new Date(left.dueAt).getTime() - new Date(right.dueAt).getTime(),
+  );
+
+  const upcomingByDay = groupCalendarTasksByDay(upcoming);
+  const upcomingDayKeys = Object.keys(upcomingByDay).sort();
+
+  return {
+    overdue,
+    upcomingByDay,
+    upcomingDayKeys,
+  };
 }
 
 export const CALENDAR_VISIBLE_TASK_LIMIT = 2;
