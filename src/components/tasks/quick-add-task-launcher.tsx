@@ -90,7 +90,10 @@ export function QuickAddTaskLauncher() {
         type="button"
         onClick={() => setOpen(true)}
         aria-label="Quick add task"
-        className="absolute bottom-6 left-6 z-40 flex h-14 w-14 cursor-pointer items-center justify-center rounded-full bg-emerald-600 text-white shadow-lg shadow-emerald-600/30 transition hover:bg-emerald-700 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:ring-offset-2 focus:ring-offset-stone-50 dark:shadow-emerald-900/40 dark:focus:ring-offset-stone-950"
+        className="fixed left-[calc(16rem+1.5rem)] z-40 flex h-14 w-14 cursor-pointer items-center justify-center rounded-full bg-emerald-600 text-white shadow-lg shadow-emerald-600/30 transition hover:bg-emerald-700 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:ring-offset-2 focus:ring-offset-stone-50 dark:shadow-emerald-900/40 dark:focus:ring-offset-stone-950"
+        style={{
+          bottom: "max(1.5rem, env(safe-area-inset-bottom, 0px))",
+        }}
       >
         <Plus className="h-7 w-7" strokeWidth={2.5} aria-hidden="true" />
       </button>

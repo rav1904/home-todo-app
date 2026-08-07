@@ -18,10 +18,10 @@ export default async function DashboardLayout({
   return (
     <div className="flex min-h-full flex-1 bg-stone-50 dark:bg-stone-950">
       <Sidebar showAdminLink={showAdminLink} />
-      <div className="relative flex min-w-0 flex-1 flex-col pb-24">
+      <div className="flex min-w-0 flex-1 flex-col pb-24">
         {children}
-        <QuickAddTaskLauncher />
       </div>
+      <QuickAddTaskLauncher />
     </div>
   );
 }
