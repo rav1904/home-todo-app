@@ -4,6 +4,13 @@ import {
   LabelFormFields,
   createEmptyLabelFormValues,
 } from "@/components/admin/label-form-fields";
+import { LabelCategoryLinkFields } from "@/components/admin/label-category-link-fields";
+import { buildCategoryLookup } from "@/lib/categories/tree";
+import type { Category } from "@/lib/categories/types";
+import {
+  getLinkedCategorySummary,
+  syncLabelCategoryLinks,
+} from "@/lib/labels/category-links";
 import {
   getNextLabelSortOrder,
   moveLabel,
@@ -30,6 +37,8 @@ import { useMemo, useState } from "react";
 
 type LabelAdminPanelProps = {
   labels: Label[];
+  categories: Category[];
+  categoryIdsByLabelId: Record<string, string[]>;
 };
 
 function toFormValues(label: Label): LabelFormValues {
@@ -39,11 +48,17 @@ function toFormValues(label: Label): LabelFormValues {
   };
 }
 
-export function LabelAdminPanel({ labels }: LabelAdminPanelProps) {
+export function LabelAdminPanel({
+  labels,
+  categories,
+  categoryIdsByLabelId,
+}: LabelAdminPanelProps) {
   const router = useRouter();
   const [createValues, setCreateValues] = useState(createEmptyLabelFormValues());
+  const [createCategoryIds, setCreateCategoryIds] = useState<string[]>([]);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editValues, setEditValues] = useState<LabelFormValues | null>(null);
+  const [editCategoryIds, setEditCategoryIds] = useState<string[]>([]);
   const [sortMode, setSortMode] = useState<LabelSortMode>("custom");
   const [draggedLabelId, setDraggedLabelId] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
@@ -52,6 +67,10 @@ export function LabelAdminPanel({ labels }: LabelAdminPanelProps) {
   const sortedLabels = useMemo(
     () => sortLabels(labels, sortMode),
     [labels, sortMode],
+  );
+  const categoryLookup = useMemo(
+    () => buildCategoryLookup(categories),
+    [categories],
   );
 
   async function persistSortOrders(
@@ -106,23 +125,40 @@ export function LabelAdminPanel({ labels }: LabelAdminPanelProps) {
     }
 
     const supabase = createClient();
-    const { error: insertError } = await supabase.from("labels").insert({
-      name: createValues.name.trim(),
-      colour: createValues.colour,
-      sort_order: getNextLabelSortOrder(labels),
-      active: true,
-      scope: "global",
-      created_by: null,
-      updated_at: new Date().toISOString(),
-    });
+    const { data: createdLabel, error: insertError } = await supabase
+      .from("labels")
+      .insert({
+        name: createValues.name.trim(),
+        colour: createValues.colour,
+        sort_order: getNextLabelSortOrder(labels),
+        active: true,
+        scope: "global",
+        created_by: null,
+        updated_at: new Date().toISOString(),
+      })
+      .select("id")
+      .single();
 
-    if (insertError) {
-      setError(insertError.message);
+    if (insertError || !createdLabel) {
+      setError(insertError?.message ?? "Could not create label.");
+      setLoading(false);
+      return;
+    }
+
+    const linksError = await syncLabelCategoryLinks(
+      supabase,
+      createdLabel.id,
+      createCategoryIds,
+    );
+
+    if (linksError) {
+      setError(linksError.message);
       setLoading(false);
       return;
     }
 
     setCreateValues(createEmptyLabelFormValues());
+    setCreateCategoryIds([]);
     setLoading(false);
     router.refresh();
   }
@@ -130,12 +166,14 @@ export function LabelAdminPanel({ labels }: LabelAdminPanelProps) {
   function startEditing(label: Label) {
     setEditingId(label.id);
     setEditValues(toFormValues(label));
+    setEditCategoryIds([...(categoryIdsByLabelId[label.id] ?? [])]);
     setError(null);
   }
 
   function cancelEditing() {
     setEditingId(null);
     setEditValues(null);
+    setEditCategoryIds([]);
     setError(null);
   }
 
@@ -168,6 +206,18 @@ export function LabelAdminPanel({ labels }: LabelAdminPanelProps) {
 
     if (updateError) {
       setError(updateError.message);
+      setLoading(false);
+      return;
+    }
+
+    const linksError = await syncLabelCategoryLinks(
+      supabase,
+      editingId,
+      editCategoryIds,
+    );
+
+    if (linksError) {
+      setError(linksError.message);
       setLoading(false);
       return;
     }
@@ -281,19 +331,26 @@ export function LabelAdminPanel({ labels }: LabelAdminPanelProps) {
 
   function renderLabelRow(label: Label) {
     const isEditing = editingId === label.id;
+    const linkedCategoryIds = categoryIdsByLabelId[label.id] ?? [];
 
     if (isEditing && editValues) {
       return (
-        <li
-          key={label.id}
-          className={adminEditCardClassName}
-        >
+        <li key={label.id} className={adminEditCardClassName}>
           <form onSubmit={handleSaveEdit} className="space-y-4">
-            <h3 className="text-sm font-semibold text-stone-900 dark:text-stone-100">Edit label</h3>
+            <h3 className="text-sm font-semibold text-stone-900 dark:text-stone-100">
+              Edit label
+            </h3>
             <LabelFormFields
               idPrefix={`edit-${label.id}`}
               values={editValues}
               onChange={setEditValues}
+            />
+            <LabelCategoryLinkFields
+              idPrefix={`edit-${label.id}`}
+              categories={categories}
+              value={editCategoryIds}
+              onChange={setEditCategoryIds}
+              disabled={loading}
             />
             <div className="flex flex-wrap gap-2">
               <button
@@ -343,8 +400,13 @@ export function LabelAdminPanel({ labels }: LabelAdminPanelProps) {
               >
                 {label.name}
               </span>
+              <p className="mt-2 text-xs text-stone-500 dark:text-stone-400">
+                {getLinkedCategorySummary(linkedCategoryIds, categoryLookup)}
+              </p>
               {!label.active ? (
-                <p className="mt-2 text-xs text-stone-500 dark:text-stone-400">Archived</p>
+                <p className="mt-1 text-xs text-stone-500 dark:text-stone-400">
+                  Archived
+                </p>
               ) : null}
             </div>
             <div className="flex shrink-0 flex-wrap items-center gap-2">
@@ -385,11 +447,12 @@ export function LabelAdminPanel({ labels }: LabelAdminPanelProps) {
   return (
     <div className="space-y-8">
       <section className={adminSectionClassName}>
-        <h2 className="text-lg font-semibold text-stone-900 dark:text-stone-100">Create global label</h2>
+        <h2 className="text-lg font-semibold text-stone-900 dark:text-stone-100">
+          Create global label
+        </h2>
         <p className="mt-1 text-sm text-stone-500 dark:text-stone-400">
-          Add a shared marker such as Urgent, Waiting, or Follow Up. Global
-          labels are visible to all users. New labels are appended to the custom
-          order automatically.
+          Add a shared marker such as Urgent, Waiting, or Follow Up. Link it to
+          categories now; task pickers will use those links in a later update.
         </p>
 
         <form onSubmit={handleCreate} className="mt-4 space-y-4">
@@ -398,11 +461,16 @@ export function LabelAdminPanel({ labels }: LabelAdminPanelProps) {
             values={createValues}
             onChange={setCreateValues}
           />
+          <LabelCategoryLinkFields
+            idPrefix="create"
+            categories={categories}
+            value={createCategoryIds}
+            onChange={setCreateCategoryIds}
+            disabled={loading}
+          />
 
-          {error ? (
-            <p className={adminErrorBannerClassName}>
-              {error}
-            </p>
+          {error && !editingId ? (
+            <p className={adminErrorBannerClassName}>{error}</p>
           ) : null}
 
           <button
@@ -418,10 +486,12 @@ export function LabelAdminPanel({ labels }: LabelAdminPanelProps) {
       <section className={adminSectionClassName}>
         <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div>
-            <h2 className="text-lg font-semibold text-stone-900 dark:text-stone-100">Global labels</h2>
+            <h2 className="text-lg font-semibold text-stone-900 dark:text-stone-100">
+              Global labels
+            </h2>
             <p className="mt-1 text-sm text-stone-500 dark:text-stone-400">
-              Manage shared labels for all users. Personal labels are created
-              from the task form and are not shown here.
+              Manage shared labels and which categories they belong to. Personal
+              labels are not shown here.
             </p>
           </div>
           <div className="flex flex-wrap gap-2">
@@ -448,8 +518,14 @@ export function LabelAdminPanel({ labels }: LabelAdminPanelProps) {
           </div>
         </div>
 
+        {error && editingId ? (
+          <p className={`mt-4 ${adminErrorBannerClassName}`}>{error}</p>
+        ) : null}
+
         {labels.length === 0 ? (
-          <p className="mt-4 text-sm text-stone-500 dark:text-stone-400">No labels yet.</p>
+          <p className="mt-4 text-sm text-stone-500 dark:text-stone-400">
+            No labels yet.
+          </p>
         ) : (
           <ul className="mt-4 space-y-3">
             {sortedLabels.map((label) => renderLabelRow(label))}
