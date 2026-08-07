@@ -2,6 +2,11 @@
 
 import { AddTaskForm } from "@/components/tasks/add-task-form";
 import type { Category } from "@/lib/categories/types";
+import {
+  groupCategoryIdsByLabel,
+  LABEL_CATEGORY_LINK_FIELDS,
+  type LabelCategoryLink,
+} from "@/lib/labels/category-links";
 import { LABEL_SELECT_FIELDS, type Label } from "@/lib/labels/types";
 import { createClient } from "@/lib/supabase/client";
 import { Plus, X } from "lucide-react";
@@ -11,6 +16,9 @@ export function QuickAddTaskLauncher() {
   const [open, setOpen] = useState(false);
   const [categories, setCategories] = useState<Category[]>([]);
   const [labels, setLabels] = useState<Label[]>([]);
+  const [categoryIdsByLabelId, setCategoryIdsByLabelId] = useState<
+    Record<string, string[]>
+  >({});
   const [loading, setLoading] = useState(false);
   const [fetchError, setFetchError] = useState<string | null>(null);
   const [loaded, setLoaded] = useState(false);
@@ -27,6 +35,7 @@ export function QuickAddTaskLauncher() {
     const [
       { data: categoryRows, error: categoriesError },
       { data: labelRows, error: labelsError },
+      { data: linkRows, error: linksError },
     ] = await Promise.all([
       supabase
         .from("categories")
@@ -43,12 +52,14 @@ export function QuickAddTaskLauncher() {
         .order("scope", { ascending: true })
         .order("sort_order", { ascending: true })
         .order("name", { ascending: true }),
+      supabase.from("label_categories").select(LABEL_CATEGORY_LINK_FIELDS),
     ]);
 
-    if (categoriesError || labelsError) {
+    if (categoriesError || labelsError || linksError) {
       setFetchError(
         categoriesError?.message ??
           labelsError?.message ??
+          linksError?.message ??
           "Could not load form data.",
       );
       setLoading(false);
@@ -57,6 +68,9 @@ export function QuickAddTaskLauncher() {
 
     setCategories((categoryRows ?? []) as Category[]);
     setLabels((labelRows ?? []) as Label[]);
+    setCategoryIdsByLabelId(
+      groupCategoryIdsByLabel((linkRows ?? []) as LabelCategoryLink[]),
+    );
     setLoaded(true);
     setLoading(false);
   }, [loaded]);
@@ -137,6 +151,7 @@ export function QuickAddTaskLauncher() {
               <AddTaskForm
                 categories={categories}
                 labels={labels}
+                categoryIdsByLabelId={categoryIdsByLabelId}
                 showHeading={false}
                 embedded
                 onSuccess={() => setOpen(false)}

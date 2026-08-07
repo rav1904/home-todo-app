@@ -39,6 +39,7 @@ type CalendarClientShellProps = {
   modalTasksById: Record<string, CalendarModalTask>;
   categories: Category[];
   labels: Label[];
+  categoryIdsByLabelId: Record<string, string[]>;
 };
 
 export function CalendarClientShell({
@@ -55,6 +56,7 @@ export function CalendarClientShell({
   modalTasksById,
   categories,
   labels,
+  categoryIdsByLabelId,
 }: CalendarClientShellProps) {
   const [selectedTaskId, setSelectedTaskId] = useState<string | null>(null);
   const selectedTask = selectedTaskId ? modalTasksById[selectedTaskId] : null;
@@ -110,6 +112,7 @@ export function CalendarClientShell({
           task={selectedTask}
           categories={categories}
           labels={labels}
+          categoryIdsByLabelId={categoryIdsByLabelId}
           onClose={() => setSelectedTaskId(null)}
         />
       ) : null}

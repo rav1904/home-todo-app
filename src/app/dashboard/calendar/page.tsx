@@ -72,11 +72,13 @@ export default async function CalendarPage({ searchParams }: CalendarPageProps) 
     error,
     categoriesError,
     labelsError,
+    labelCategoryLinksError,
     taskLabelsError,
     historyError,
     subtasksError,
     categories,
     labels,
+    categoryIdsByLabelId,
   } = await fetchCalendarPageData(supabase, fetchOptions);
 
   const tasksByDay = groupCalendarTasksByDay(calendarTasks);
@@ -108,6 +110,12 @@ export default async function CalendarPage({ searchParams }: CalendarPageProps) 
         {labelsError ? (
           <div className="rounded-2xl border border-amber-200 bg-amber-50 p-6 text-sm text-amber-800 dark:border-amber-900/50 dark:bg-amber-950/40 dark:text-amber-300">
             Could not load labels: {labelsError}
+          </div>
+        ) : null}
+
+        {labelCategoryLinksError ? (
+          <div className="rounded-2xl border border-amber-200 bg-amber-50 p-6 text-sm text-amber-800 dark:border-amber-900/50 dark:bg-amber-950/40 dark:text-amber-300">
+            Could not load label category links: {labelCategoryLinksError}
           </div>
         ) : null}
 
@@ -144,6 +152,7 @@ export default async function CalendarPage({ searchParams }: CalendarPageProps) 
             modalTasksById={modalTasksById}
             categories={categories}
             labels={labels}
+            categoryIdsByLabelId={categoryIdsByLabelId}
           />
         ) : null}
 

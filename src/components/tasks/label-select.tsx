@@ -2,6 +2,12 @@
 
 import { LabelBadges } from "@/components/tasks/label-badges";
 import { CATEGORY_COLOUR_PRESETS } from "@/lib/categories/colours";
+import { buildCategoryLookup } from "@/lib/categories/tree";
+import type { Category } from "@/lib/categories/types";
+import {
+  getRelevantCategoryIdsForLabelPicker,
+  isGlobalLabelLinkedToCategories,
+} from "@/lib/labels/category-links";
 import {
   findPersonalLabelByName,
   groupLabelsForPicker,
@@ -16,6 +22,9 @@ import { useMemo, useState } from "react";
 type LabelSelectProps = {
   id: string;
   labels: Label[];
+  categories: Category[];
+  categoryId: string | null;
+  categoryIdsByLabelId: Record<string, string[]>;
   value: string[];
   onChange: (labelIds: string[]) => void;
   onLabelCreated?: (label: Label) => void;
@@ -32,6 +41,9 @@ function toggleLabelId(selectedIds: string[], labelId: string) {
 export function LabelSelect({
   id,
   labels,
+  categories,
+  categoryId,
+  categoryIdsByLabelId,
   value,
   onChange,
   onLabelCreated,
@@ -52,6 +64,16 @@ export function LabelSelect({
     setCreateError(null);
   }
 
+  const categoryLookup = useMemo(
+    () => buildCategoryLookup(categories),
+    [categories],
+  );
+
+  const relevantCategoryIds = useMemo(
+    () => getRelevantCategoryIdsForLabelPicker(categoryId, categoryLookup),
+    [categoryId, categoryLookup],
+  );
+
   const availableLabels = useMemo(() => {
     const merged = new Map<string, Label>();
 
@@ -62,9 +84,21 @@ export function LabelSelect({
     return [...merged.values()];
   }, [labels, localLabels]);
 
-  const { global, personal } = useMemo(
+  const { global: allGlobal, personal } = useMemo(
     () => groupLabelsForPicker(availableLabels),
     [availableLabels],
+  );
+
+  const global = useMemo(
+    () =>
+      allGlobal.filter((label) =>
+        isGlobalLabelLinkedToCategories(
+          label.id,
+          relevantCategoryIds,
+          categoryIdsByLabelId,
+        ),
+      ),
+    [allGlobal, categoryIdsByLabelId, relevantCategoryIds],
   );
 
   const selectedLabels = useMemo(
@@ -165,7 +199,7 @@ export function LabelSelect({
         onClick={() => onChange(toggleLabelId(value, label.id))}
         className={`cursor-pointer rounded-full px-2.5 py-1 text-xs font-medium transition ${
           isSelected
-            ? "text-white ring-2 ring-stone-900 ring-offset-1"
+            ? "text-white ring-2 ring-stone-900 ring-offset-1 dark:ring-stone-100 dark:ring-offset-stone-900"
             : "text-white opacity-80 hover:opacity-100"
         }`}
         style={{ backgroundColor: label.colour }}
@@ -197,6 +231,13 @@ export function LabelSelect({
           </button>
         ) : null}
       </div>
+
+      {!categoryId ? (
+        <p className="mb-3 text-sm text-stone-500 dark:text-stone-400">
+          Select a category to see relevant global labels. Personal labels are
+          always available.
+        </p>
+      ) : null}
 
       {selectedLabels.length > 0 ? (
         <div className="mb-3 rounded-xl border border-stone-200 bg-stone-50 p-3 dark:border-stone-700 dark:bg-stone-800/50">
@@ -230,6 +271,10 @@ export function LabelSelect({
           </p>
           <div className="flex flex-wrap gap-1.5">{global.map(renderLabelChip)}</div>
         </div>
+      ) : categoryId && personal.length > 0 ? (
+        <p className="mb-3 text-sm text-stone-500 dark:text-stone-400">
+          No shared labels are linked to this category yet.
+        </p>
       ) : null}
 
       {personal.length > 0 ? (
@@ -246,10 +291,17 @@ export function LabelSelect({
         </div>
       ) : null}
 
-      {global.length === 0 && personal.length === 0 ? (
+      {categoryId && global.length === 0 && personal.length === 0 ? (
         <p className="mb-3 text-sm text-stone-500 dark:text-stone-400">
-          No labels yet. Create a personal label or ask an admin to add shared
-          labels.
+          No labels yet. Create a personal label or ask an admin to link shared
+          labels to this category.
+        </p>
+      ) : null}
+
+      {!categoryId && personal.length === 0 ? (
+        <p className="mb-3 text-sm text-stone-500 dark:text-stone-400">
+          No personal labels yet. Create one above, or select a category to see
+          shared labels.
         </p>
       ) : null}
 

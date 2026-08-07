@@ -15,6 +15,7 @@ import { useMemo, useState } from "react";
 type AddTaskFormProps = {
   categories: Category[];
   labels: Label[];
+  categoryIdsByLabelId?: Record<string, string[]>;
   showHeading?: boolean;
   embedded?: boolean;
   onSuccess?: () => void;
@@ -23,6 +24,7 @@ type AddTaskFormProps = {
 export function AddTaskForm({
   categories,
   labels,
+  categoryIdsByLabelId = {},
   showHeading = true,
   embedded = false,
   onSuccess,
@@ -184,6 +186,9 @@ export function AddTaskForm({
         <LabelSelect
           id="task-labels"
           labels={availableLabels}
+          categories={categories}
+          categoryId={categoryId}
+          categoryIdsByLabelId={categoryIdsByLabelId}
           value={labelIds}
           onChange={setLabelIds}
           onLabelCreated={(label) =>

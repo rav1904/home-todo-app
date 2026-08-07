@@ -46,6 +46,7 @@ type TaskListItemProps = {
   categoryUnavailable: boolean;
   categories: Category[];
   labels: Label[];
+  categoryIdsByLabelId?: Record<string, string[]>;
   labelIds: string[];
   taskLabels: TaskLabelDisplay;
   dueDateHistory: DueDateHistoryCounts;
@@ -105,6 +106,7 @@ export function TaskListItem({
   categoryUnavailable,
   categories,
   labels,
+  categoryIdsByLabelId = {},
   labelIds,
   taskLabels,
   dueDateHistory,
@@ -307,6 +309,9 @@ export function TaskListItem({
           <LabelSelect
             id={`edit-labels-${id}`}
             labels={availableLabels}
+            categories={categories}
+            categoryId={editCategoryId}
+            categoryIdsByLabelId={categoryIdsByLabelId}
             value={editLabelIds}
             onChange={setEditLabelIds}
             onLabelCreated={(label) =>

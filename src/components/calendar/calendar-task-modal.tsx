@@ -11,6 +11,7 @@ type CalendarTaskModalProps = {
   task: CalendarModalTask;
   categories: Category[];
   labels: Label[];
+  categoryIdsByLabelId?: Record<string, string[]>;
   onClose: () => void;
 };
 
@@ -18,6 +19,7 @@ export function CalendarTaskModal({
   task,
   categories,
   labels,
+  categoryIdsByLabelId = {},
   onClose,
 }: CalendarTaskModalProps) {
   useEffect(() => {
@@ -74,6 +76,7 @@ export function CalendarTaskModal({
           categoryUnavailable={task.categoryUnavailable}
           categories={categories}
           labels={labels}
+          categoryIdsByLabelId={categoryIdsByLabelId}
           labelIds={task.labelIds}
           taskLabels={task.taskLabels}
           dueDateHistory={task.dueDateHistory}

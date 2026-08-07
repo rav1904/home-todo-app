@@ -7,6 +7,11 @@ import {
   buildLabelLookup,
   resolveTaskLabelDisplay,
 } from "@/lib/labels/display";
+import {
+  groupCategoryIdsByLabel,
+  LABEL_CATEGORY_LINK_FIELDS,
+  type LabelCategoryLink,
+} from "@/lib/labels/category-links";
 import { LABEL_SELECT_FIELDS, type Label } from "@/lib/labels/types";
 import type { CalendarModalTask, CalendarTask } from "@/lib/tasks/calendar";
 import { aggregateDueDateHistoryCounts } from "@/lib/tasks/due-date-change";
@@ -35,11 +40,13 @@ export type CalendarFetchResult = {
   error: string | null;
   categoriesError: string | null;
   labelsError: string | null;
+  labelCategoryLinksError: string | null;
   taskLabelsError: string | null;
   historyError: string | null;
   subtasksError: string | null;
   categories: Category[];
   labels: Label[];
+  categoryIdsByLabelId: Record<string, string[]>;
 };
 
 type FetchCalendarPageDataOptions =
@@ -69,6 +76,7 @@ export async function fetchCalendarPageData(
     { data: tasks, error },
     { data: categories, error: categoriesError },
     { data: labels, error: labelsError },
+    { data: labelCategoryLinks, error: labelCategoryLinksError },
   ] = await Promise.all([
     tasksQuery,
     supabase
@@ -86,10 +94,14 @@ export async function fetchCalendarPageData(
       .order("scope", { ascending: true })
       .order("sort_order", { ascending: true })
       .order("name", { ascending: true }),
+    supabase.from("label_categories").select(LABEL_CATEGORY_LINK_FIELDS),
   ]);
 
   const activeCategories = (categories ?? []) as Category[];
   const activeLabels = (labels ?? []) as Label[];
+  const categoryIdsByLabelId = groupCategoryIdsByLabel(
+    (labelCategoryLinks ?? []) as LabelCategoryLink[],
+  );
   const categoryLookup = buildCategoryLookup(activeCategories);
   const labelLookup = buildLabelLookup(activeLabels);
 
@@ -195,10 +207,12 @@ export async function fetchCalendarPageData(
     error: error?.message ?? null,
     categoriesError: categoriesError?.message ?? null,
     labelsError: labelsError?.message ?? null,
+    labelCategoryLinksError: labelCategoryLinksError?.message ?? null,
     taskLabelsError,
     historyError,
     subtasksError,
     categories: activeCategories,
     labels: activeLabels,
+    categoryIdsByLabelId,
   };
 }

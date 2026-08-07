@@ -61,6 +61,42 @@ export function getLinkedCategorySummary(
   return `${names.slice(0, 2).join(", ")} +${names.length - 2} more`;
 }
 
+/** Category ids whose linked global labels should appear in the task picker. */
+export function getRelevantCategoryIdsForLabelPicker(
+  categoryId: string | null,
+  categoryLookup: Map<string, Category>,
+): string[] {
+  if (!categoryId) {
+    return [];
+  }
+
+  const category = categoryLookup.get(categoryId);
+  if (!category) {
+    return [];
+  }
+
+  if (category.parent_id) {
+    return [category.id, category.parent_id];
+  }
+
+  return [category.id];
+}
+
+export function isGlobalLabelLinkedToCategories(
+  labelId: string,
+  relevantCategoryIds: string[],
+  categoryIdsByLabelId: Record<string, string[]>,
+) {
+  if (relevantCategoryIds.length === 0) {
+    return false;
+  }
+
+  const linkedCategoryIds = categoryIdsByLabelId[labelId] ?? [];
+  return linkedCategoryIds.some((categoryId) =>
+    relevantCategoryIds.includes(categoryId),
+  );
+}
+
 export async function syncLabelCategoryLinks(
   supabase: SupabaseClient,
   labelId: string,

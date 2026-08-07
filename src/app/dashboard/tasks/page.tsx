@@ -16,6 +16,11 @@ import {
   buildLabelLookup,
   resolveTaskLabelDisplay,
 } from "@/lib/labels/display";
+import {
+  groupCategoryIdsByLabel,
+  LABEL_CATEGORY_LINK_FIELDS,
+  type LabelCategoryLink,
+} from "@/lib/labels/category-links";
 import { filterTasksByLabel, parseLabelFilterParam } from "@/lib/labels/filter";
 import { LABEL_SELECT_FIELDS, type Label } from "@/lib/labels/types";
 import {
@@ -63,6 +68,7 @@ export default async function TasksPage({ searchParams }: TasksPageProps) {
     { data: tasks, error },
     { data: categories, error: categoriesError },
     { data: labels, error: labelsError },
+    { data: labelCategoryLinks, error: labelCategoryLinksError },
   ] = await Promise.all([
     supabase
       .from("tasks")
@@ -83,10 +89,14 @@ export default async function TasksPage({ searchParams }: TasksPageProps) {
       .order("scope", { ascending: true })
       .order("sort_order", { ascending: true })
       .order("name", { ascending: true }),
+    supabase.from("label_categories").select(LABEL_CATEGORY_LINK_FIELDS),
   ]);
 
   const activeCategories = (categories ?? []) as Category[];
   const activeLabels = (labels ?? []) as Label[];
+  const categoryIdsByLabelId = groupCategoryIdsByLabel(
+    (labelCategoryLinks ?? []) as LabelCategoryLink[],
+  );
   const labelLookup = buildLabelLookup(activeLabels);
   const categoryLookup = buildCategoryLookup(activeCategories);
   const { subsByParent } = buildCategoryTree(activeCategories);
@@ -191,11 +201,22 @@ export default async function TasksPage({ searchParams }: TasksPageProps) {
         email={user?.email}
       />
       <div className="flex-1 space-y-6 overflow-auto p-8">
-        <AddTaskForm categories={activeCategories} labels={activeLabels} />
+        <AddTaskForm
+          categories={activeCategories}
+          labels={activeLabels}
+          categoryIdsByLabelId={categoryIdsByLabelId}
+        />
 
         {labelsError ? (
           <div className="rounded-2xl border border-amber-200 bg-amber-50 p-6 text-sm text-amber-800">
             Could not load labels: {labelsError.message}
+          </div>
+        ) : null}
+
+        {labelCategoryLinksError ? (
+          <div className="rounded-2xl border border-amber-200 bg-amber-50 p-6 text-sm text-amber-800">
+            Could not load label category links:{" "}
+            {labelCategoryLinksError.message}
           </div>
         ) : null}
 
@@ -278,6 +299,7 @@ export default async function TasksPage({ searchParams }: TasksPageProps) {
                   categoryUnavailable={categoryUnavailable}
                   categories={activeCategories}
                   labels={activeLabels}
+                  categoryIdsByLabelId={categoryIdsByLabelId}
                   labelIds={taskLabelIds}
                   taskLabels={taskLabelDisplay}
                   dueDateHistory={dueDateHistory}
