@@ -16,7 +16,12 @@ import { getNextLabelSortOrder } from "@/lib/labels/sort";
 import type { Label } from "@/lib/labels/types";
 import { validateLabelFormValues } from "@/lib/labels/validation";
 import { createClient } from "@/lib/supabase/client";
-import { fieldClassName } from "@/lib/ui/field-classes";
+import {
+  compactFieldClassName,
+  formLabelClassName,
+  formPrimaryButtonClassName,
+  formSecondaryButtonClassName,
+} from "@/lib/ui/field-classes";
 import { useMemo, useState } from "react";
 
 type LabelSelectProps = {
@@ -210,12 +215,13 @@ export function LabelSelect({
   }
 
   return (
-    <div>
-      <div className="mb-1.5 flex items-center justify-between gap-2">
-        <p className="text-sm font-medium text-stone-700 dark:text-stone-300">
-          Labels{" "}
+    <div className="space-y-2.5">
+      <div className="flex items-center justify-between gap-2">
+        <p className={formLabelClassName}>
+          Labels
           <span className="font-normal text-stone-400 dark:text-stone-500">
-            (optional)
+            {" "}
+            · optional
           </span>
         </p>
         {!showCreateForm ? (
@@ -225,65 +231,53 @@ export function LabelSelect({
               setShowCreateForm(true);
               setCreateError(null);
             }}
-            className="cursor-pointer text-sm font-medium text-emerald-700 transition hover:text-emerald-800 dark:text-emerald-400 dark:hover:text-emerald-300"
+            className="cursor-pointer text-xs font-medium text-emerald-700 transition hover:text-emerald-800 dark:text-emerald-400 dark:hover:text-emerald-300"
           >
-            + New personal label
+            + New
           </button>
         ) : null}
       </div>
 
       {!categoryId ? (
-        <p className="mb-3 text-sm text-stone-500 dark:text-stone-400">
-          Select a category to see relevant global labels. Personal labels are
-          always available.
+        <p className="text-xs text-stone-500 dark:text-stone-400">
+          Pick a category for shared labels. Personal labels always show.
         </p>
       ) : null}
 
       {selectedLabels.length > 0 ? (
-        <div className="mb-3 rounded-xl border border-stone-200 bg-stone-50 p-3 dark:border-stone-700 dark:bg-stone-800/50">
-          <div className="mb-2 flex items-center justify-between gap-2">
-            <p className="text-xs font-medium uppercase tracking-wide text-stone-500 dark:text-stone-400">
-              Selected for this task
-            </p>
-            <button
-              type="button"
-              onClick={() => onChange([])}
-              className="cursor-pointer text-xs font-medium text-stone-600 transition hover:text-stone-900 dark:text-stone-400 dark:hover:text-stone-100"
-            >
-              Clear all
-            </button>
-          </div>
+        <div className="flex flex-wrap items-center gap-1.5">
           <LabelBadges
             labels={selectedLabels}
             removable
             onRemove={removeLabel}
           />
+          <button
+            type="button"
+            onClick={() => onChange([])}
+            className="cursor-pointer text-xs text-stone-500 transition hover:text-stone-800 dark:text-stone-400 dark:hover:text-stone-200"
+          >
+            Clear
+          </button>
         </div>
       ) : null}
 
       {global.length > 0 ? (
-        <div className="mb-3">
-          <p className="mb-2 text-xs font-medium uppercase tracking-wide text-stone-500 dark:text-stone-400">
-            Shared labels
-          </p>
-          <p className="mb-2 text-xs text-stone-500 dark:text-stone-400">
-            Click to add or remove from this task.
+        <div>
+          <p className="mb-1.5 text-[11px] font-medium uppercase tracking-wide text-stone-400 dark:text-stone-500">
+            Shared
           </p>
           <div className="flex flex-wrap gap-1.5">{global.map(renderLabelChip)}</div>
         </div>
       ) : categoryId && personal.length > 0 ? (
-        <p className="mb-3 text-sm text-stone-500 dark:text-stone-400">
-          No shared labels are linked to this category yet.
+        <p className="text-xs text-stone-500 dark:text-stone-400">
+          No shared labels linked to this category.
         </p>
       ) : null}
 
       {personal.length > 0 ? (
-        <div className="mb-3">
-          <p className="mb-2 text-xs font-medium uppercase tracking-wide text-stone-500 dark:text-stone-400">
-            My labels
-          </p>
-          <p className="mb-2 text-xs text-stone-500 dark:text-stone-400">
-            Click to add or remove from this task.
+        <div>
+          <p className="mb-1.5 text-[11px] font-medium uppercase tracking-wide text-stone-400 dark:text-stone-500">
+            Personal
           </p>
           <div className="flex flex-wrap gap-1.5">
             {personal.map(renderLabelChip)}
@@ -292,33 +286,28 @@ export function LabelSelect({
       ) : null}
 
       {categoryId && global.length === 0 && personal.length === 0 ? (
-        <p className="mb-3 text-sm text-stone-500 dark:text-stone-400">
-          No labels yet. Create a personal label or ask an admin to link shared
-          labels to this category.
+        <p className="text-xs text-stone-500 dark:text-stone-400">
+          No labels yet. Create a personal one, or ask an admin to link shared
+          labels.
         </p>
       ) : null}
 
       {!categoryId && personal.length === 0 ? (
-        <p className="mb-3 text-sm text-stone-500 dark:text-stone-400">
-          No personal labels yet. Create one above, or select a category to see
-          shared labels.
+        <p className="text-xs text-stone-500 dark:text-stone-400">
+          No personal labels yet.
         </p>
       ) : null}
 
       {showCreateForm ? (
-        <div className="rounded-xl border border-stone-200 bg-stone-50 p-4 dark:border-stone-700 dark:bg-stone-800/50">
+        <div className="rounded-lg border border-stone-200 bg-stone-50/80 p-3 dark:border-stone-700 dark:bg-stone-800/40">
           <p className="text-sm font-medium text-stone-900 dark:text-stone-100">
             New personal label
           </p>
-          <p className="mt-1 text-xs text-stone-500 dark:text-stone-400">
-            Only you can see and use personal labels.
-          </p>
-
-          <div className="mt-3 space-y-3">
+          <div className="mt-2 space-y-2.5">
             <div>
               <label
                 htmlFor={`${id}-new-label-name`}
-                className="mb-1.5 block text-sm font-medium text-stone-700 dark:text-stone-300"
+                className={formLabelClassName}
               >
                 Name
               </label>
@@ -334,16 +323,14 @@ export function LabelSelect({
                     void handleCreatePersonalLabel();
                   }
                 }}
-                className={fieldClassName}
+                className={compactFieldClassName}
                 placeholder="e.g. Quick win"
               />
             </div>
 
             <div>
-              <p className="mb-2 text-sm font-medium text-stone-700 dark:text-stone-300">
-                Colour
-              </p>
-              <div className="flex flex-wrap gap-2">
+              <p className={formLabelClassName}>Colour</p>
+              <div className="flex flex-wrap gap-1.5">
                 {CATEGORY_COLOUR_PRESETS.map((preset) => {
                   const isSelected = newColour === preset.value;
 
@@ -354,7 +341,7 @@ export function LabelSelect({
                       aria-label={`Select ${preset.label} colour`}
                       aria-pressed={isSelected}
                       onClick={() => setNewColour(preset.value)}
-                      className={`h-8 w-8 rounded-full border-2 transition ${
+                      className={`h-7 w-7 rounded-full border-2 transition ${
                         isSelected
                           ? "border-stone-900 dark:border-stone-100"
                           : "border-transparent"
@@ -368,17 +355,17 @@ export function LabelSelect({
           </div>
 
           {createError ? (
-            <p className="mt-3 rounded-xl bg-red-50 px-3 py-2 text-sm text-red-700 dark:bg-red-950/40 dark:text-red-300">
+            <p className="mt-2 rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700 dark:bg-red-950/40 dark:text-red-300">
               {createError}
             </p>
           ) : null}
 
-          <div className="mt-3 flex flex-wrap gap-2">
+          <div className="mt-2.5 flex flex-wrap gap-2">
             <button
               type="button"
               disabled={creating}
               onClick={cancelCreatePersonalLabel}
-              className="cursor-pointer rounded-xl border border-stone-200 bg-white px-4 py-2 text-sm font-medium text-stone-700 transition hover:bg-stone-50 disabled:cursor-not-allowed disabled:opacity-60 dark:border-stone-600 dark:bg-stone-800 dark:text-stone-200 dark:hover:bg-stone-700"
+              className={formSecondaryButtonClassName}
             >
               Cancel
             </button>
@@ -386,7 +373,7 @@ export function LabelSelect({
               type="button"
               disabled={creating}
               onClick={() => void handleCreatePersonalLabel()}
-              className="cursor-pointer rounded-xl bg-emerald-600 px-4 py-2 text-sm font-medium text-white transition hover:bg-emerald-700 disabled:cursor-not-allowed disabled:opacity-60"
+              className={formPrimaryButtonClassName}
             >
               {creating ? "Creating..." : "Create and select"}
             </button>

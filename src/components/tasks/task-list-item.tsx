@@ -17,6 +17,10 @@ import {
   PrioritySelect,
 } from "@/components/tasks/priority-select";
 import { RecurrenceSelect } from "@/components/tasks/recurrence-select";
+import {
+  TaskFormMoreDetails,
+  TaskFormNotesToggle,
+} from "@/components/tasks/task-form-shared";
 import type { CategoryDisplay } from "@/lib/categories/tree";
 import type { Category } from "@/lib/categories/types";
 import type { TaskLabelDisplay } from "@/lib/labels/display";
@@ -49,7 +53,15 @@ import {
   type ReminderFormState,
 } from "@/lib/tasks/reminder";
 import { isFocusDueOverdue } from "@/lib/tasks/focus";
-import { cardClassName, fieldClassName } from "@/lib/ui/field-classes";
+import {
+  cardClassName,
+  compactFieldClassName,
+  formErrorClassName,
+  formLabelClassName,
+  formPrimaryButtonClassName,
+  formSecondaryButtonClassName,
+  titleFieldClassName,
+} from "@/lib/ui/field-classes";
 import { createClient } from "@/lib/supabase/client";
 import {
   dueAtValuesEqual,
@@ -187,6 +199,10 @@ export function TaskListItem({
   const [editLabelIds, setEditLabelIds] = useState<string[]>(labelIds);
   const [extraLabels, setExtraLabels] = useState<Label[]>([]);
   const [editCompleted, setEditCompleted] = useState(completed);
+  const [notesOpen, setNotesOpen] = useState(Boolean(description?.trim()));
+  const [detailsOpen, setDetailsOpen] = useState(
+    Boolean(categoryId) || labelIds.length > 0,
+  );
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [checklistOpen, setChecklistOpen] = useState(false);
@@ -206,6 +222,21 @@ export function TaskListItem({
     return editLabelIds.filter((labelId) => allowedIds.has(labelId));
   }, [availableLabels, editLabelIds]);
 
+  const editDetailsSummary = useMemo(() => {
+    const parts: string[] = [];
+    if (editCategoryId) {
+      parts.push("category");
+    }
+    if (editLabelIds.length > 0) {
+      parts.push(
+        editLabelIds.length === 1
+          ? "1 label"
+          : `${editLabelIds.length} labels`,
+      );
+    }
+    return parts.join(", ");
+  }, [editCategoryId, editLabelIds.length]);
+
   function startEditing() {
     setEditTitle(title);
     setEditDescription(description ?? "");
@@ -223,6 +254,8 @@ export function TaskListItem({
     setEditLabelIds(labelIds);
     setExtraLabels([]);
     setEditCompleted(completed);
+    setNotesOpen(Boolean(description?.trim()));
+    setDetailsOpen(Boolean(categoryId) || labelIds.length > 0);
     setError(null);
     setIsEditing(true);
   }
@@ -363,78 +396,90 @@ export function TaskListItem({
   if (isEditing) {
     const editContent = (
       <form onSubmit={handleSave} className="space-y-3">
-          <div>
-            <label
-              htmlFor={`edit-title-${id}`}
-              className="mb-1.5 block text-sm font-medium text-stone-700"
-            >
-              Title
-            </label>
-            <input
-              id={`edit-title-${id}`}
-              type="text"
-              required
-              value={editTitle}
-              onChange={(event) => setEditTitle(event.target.value)}
-              className={fieldClassName}
-            />
-          </div>
+        <div>
+          <label htmlFor={`edit-title-${id}`} className="sr-only">
+            Title
+          </label>
+          <input
+            id={`edit-title-${id}`}
+            type="text"
+            required
+            value={editTitle}
+            onChange={(event) => setEditTitle(event.target.value)}
+            className={titleFieldClassName}
+            placeholder="Task title"
+          />
+        </div>
 
+        <TaskFormNotesToggle
+          open={notesOpen || Boolean(editDescription.trim())}
+          onOpen={() => setNotesOpen(true)}
+        >
           <div>
             <label
               htmlFor={`edit-description-${id}`}
-              className="mb-1.5 block text-sm font-medium text-stone-700"
+              className={formLabelClassName}
             >
-              Description{" "}
-              <span className="font-normal text-stone-400">(optional)</span>
+              Notes
+              <span className="font-normal text-stone-400 dark:text-stone-500">
+                {" "}
+                · optional
+              </span>
             </label>
             <textarea
               id={`edit-description-${id}`}
               rows={2}
               value={editDescription}
               onChange={(event) => setEditDescription(event.target.value)}
-              className={`${fieldClassName} resize-none`}
+              className={`${compactFieldClassName} resize-none`}
+              placeholder="Extra details"
             />
           </div>
+        </TaskFormNotesToggle>
 
+        <div className="grid gap-3 sm:grid-cols-2">
           <DueDatetimeFields
             id={`edit-due-at-${id}`}
             value={editDueAt}
             onChange={handleEditDueChange}
-            labelClassName="mb-1.5 block text-sm font-medium text-stone-700"
           />
-
-          <ReminderFields
-            id={`edit-reminder-${id}`}
-            dueLocal={editDueAt}
-            value={editReminder}
-            onChange={setEditReminder}
-            labelClassName="mb-1.5 block text-sm font-medium text-stone-700"
-          />
-
           <PrioritySelect
             id={`edit-priority-${id}`}
             value={editPriority}
             onChange={setEditPriority}
-            labelClassName="mb-1.5 block text-sm font-medium text-stone-700"
           />
-
           <RecurrenceSelect
             id={`edit-recurrence-${id}`}
             value={editRecurrence}
             onChange={setEditRecurrence}
             dueLocal={editDueAt}
-            labelClassName="mb-1.5 block text-sm font-medium text-stone-700"
           />
+          <ReminderFields
+            id={`edit-reminder-${id}`}
+            dueLocal={editDueAt}
+            value={editReminder}
+            onChange={setEditReminder}
+          />
+        </div>
 
+        <TaskFormMoreDetails
+          open={detailsOpen}
+          onToggle={() => setDetailsOpen((open) => !open)}
+          summary={editDetailsSummary}
+        >
           <CategorySelect
             id={`edit-category-${id}`}
             categories={categories}
             value={editCategoryId}
-            onChange={setEditCategoryId}
-            className={fieldClassName}
+            onChange={(next) => {
+              setEditCategoryId(next);
+              if (next) {
+                setDetailsOpen(true);
+              }
+            }}
+            className={compactFieldClassName}
+            compact
           />
-
           <LabelSelect
             id={`edit-labels-${id}`}
             labels={availableLabels}
@@ -442,46 +487,48 @@ export function TaskListItem({
             categoryId={editCategoryId}
             categoryIdsByLabelId={categoryIdsByLabelId}
             value={editLabelIds}
-            onChange={setEditLabelIds}
+            onChange={(next) => {
+              setEditLabelIds(next);
+              if (next.length > 0) {
+                setDetailsOpen(true);
+              }
+            }}
             onLabelCreated={(label) =>
               setExtraLabels((current) => [...current, label])
             }
           />
+        </TaskFormMoreDetails>
 
-          <label className="flex cursor-pointer items-center gap-2 text-sm text-stone-700">
-            <input
-              type="checkbox"
-              checked={editCompleted}
-              onChange={(event) => setEditCompleted(event.target.checked)}
-              className="h-4 w-4 cursor-pointer rounded border-stone-300 text-emerald-600 focus:ring-emerald-500/20"
-            />
-            Mark as completed
-          </label>
+        <label className="flex cursor-pointer items-center gap-2 text-sm text-stone-700 dark:text-stone-300">
+          <input
+            type="checkbox"
+            checked={editCompleted}
+            onChange={(event) => setEditCompleted(event.target.checked)}
+            className="h-4 w-4 cursor-pointer rounded border-stone-300 text-emerald-600 focus:ring-emerald-500/20"
+          />
+          Mark as completed
+        </label>
 
-          {error ? (
-            <p className="rounded-xl bg-red-50 px-3 py-2 text-sm text-red-700">
-              {error}
-            </p>
-          ) : null}
+        {error ? <p className={formErrorClassName}>{error}</p> : null}
 
-          <div className="flex flex-wrap gap-2 pt-1">
-            <button
-              type="submit"
-              disabled={loading}
-              className="cursor-pointer rounded-xl bg-emerald-600 px-4 py-2 text-sm font-medium text-white transition hover:bg-emerald-700 disabled:cursor-not-allowed disabled:opacity-60"
-            >
-              {loading ? "Saving..." : "Save"}
-            </button>
-            <button
-              type="button"
-              onClick={cancelEditing}
-              disabled={loading}
-              className="cursor-pointer rounded-xl border border-stone-200 bg-white px-4 py-2 text-sm font-medium text-stone-700 transition hover:bg-stone-50 disabled:cursor-not-allowed disabled:opacity-60"
-            >
-              Cancel
-            </button>
-          </div>
-        </form>
+        <div className="flex flex-wrap gap-2 pt-0.5">
+          <button
+            type="submit"
+            disabled={loading}
+            className={formPrimaryButtonClassName}
+          >
+            {loading ? "Saving..." : "Save"}
+          </button>
+          <button
+            type="button"
+            onClick={cancelEditing}
+            disabled={loading}
+            className={formSecondaryButtonClassName}
+          >
+            Cancel
+          </button>
+        </div>
+      </form>
     );
 
     if (embedded) {

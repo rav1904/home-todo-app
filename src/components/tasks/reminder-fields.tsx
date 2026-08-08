@@ -8,7 +8,10 @@ import {
   type ReminderFormState,
   type ReminderSelectValue,
 } from "@/lib/tasks/reminder";
-import { fieldClassName } from "@/lib/ui/field-classes";
+import {
+  compactFieldClassName,
+  formLabelClassName,
+} from "@/lib/ui/field-classes";
 
 type ReminderFieldsProps = {
   id: string;
@@ -16,6 +19,7 @@ type ReminderFieldsProps = {
   value: ReminderFormState;
   onChange: (value: ReminderFormState) => void;
   labelClassName?: string;
+  className?: string;
 };
 
 export function ReminderFields({
@@ -23,18 +27,20 @@ export function ReminderFields({
   dueLocal,
   value,
   onChange,
-  labelClassName = "mb-1.5 block text-sm font-medium text-stone-700 dark:text-stone-300",
+  labelClassName = formLabelClassName,
+  className = compactFieldClassName,
 }: ReminderFieldsProps) {
   const hasDueDate = Boolean(dueLocal);
   const selectValue = reminderSelectValueFromForm(value);
 
   return (
-    <div className="space-y-3">
+    <div className="space-y-2">
       <div>
         <label htmlFor={id} className={labelClassName}>
-          Reminder{" "}
+          Reminder
           <span className="font-normal text-stone-400 dark:text-stone-500">
-            (optional)
+            {" "}
+            · optional
           </span>
         </label>
         <select
@@ -44,10 +50,10 @@ export function ReminderFields({
             const next = event.target.value as ReminderSelectValue;
             onChange(reminderFormFromSelectValue(next, value));
           }}
-          className={fieldClassName}
+          className={className}
         >
-          <option value="none">No reminder</option>
-          <option value="custom">Custom date/time</option>
+          <option value="none">None</option>
+          <option value="custom">Custom time</option>
           {REMINDER_OFFSET_OPTIONS.map((option) => (
             <option
               key={option.minutes}
@@ -59,9 +65,8 @@ export function ReminderFields({
           ))}
         </select>
         {!hasDueDate ? (
-          <p className="mt-1.5 text-xs text-stone-500 dark:text-stone-400">
-            Select a due date to use reminders before the due date. Custom
-            reminders are always available.
+          <p className="mt-1 text-xs text-stone-500 dark:text-stone-400">
+            Relative reminders need a due date. Custom times always work.
           </p>
         ) : null}
       </div>
@@ -69,7 +74,8 @@ export function ReminderFields({
       {value.mode === "custom" ? (
         <DueDatetimeFields
           id={`${id}-custom`}
-          label="Custom reminder time"
+          label="Custom reminder"
+          optional={false}
           value={value.customLocal}
           onChange={(customLocal) =>
             onChange({
@@ -80,6 +86,7 @@ export function ReminderFields({
             })
           }
           labelClassName={labelClassName}
+          className={className}
         />
       ) : null}
     </div>

@@ -7,7 +7,10 @@ import {
   TASK_RECURRENCE_OPTIONS,
   type TaskRecurrence,
 } from "@/lib/tasks/recurrence";
-import { fieldClassName } from "@/lib/ui/field-classes";
+import {
+  compactFieldClassName,
+  formLabelClassName,
+} from "@/lib/ui/field-classes";
 
 type RecurrenceSelectProps = {
   id: string;
@@ -23,8 +26,8 @@ export function RecurrenceSelect({
   value,
   onChange,
   dueLocal,
-  labelClassName = "mb-1.5 block text-sm font-medium text-stone-700 dark:text-stone-300",
-  className = fieldClassName,
+  labelClassName = formLabelClassName,
+  className = compactFieldClassName,
 }: RecurrenceSelectProps) {
   const hasDueDate = Boolean(dueLocal);
 
@@ -46,12 +49,12 @@ export function RecurrenceSelect({
         ))}
       </select>
       {value !== DEFAULT_TASK_RECURRENCE && !hasDueDate ? (
-        <p className="mt-1.5 text-xs text-amber-700 dark:text-amber-300">
-          Select a due date to use a repeating schedule.
+        <p className="mt-1 text-xs text-amber-700 dark:text-amber-300">
+          A due date is required to repeat.
         </p>
       ) : null}
       {value !== DEFAULT_TASK_RECURRENCE && hasDueDate ? (
-        <p className="mt-1.5 text-xs text-stone-500 dark:text-stone-400">
+        <p className="mt-1 text-xs text-stone-500 dark:text-stone-400">
           {RECURRENCE_NEXT_OCCURRENCE_HINT}
         </p>
       ) : null}

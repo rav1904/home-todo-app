@@ -1,32 +1,42 @@
 "use client";
 
 import { normalizeDatetimeLocalValue } from "@/lib/tasks/due-datetime";
-import { fieldClassName } from "@/lib/ui/field-classes";
+import {
+  compactFieldClassName,
+  formLabelClassName,
+} from "@/lib/ui/field-classes";
 
 type DueDatetimeFieldsProps = {
   id: string;
   value: string;
   onChange: (value: string) => void;
   label?: string;
+  optional?: boolean;
   labelClassName?: string;
+  className?: string;
 };
 
 export function DueDatetimeFields({
   id,
   value,
   onChange,
-  label = "Due date",
-  labelClassName = "mb-1.5 block text-sm font-medium text-stone-700 dark:text-stone-300",
+  label = "Due",
+  optional = true,
+  labelClassName = formLabelClassName,
+  className = compactFieldClassName,
 }: DueDatetimeFieldsProps) {
   const inputValue = value ? normalizeDatetimeLocalValue(value) : "";
 
   return (
     <div>
       <label htmlFor={id} className={labelClassName}>
-        {label}{" "}
-        <span className="font-normal text-stone-400 dark:text-stone-500">
-          (optional)
-        </span>
+        {label}
+        {optional ? (
+          <span className="font-normal text-stone-400 dark:text-stone-500">
+            {" "}
+            · optional
+          </span>
+        ) : null}
       </label>
       <input
         id={id}
@@ -48,7 +58,7 @@ export function DueDatetimeFields({
             onChange(normalized);
           }
         }}
-        className={fieldClassName}
+        className={className}
       />
     </div>
   );

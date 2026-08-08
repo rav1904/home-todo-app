@@ -8,7 +8,7 @@ import {
   resolveCategoryIdForSave,
   splitCategorySelection,
 } from "@/lib/categories/tree";
-import { fieldClassName } from "@/lib/ui/field-classes";
+import { fieldClassName, formLabelClassName } from "@/lib/ui/field-classes";
 
 type CategorySelectProps = {
   id: string;
@@ -17,6 +17,7 @@ type CategorySelectProps = {
   categories: Category[];
   optional?: boolean;
   className?: string;
+  compact?: boolean;
 };
 
 export function CategorySelect({
@@ -26,6 +27,7 @@ export function CategorySelect({
   categories,
   optional = true,
   className,
+  compact = false,
 }: CategorySelectProps) {
   const { mains, subsByParent } = buildCategoryTree(categories);
   const lookup = buildCategoryLookup(categories);
@@ -35,18 +37,18 @@ export function CategorySelect({
     : [];
   const showSubSelect = subcategories.length > 0;
   const selectClassName = className ?? fieldClassName;
+  const labelClass = formLabelClassName;
+  const stackClass = compact ? "space-y-2" : "space-y-3";
 
   return (
-    <div className="space-y-3">
+    <div className={stackClass}>
       <div>
-        <label
-          htmlFor={`${id}-main`}
-          className="mb-1.5 block text-sm font-medium text-stone-700 dark:text-stone-300"
-        >
-          Main category{" "}
+        <label htmlFor={`${id}-main`} className={labelClass}>
+          Category
           {optional ? (
             <span className="font-normal text-stone-400 dark:text-stone-500">
-              (optional)
+              {" "}
+              · optional
             </span>
           ) : null}
         </label>
@@ -70,13 +72,11 @@ export function CategorySelect({
 
       {showSubSelect ? (
         <div>
-          <label
-            htmlFor={`${id}-sub`}
-            className="mb-1.5 block text-sm font-medium text-stone-700 dark:text-stone-300"
-          >
-            Subcategory{" "}
+          <label htmlFor={`${id}-sub`} className={labelClass}>
+            Subcategory
             <span className="font-normal text-stone-400 dark:text-stone-500">
-              (optional)
+              {" "}
+              · optional
             </span>
           </label>
           <select

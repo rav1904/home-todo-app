@@ -8,7 +8,10 @@ import {
   TASK_PRIORITY_OPTIONS,
   type TaskPriority,
 } from "@/lib/tasks/priority";
-import { fieldClassName } from "@/lib/ui/field-classes";
+import {
+  compactFieldClassName,
+  formLabelClassName,
+} from "@/lib/ui/field-classes";
 
 type PrioritySelectProps = {
   id: string;
@@ -22,8 +25,8 @@ export function PrioritySelect({
   id,
   value,
   onChange,
-  labelClassName = "mb-1.5 block text-sm font-medium text-stone-700 dark:text-stone-300",
-  className = fieldClassName,
+  labelClassName = formLabelClassName,
+  className = compactFieldClassName,
 }: PrioritySelectProps) {
   return (
     <div>

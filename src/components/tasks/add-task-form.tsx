@@ -9,6 +9,10 @@ import {
   DEFAULT_TASK_PRIORITY,
   PrioritySelect,
 } from "@/components/tasks/priority-select";
+import {
+  TaskFormMoreDetails,
+  TaskFormNotesToggle,
+} from "@/components/tasks/task-form-shared";
 import type { Category } from "@/lib/categories/types";
 import type { Label } from "@/lib/labels/types";
 import { syncTaskLabels } from "@/lib/labels/sync-task-labels";
@@ -25,7 +29,14 @@ import {
   toReminderDbColumns,
   type ReminderFormState,
 } from "@/lib/tasks/reminder";
-import { cardClassName, fieldClassName } from "@/lib/ui/field-classes";
+import {
+  cardClassName,
+  compactFieldClassName,
+  formErrorClassName,
+  formLabelClassName,
+  formPrimaryButtonClassName,
+  titleFieldClassName,
+} from "@/lib/ui/field-classes";
 import { createClient } from "@/lib/supabase/client";
 import { useRouter } from "next/navigation";
 import { useMemo, useState } from "react";
@@ -50,6 +61,7 @@ export function AddTaskForm({
   const router = useRouter();
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
+  const [notesOpen, setNotesOpen] = useState(false);
   const [dueAt, setDueAt] = useState("");
   const [reminder, setReminder] = useState<ReminderFormState>(
     emptyReminderFormState,
@@ -61,6 +73,7 @@ export function AddTaskForm({
   const [categoryId, setCategoryId] = useState<string | null>(null);
   const [labelIds, setLabelIds] = useState<string[]>([]);
   const [extraLabels, setExtraLabels] = useState<Label[]>([]);
+  const [detailsOpen, setDetailsOpen] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -74,9 +87,29 @@ export function AddTaskForm({
     return [...merged.values()];
   }, [extraLabels, labels]);
 
+  const detailsSummary = useMemo(() => {
+    const parts: string[] = [];
+    if (categoryId) {
+      parts.push("category");
+    }
+    if (labelIds.length > 0) {
+      parts.push(
+        labelIds.length === 1 ? "1 label" : `${labelIds.length} labels`,
+      );
+    }
+    return parts.join(", ");
+  }, [categoryId, labelIds.length]);
+
   function handleDueChange(nextDue: string) {
     setDueAt(nextDue);
     setReminder((current) => syncReminderFormWithDueLocal(nextDue, current));
+  }
+
+  function handleCategoryChange(nextCategoryId: string | null) {
+    setCategoryId(nextCategoryId);
+    if (nextCategoryId) {
+      setDetailsOpen(true);
+    }
   }
 
   async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
@@ -154,6 +187,7 @@ export function AddTaskForm({
 
     setTitle("");
     setDescription("");
+    setNotesOpen(false);
     setDueAt("");
     setReminder(emptyReminderFormState());
     setPriority(DEFAULT_TASK_PRIORITY);
@@ -161,6 +195,7 @@ export function AddTaskForm({
     setCategoryId(null);
     setLabelIds([]);
     setExtraLabels([]);
+    setDetailsOpen(false);
     setLoading(false);
     router.refresh();
     onSuccess?.();
@@ -169,7 +204,7 @@ export function AddTaskForm({
   return (
     <form
       onSubmit={handleSubmit}
-      className={embedded ? "space-y-3" : `${cardClassName} p-5`}
+      className={embedded ? "space-y-3" : `${cardClassName} space-y-3 p-4`}
     >
       {showHeading ? (
         <h2 className="text-sm font-semibold text-stone-900 dark:text-stone-100">
@@ -177,33 +212,32 @@ export function AddTaskForm({
         </h2>
       ) : null}
 
-      <div className={showHeading ? "mt-4 space-y-3" : "space-y-3"}>
-        <div>
-          <label
-            htmlFor="task-title"
-            className="mb-1.5 block text-sm font-medium text-stone-700 dark:text-stone-300"
-          >
-            Title
-          </label>
-          <input
-            id="task-title"
-            type="text"
-            required
-            value={title}
-            onChange={(event) => setTitle(event.target.value)}
-            className={fieldClassName}
-            placeholder="What needs doing?"
-          />
-        </div>
+      <div>
+        <label htmlFor="task-title" className="sr-only">
+          Title
+        </label>
+        <input
+          id="task-title"
+          type="text"
+          required
+          autoFocus={embedded}
+          value={title}
+          onChange={(event) => setTitle(event.target.value)}
+          className={titleFieldClassName}
+          placeholder="What needs doing?"
+        />
+      </div>
 
+      <TaskFormNotesToggle
+        open={notesOpen || Boolean(description.trim())}
+        onOpen={() => setNotesOpen(true)}
+      >
         <div>
-          <label
-            htmlFor="task-description"
-            className="mb-1.5 block text-sm font-medium text-stone-700 dark:text-stone-300"
-          >
-            Description{" "}
+          <label htmlFor="task-description" className={formLabelClassName}>
+            Notes
             <span className="font-normal text-stone-400 dark:text-stone-500">
-              (optional)
+              {" "}
+              · optional
             </span>
           </label>
           <textarea
@@ -211,44 +245,50 @@ export function AddTaskForm({
             rows={2}
             value={description}
             onChange={(event) => setDescription(event.target.value)}
-            className={`${fieldClassName} resize-none`}
+            className={`${compactFieldClassName} resize-none`}
             placeholder="Extra details"
           />
         </div>
+      </TaskFormNotesToggle>
 
+      <div className="grid gap-3 sm:grid-cols-2">
         <DueDatetimeFields
           id="task-due-at"
           value={dueAt}
           onChange={handleDueChange}
         />
-
-        <ReminderFields
-          id="task-reminder"
-          dueLocal={dueAt}
-          value={reminder}
-          onChange={setReminder}
-        />
-
         <PrioritySelect
           id="task-priority"
           value={priority}
           onChange={setPriority}
         />
-
         <RecurrenceSelect
           id="task-recurrence"
           value={recurrence}
           onChange={setRecurrence}
           dueLocal={dueAt}
         />
+        <ReminderFields
+          id="task-reminder"
+          dueLocal={dueAt}
+          value={reminder}
+          onChange={setReminder}
+        />
+      </div>
 
+      <TaskFormMoreDetails
+        open={detailsOpen}
+        onToggle={() => setDetailsOpen((open) => !open)}
+        summary={detailsSummary}
+      >
         <CategorySelect
           id="task-category"
           categories={categories}
           value={categoryId}
-          onChange={setCategoryId}
+          onChange={handleCategoryChange}
+          className={compactFieldClassName}
+          compact
         />
-
         <LabelSelect
           id="task-labels"
           labels={availableLabels}
@@ -256,26 +296,29 @@ export function AddTaskForm({
           categoryId={categoryId}
           categoryIdsByLabelId={categoryIdsByLabelId}
           value={labelIds}
-          onChange={setLabelIds}
+          onChange={(next) => {
+            setLabelIds(next);
+            if (next.length > 0) {
+              setDetailsOpen(true);
+            }
+          }}
           onLabelCreated={(label) =>
             setExtraLabels((current) => [...current, label])
           }
         />
+      </TaskFormMoreDetails>
+
+      {error ? <p className={formErrorClassName}>{error}</p> : null}
+
+      <div className="flex flex-wrap gap-2 pt-0.5">
+        <button
+          type="submit"
+          disabled={loading}
+          className={formPrimaryButtonClassName}
+        >
+          {loading ? "Adding..." : "Add task"}
+        </button>
       </div>
-
-      {error ? (
-        <p className="mt-3 rounded-xl bg-red-50 px-3 py-2 text-sm text-red-700 dark:bg-red-950/50 dark:text-red-300">
-          {error}
-        </p>
-      ) : null}
-
-      <button
-        type="submit"
-        disabled={loading}
-        className="mt-4 cursor-pointer rounded-xl bg-emerald-600 px-4 py-2.5 text-sm font-medium text-white transition hover:bg-emerald-700 disabled:cursor-not-allowed disabled:opacity-60"
-      >
-        {loading ? "Adding..." : "Add task"}
-      </button>
     </form>
   );
 }
