@@ -5,6 +5,7 @@ import {
 } from "@/lib/tasks/reminder";
 import { createClient } from "@/lib/supabase/server";
 import Link from "next/link";
+import type { ReactNode } from "react";
 
 type Task = {
   id: string;
@@ -77,24 +78,31 @@ function formatDateTime(value: string) {
 function TaskList({
   tasks,
   emptyMessage,
+  emptyAction,
   showDueDate = false,
   showReminder = false,
   reminderOverdue = false,
 }: {
   tasks: Task[];
   emptyMessage: string;
+  emptyAction?: ReactNode;
   showDueDate?: boolean;
   showReminder?: boolean;
   reminderOverdue?: boolean;
 }) {
   if (tasks.length === 0) {
     return (
-      <p className="text-sm text-stone-500 dark:text-stone-400">{emptyMessage}</p>
+      <div className="py-1">
+        <p className="text-sm text-stone-500 dark:text-stone-400">
+          {emptyMessage}
+        </p>
+        {emptyAction ? <div className="mt-2">{emptyAction}</div> : null}
+      </div>
     );
   }
 
   return (
-    <ul className="space-y-2">
+    <ul className="divide-y divide-stone-100 dark:divide-stone-800">
       {tasks.map((task) => {
         const meta = showReminder
           ? task.reminder_at
@@ -108,13 +116,13 @@ function TaskList({
           <li key={task.id}>
             <Link
               href={`/dashboard/tasks?edit=${task.id}`}
-              className="flex items-start justify-between gap-4 rounded-xl bg-stone-50 px-4 py-3 transition hover:bg-stone-100 dark:bg-stone-900/60 dark:hover:bg-stone-800/80"
+              className="flex items-start justify-between gap-3 py-2.5 transition hover:bg-stone-50/80 dark:hover:bg-stone-800/40"
             >
-              <div className="min-w-0">
+              <div className="min-w-0 px-1">
                 <p
                   className={`text-sm font-medium text-stone-900 dark:text-stone-100 ${
                     task.completed
-                      ? "line-through text-stone-400 dark:text-stone-500"
+                      ? "text-stone-400 line-through dark:text-stone-500"
                       : ""
                   }`}
                 >
@@ -128,7 +136,7 @@ function TaskList({
               </div>
               {meta ? (
                 <span
-                  className={`shrink-0 text-xs ${
+                  className={`shrink-0 pt-0.5 text-xs tabular-nums ${
                     showReminder && reminderOverdue
                       ? "font-medium text-rose-700 dark:text-rose-300"
                       : "text-stone-400 dark:text-stone-500"
@@ -142,6 +150,84 @@ function TaskList({
         );
       })}
     </ul>
+  );
+}
+
+function OverviewPanel({
+  title,
+  description,
+  count,
+  children,
+  href,
+}: {
+  title: string;
+  description: string;
+  count: number;
+  children: ReactNode;
+  href?: string;
+}) {
+  return (
+    <article className="rounded-xl border border-stone-200/80 bg-white p-4 sm:p-5 dark:border-stone-700/80 dark:bg-stone-900">
+      <div className="flex items-start justify-between gap-3">
+        <div className="min-w-0">
+          {href ? (
+            <Link
+              href={href}
+              className="text-base font-semibold text-stone-900 transition hover:text-emerald-700 dark:text-stone-100 dark:hover:text-emerald-300"
+            >
+              {title}
+            </Link>
+          ) : (
+            <h2 className="text-base font-semibold text-stone-900 dark:text-stone-100">
+              {title}
+            </h2>
+          )}
+          <p className="mt-0.5 text-sm text-stone-500 dark:text-stone-400">
+            {description}
+          </p>
+        </div>
+        <span className="shrink-0 rounded-md bg-stone-100 px-2 py-0.5 text-xs font-medium tabular-nums text-stone-600 dark:bg-stone-800 dark:text-stone-300">
+          {count}
+        </span>
+      </div>
+      <div className="mt-3">{children}</div>
+    </article>
+  );
+}
+
+function StatCard({
+  label,
+  value,
+  hint,
+  href,
+  emphasize,
+}: {
+  label: string;
+  value: number;
+  hint: string;
+  href: string;
+  emphasize?: "danger" | "warning";
+}) {
+  const valueClass =
+    emphasize === "danger" && value > 0
+      ? "text-rose-700 dark:text-rose-300"
+      : emphasize === "warning" && value > 0
+        ? "text-amber-800 dark:text-amber-300"
+        : "text-stone-900 dark:text-stone-100";
+
+  return (
+    <Link
+      href={href}
+      className="rounded-xl border border-stone-200/80 bg-white p-4 transition hover:border-stone-300 hover:bg-stone-50/80 dark:border-stone-700/80 dark:bg-stone-900 dark:hover:border-stone-600 dark:hover:bg-stone-800/60"
+    >
+      <p className="text-xs font-medium uppercase tracking-wide text-stone-500 dark:text-stone-400">
+        {label}
+      </p>
+      <p className={`mt-2 text-3xl font-semibold tabular-nums ${valueClass}`}>
+        {value}
+      </p>
+      <p className="mt-1 text-sm text-stone-400 dark:text-stone-500">{hint}</p>
+    </Link>
   );
 }
 
@@ -186,163 +272,178 @@ export default async function DashboardPage() {
   const { dueOrOverdue: remindersDueOrOverdue, upcoming: upcomingReminders } =
     partitionActiveReminders(allTasks, now);
 
-  const stats = [
-    {
-      label: "Open tasks",
-      value: openTasks.length,
-      hint: openTasks.length === 0 ? "All caught up" : "Still to do",
-    },
-    {
-      label: "Due today",
-      value: dueTodayTasks.length,
-      hint:
-        dueTodayTasks.length === 0 ? "Nothing due today" : "Due by end of day",
-    },
-    {
-      label: "Overdue",
-      value: overdueTasks.length,
-      hint: overdueTasks.length === 0 ? "None overdue" : "Needs attention",
-    },
-    {
-      label: "Completed",
-      value: completedTasks.length,
-      hint: "Marked done",
-    },
-  ];
+  const needsAttention =
+    overdueTasks.length +
+      dueTodayTasks.length +
+      remindersDueOrOverdue.length >
+    0;
+
+  const focusLink = (
+    <Link
+      href="/dashboard/focus"
+      className="text-sm font-medium text-emerald-700 transition hover:text-emerald-800 dark:text-emerald-400 dark:hover:text-emerald-300"
+    >
+      Open Focus
+    </Link>
+  );
+
+  const tasksLink = (
+    <Link
+      href="/dashboard/tasks"
+      className="text-sm font-medium text-emerald-700 transition hover:text-emerald-800 dark:text-emerald-400 dark:hover:text-emerald-300"
+    >
+      Go to Tasks
+    </Link>
+  );
 
   return (
     <>
       <DashboardHeader
         title="Overview"
-        description="A quick look at your tasks"
+        description={
+          needsAttention
+            ? "A few things need attention today"
+            : "A calm look at your workspace"
+        }
         email={user?.email}
       />
       <div className="flex-1 overflow-auto p-4 sm:p-6 lg:p-8">
-        <div className="space-y-8">
+        <div className="mx-auto max-w-6xl space-y-6">
           {error ? (
-            <div className="rounded-2xl border border-red-200 bg-red-50 p-6 text-sm text-red-700 dark:border-red-900/50 dark:bg-red-950/40 dark:text-red-300">
+            <div className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700 dark:border-red-900/50 dark:bg-red-950/40 dark:text-red-300">
               Could not load dashboard data: {error.message}
             </div>
           ) : null}
 
-          <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-            {stats.map((stat) => (
-              <article
-                key={stat.label}
-                className="rounded-2xl border border-stone-200 bg-white p-5 shadow-sm dark:border-stone-700 dark:bg-stone-900"
-              >
-                <p className="text-sm font-medium text-stone-500 dark:text-stone-400">
-                  {stat.label}
-                </p>
-                <p className="mt-2 text-3xl font-semibold text-stone-900 dark:text-stone-100">
-                  {stat.value}
-                </p>
-                <p className="mt-1 text-sm text-stone-400 dark:text-stone-500">
-                  {stat.hint}
-                </p>
-              </article>
-            ))}
+          <section className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+            <StatCard
+              label="Open"
+              value={openTasks.length}
+              hint={
+                openTasks.length === 0 ? "All caught up" : "Still to do"
+              }
+              href="/dashboard/tasks?status=open"
+            />
+            <StatCard
+              label="Due today"
+              value={dueTodayTasks.length}
+              hint={
+                dueTodayTasks.length === 0
+                  ? "Nothing due today"
+                  : "Due by end of day"
+              }
+              href="/dashboard/focus"
+              emphasize="warning"
+            />
+            <StatCard
+              label="Overdue"
+              value={overdueTasks.length}
+              hint={
+                overdueTasks.length === 0 ? "None overdue" : "Needs attention"
+              }
+              href="/dashboard/focus"
+              emphasize="danger"
+            />
+            <StatCard
+              label="Completed"
+              value={completedTasks.length}
+              hint="Marked done"
+              href="/dashboard/tasks?status=completed"
+            />
           </section>
 
-          <section className="grid gap-6 lg:grid-cols-2">
-            <article className="rounded-2xl border border-stone-200 bg-white p-6 shadow-sm dark:border-stone-700 dark:bg-stone-900">
-              <h2 className="text-lg font-semibold text-stone-900 dark:text-stone-100">
-                Reminders due now / overdue
-              </h2>
-              <p className="mt-1 text-sm text-stone-500 dark:text-stone-400">
-                Open tasks whose reminder time has passed
+          {needsAttention ? (
+            <div className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-amber-200/80 bg-amber-50/70 px-4 py-3 dark:border-amber-900/40 dark:bg-amber-950/30">
+              <p className="text-sm text-amber-900 dark:text-amber-200">
+                Focus has items that need attention now.
               </p>
-              <div className="mt-4">
-                <TaskList
-                  tasks={remindersDueOrOverdue}
-                  emptyMessage="No reminders due right now."
-                  showReminder
-                  reminderOverdue
-                />
-              </div>
-            </article>
-
-            <article className="rounded-2xl border border-stone-200 bg-white p-6 shadow-sm dark:border-stone-700 dark:bg-stone-900">
-              <h2 className="text-lg font-semibold text-stone-900 dark:text-stone-100">
-                Upcoming reminders
-              </h2>
-              <p className="mt-1 text-sm text-stone-500 dark:text-stone-400">
-                Open tasks with a reminder still ahead
-              </p>
-              <div className="mt-4">
-                <TaskList
-                  tasks={upcomingReminders}
-                  emptyMessage="No upcoming reminders."
-                  showReminder
-                />
-              </div>
-            </article>
-          </section>
-
-          <section className="grid gap-6 lg:grid-cols-3">
-            <article className="rounded-2xl border border-stone-200 bg-white p-6 shadow-sm dark:border-stone-700 dark:bg-stone-900">
-              <h2 className="text-lg font-semibold text-stone-900 dark:text-stone-100">
-                Due today
-              </h2>
-              <p className="mt-1 text-sm text-stone-500 dark:text-stone-400">
-                Open tasks due by end of today
-              </p>
-              <div className="mt-4">
-                <TaskList
-                  tasks={dueTodayTasks}
-                  emptyMessage="No tasks due today."
-                  showDueDate
-                />
-              </div>
-            </article>
-
-            <article className="rounded-2xl border border-stone-200 bg-white p-6 shadow-sm dark:border-stone-700 dark:bg-stone-900">
-              <h2 className="text-lg font-semibold text-stone-900 dark:text-stone-100">
-                Due within a week
-              </h2>
-              <p className="mt-1 text-sm text-stone-500 dark:text-stone-400">
-                Open tasks due in the next 7 days after today
-              </p>
-              <div className="mt-4">
-                <TaskList
-                  tasks={dueWithinWeekTasks}
-                  emptyMessage="Nothing due in the next week."
-                  showDueDate
-                />
-              </div>
-            </article>
-
-            <article className="rounded-2xl border border-stone-200 bg-white p-6 shadow-sm dark:border-stone-700 dark:bg-stone-900">
-              <h2 className="text-lg font-semibold text-stone-900 dark:text-stone-100">
-                Upcoming tasks
-              </h2>
-              <p className="mt-1 text-sm text-stone-500 dark:text-stone-400">
-                Open tasks due after the next 7 days
-              </p>
-              <div className="mt-4">
-                <TaskList
-                  tasks={upcomingTasks}
-                  emptyMessage="No upcoming tasks scheduled."
-                  showDueDate
-                />
-              </div>
-            </article>
-          </section>
-
-          <section className="rounded-2xl border border-stone-200 bg-white p-6 shadow-sm dark:border-stone-700 dark:bg-stone-900">
-            <h2 className="text-lg font-semibold text-stone-900 dark:text-stone-100">
-              Recently added
-            </h2>
-            <p className="mt-1 text-sm text-stone-500 dark:text-stone-400">
-              Your latest tasks, newest first
-            </p>
-            <div className="mt-4">
-              <TaskList
-                tasks={recentlyAddedTasks}
-                emptyMessage="No tasks yet. Add one from the Tasks page."
-              />
+              {focusLink}
             </div>
+          ) : null}
+
+          <section className="grid gap-4 lg:grid-cols-2">
+            <OverviewPanel
+              title="Reminders due"
+              description="Reminder time has passed"
+              count={remindersDueOrOverdue.length}
+              href="/dashboard/focus"
+            >
+              <TaskList
+                tasks={remindersDueOrOverdue}
+                emptyMessage="No reminders due right now."
+                emptyAction={focusLink}
+                showReminder
+                reminderOverdue
+              />
+            </OverviewPanel>
+
+            <OverviewPanel
+              title="Upcoming reminders"
+              description="Reminders still ahead"
+              count={upcomingReminders.length}
+            >
+              <TaskList
+                tasks={upcomingReminders}
+                emptyMessage="No upcoming reminders."
+                showReminder
+              />
+            </OverviewPanel>
           </section>
+
+          <section className="grid gap-4 lg:grid-cols-3">
+            <OverviewPanel
+              title="Due today"
+              description="By end of today"
+              count={dueTodayTasks.length}
+              href="/dashboard/focus"
+            >
+              <TaskList
+                tasks={dueTodayTasks}
+                emptyMessage="Nothing due today."
+                emptyAction={focusLink}
+                showDueDate
+              />
+            </OverviewPanel>
+
+            <OverviewPanel
+              title="This week"
+              description="Next 7 days after today"
+              count={dueWithinWeekTasks.length}
+              href="/dashboard/calendar"
+            >
+              <TaskList
+                tasks={dueWithinWeekTasks}
+                emptyMessage="Nothing else due this week."
+                showDueDate
+              />
+            </OverviewPanel>
+
+            <OverviewPanel
+              title="Later"
+              description="Due after the next week"
+              count={upcomingTasks.length}
+              href="/dashboard/calendar"
+            >
+              <TaskList
+                tasks={upcomingTasks}
+                emptyMessage="No later tasks scheduled."
+                showDueDate
+              />
+            </OverviewPanel>
+          </section>
+
+          <OverviewPanel
+            title="Recently added"
+            description="Newest first"
+            count={recentlyAddedTasks.length}
+            href="/dashboard/tasks"
+          >
+            <TaskList
+              tasks={recentlyAddedTasks}
+              emptyMessage="No tasks yet."
+              emptyAction={tasksLink}
+            />
+          </OverviewPanel>
         </div>
       </div>
     </>
