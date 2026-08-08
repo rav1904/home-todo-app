@@ -1,4 +1,5 @@
 import { SignOutButton } from "@/components/dashboard/sign-out-button";
+import { ThemeMenu } from "@/components/theme/theme-menu";
 
 type DashboardHeaderProps = {
   title: string;
@@ -24,12 +25,13 @@ export function DashboardHeader({
         ) : null}
       </div>
 
-      <div className="flex items-center gap-3">
+      <div className="flex items-center gap-1 sm:gap-2">
         {email ? (
-          <span className="hidden rounded-full bg-stone-100 px-3 py-1 text-xs text-stone-600 sm:inline dark:bg-stone-800 dark:text-stone-300">
+          <span className="mr-1 hidden rounded-full bg-stone-100 px-3 py-1 text-xs text-stone-600 sm:inline dark:bg-stone-800 dark:text-stone-300">
             {email}
           </span>
         ) : null}
+        <ThemeMenu />
         <SignOutButton />
       </div>
     </header>
