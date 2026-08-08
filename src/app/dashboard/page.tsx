@@ -1,4 +1,5 @@
 import { DashboardHeader } from "@/components/dashboard/header";
+import { UserAvatar } from "@/components/ui/user-avatar";
 import {
   getUserAvatarUrl,
   getUserDisplayName,
@@ -309,19 +310,27 @@ export default async function DashboardPage() {
 
   return (
     <>
-      <DashboardHeader
-        title={`Hello ${displayName}, what would you like to do today?`}
-        description={
-          needsAttention
-            ? "A few things need attention today"
-            : "A calm look at your workspace"
-        }
-        email={user?.email}
-        avatarUrl={avatarUrl}
-        avatarName={displayName}
-      />
+      <DashboardHeader title="Overview" email={user?.email} />
       <div className="flex-1 overflow-auto p-4 sm:p-6 lg:p-8">
         <div className="mx-auto max-w-6xl space-y-6">
+          <div className="flex items-center gap-3 sm:gap-4">
+            <UserAvatar
+              name={displayName}
+              avatarUrl={avatarUrl}
+              size="lg"
+            />
+            <div className="min-w-0">
+              <h2 className="text-xl font-semibold tracking-tight text-stone-900 dark:text-stone-100 sm:text-2xl">
+                Hello {displayName}, what would you like to do today?
+              </h2>
+              <p className="mt-1 text-sm text-stone-500 dark:text-stone-400">
+                {needsAttention
+                  ? "A few things need attention today"
+                  : "A calm look at your workspace"}
+              </p>
+            </div>
+          </div>
+
           {error ? (
             <div className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700 dark:border-red-900/50 dark:bg-red-950/40 dark:text-red-300">
               Could not load dashboard data: {error.message}

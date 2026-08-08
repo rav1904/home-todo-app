@@ -6,12 +6,13 @@ import { useState } from "react";
 type UserAvatarProps = {
   name: string;
   avatarUrl?: string | null;
-  size?: "sm" | "md";
+  size?: "sm" | "md" | "lg";
 };
 
 const sizeClasses = {
   sm: "h-8 w-8 text-[11px]",
   md: "h-9 w-9 text-xs",
+  lg: "h-12 w-12 text-sm",
 } as const;
 
 export function UserAvatar({
