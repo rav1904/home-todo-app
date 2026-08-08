@@ -8,6 +8,7 @@ type TaskDeleteButtonProps = {
   id: string;
   title: string;
   onDeleted?: () => void;
+  variant?: "default" | "ghost";
 };
 
 function TrashIcon() {
@@ -32,7 +33,12 @@ function TrashIcon() {
   );
 }
 
-export function TaskDeleteButton({ id, title, onDeleted }: TaskDeleteButtonProps) {
+export function TaskDeleteButton({
+  id,
+  title,
+  onDeleted,
+  variant = "default",
+}: TaskDeleteButtonProps) {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
 
@@ -56,13 +62,18 @@ export function TaskDeleteButton({ id, title, onDeleted }: TaskDeleteButtonProps
     setLoading(false);
   }
 
+  const className =
+    variant === "ghost"
+      ? "shrink-0 cursor-pointer rounded-lg p-1.5 text-stone-400 transition hover:bg-rose-50 hover:text-rose-700 disabled:cursor-not-allowed disabled:opacity-60 dark:hover:bg-rose-950/40 dark:hover:text-rose-400"
+      : "shrink-0 cursor-pointer rounded-lg border border-stone-200 bg-white p-2 text-stone-500 transition hover:border-red-200 hover:bg-red-50 hover:text-red-700 disabled:cursor-not-allowed disabled:opacity-60 dark:border-stone-600 dark:bg-stone-800 dark:text-stone-400 dark:hover:border-red-900/50 dark:hover:bg-red-950/40 dark:hover:text-red-400";
+
   return (
     <button
       type="button"
       onClick={handleDelete}
       disabled={loading}
       aria-label={loading ? `Deleting "${title}"` : `Delete "${title}"`}
-      className="shrink-0 cursor-pointer rounded-lg border border-stone-200 bg-white p-2 text-stone-500 transition hover:border-red-200 hover:bg-red-50 hover:text-red-700 disabled:cursor-not-allowed disabled:opacity-60 dark:border-stone-600 dark:bg-stone-800 dark:text-stone-400 dark:hover:border-red-900/50 dark:hover:bg-red-950/40 dark:hover:text-red-400"
+      className={className}
     >
       <TrashIcon />
     </button>

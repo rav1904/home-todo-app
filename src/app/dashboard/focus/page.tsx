@@ -221,7 +221,7 @@ export default async function FocusPage() {
         description="What needs attention now"
         email={user?.email}
       />
-      <div className="flex-1 space-y-6 overflow-auto p-8">
+      <div className="flex-1 space-y-6 overflow-auto p-4 sm:p-6 lg:p-8">
         {error ? (
           <div className="rounded-2xl border border-red-200 bg-red-50 p-6 text-sm text-red-700 dark:border-red-900/50 dark:bg-red-950/40 dark:text-red-300">
             Could not load tasks: {error.message}

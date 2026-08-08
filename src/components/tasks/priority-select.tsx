@@ -48,14 +48,25 @@ export function PrioritySelect({
 
 type PriorityBadgeProps = {
   priority: TaskPriority;
+  /** Hide the default (medium) priority on cards — only signal non-default. */
+  hideDefault?: boolean;
+  className?: string;
 };
 
-export function PriorityBadge({ priority }: PriorityBadgeProps) {
+export function PriorityBadge({
+  priority,
+  hideDefault = false,
+  className = "",
+}: PriorityBadgeProps) {
   const safe = parseTaskPriority(priority);
+
+  if (hideDefault && safe === DEFAULT_TASK_PRIORITY) {
+    return null;
+  }
 
   return (
     <span
-      className={`inline-flex items-center rounded-full px-2.5 py-1 text-xs font-medium ${getPriorityBadgeClassName(safe)}`}
+      className={`inline-flex items-center rounded-md px-2 py-0.5 text-xs font-medium ${getPriorityBadgeClassName(safe)} ${className}`}
     >
       {getPriorityLabel(safe)}
     </span>

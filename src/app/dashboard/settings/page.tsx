@@ -31,7 +31,7 @@ export default async function SettingsPage() {
         description="Appearance and personal labels for your account"
         email={user.email}
       />
-      <div className="flex-1 overflow-auto p-4 sm:p-8">
+      <div className="flex-1 overflow-auto p-4 sm:p-6 lg:p-8">
         <div className="mx-auto max-w-2xl space-y-6">
           <section className={`${cardClassName} p-6`}>
             <h2 className="text-lg font-semibold text-stone-900 dark:text-stone-100">

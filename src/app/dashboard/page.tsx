@@ -217,7 +217,7 @@ export default async function DashboardPage() {
         description="A quick look at your tasks"
         email={user?.email}
       />
-      <div className="flex-1 overflow-auto p-8">
+      <div className="flex-1 overflow-auto p-4 sm:p-6 lg:p-8">
         <div className="space-y-8">
           {error ? (
             <div className="rounded-2xl border border-red-200 bg-red-50 p-6 text-sm text-red-700 dark:border-red-900/50 dark:bg-red-950/40 dark:text-red-300">

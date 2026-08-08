@@ -15,9 +15,15 @@ import { useState } from "react";
 type TaskSubtaskListProps = {
   taskId: string;
   subtasks: TaskSubtask[];
+  /** Hide the Checklist heading when a parent already shows progress. */
+  hideHeading?: boolean;
 };
 
-export function TaskSubtaskList({ taskId, subtasks }: TaskSubtaskListProps) {
+export function TaskSubtaskList({
+  taskId,
+  subtasks,
+  hideHeading = false,
+}: TaskSubtaskListProps) {
   const router = useRouter();
   const [newTitle, setNewTitle] = useState("");
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -207,13 +213,21 @@ export function TaskSubtaskList({ taskId, subtasks }: TaskSubtaskListProps) {
   }
 
   return (
-    <div className="mt-4 border-t border-stone-200 pt-4 dark:border-stone-700">
-      <h3 className="text-sm font-medium text-stone-700 dark:text-stone-300">
-        Checklist
-      </h3>
+    <div
+      className={
+        hideHeading
+          ? "mt-2"
+          : "mt-4 border-t border-stone-200 pt-4 dark:border-stone-700"
+      }
+    >
+      {hideHeading ? null : (
+        <h3 className="text-sm font-medium text-stone-700 dark:text-stone-300">
+          Checklist
+        </h3>
+      )}
 
       {subtasks.length > 0 ? (
-        <ul className="mt-3 space-y-2">
+        <ul className={hideHeading ? "space-y-2" : "mt-3 space-y-2"}>
           {subtasks.map((subtask, index) => {
             const isEditing = editingId === subtask.id;
 

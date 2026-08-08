@@ -200,7 +200,7 @@ export default async function TasksPage({ searchParams }: TasksPageProps) {
         description="View and manage tasks"
         email={user?.email}
       />
-      <div className="flex-1 space-y-6 overflow-auto p-8">
+      <div className="flex-1 space-y-6 overflow-auto p-4 sm:p-6 lg:p-8">
         <AddTaskForm
           categories={activeCategories}
           labels={activeLabels}
