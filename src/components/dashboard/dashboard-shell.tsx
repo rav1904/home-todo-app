@@ -20,8 +20,8 @@ export function DashboardShell({
         <Sidebar showAdminLink={showAdminLink} />
         <div className="relative flex min-w-0 flex-1 flex-col pb-24">
           {children}
-          <QuickAddTaskLauncher />
         </div>
+        <QuickAddTaskLauncher />
       </div>
     </DashboardNavProvider>
   );
