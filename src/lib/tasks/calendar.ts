@@ -21,6 +21,8 @@ export type CalendarTask = {
   dueAt: string;
   completed: boolean;
   priority: TaskPriority;
+  recurrence: TaskRecurrence;
+  reminderAt: string | null;
   category: CategoryDisplay | null;
   categoryUnavailable: boolean;
   labels: Label[];

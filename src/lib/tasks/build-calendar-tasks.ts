@@ -185,6 +185,8 @@ export async function fetchCalendarPageData(
       dueAt: task.due_at,
       completed: task.completed,
       priority: parseTaskPriority(task.priority),
+      recurrence: parseTaskRecurrence(task.recurrence),
+      reminderAt: task.reminder_at,
       category,
       categoryUnavailable,
       labels: taskLabelDisplay.labels,

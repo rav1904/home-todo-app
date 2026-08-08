@@ -1,10 +1,10 @@
 "use client";
 
-import { CategoryBadge } from "@/components/tasks/category-select";
-import { LabelBadges } from "@/components/tasks/label-badges";
 import type { CalendarTask } from "@/lib/tasks/calendar";
 import { formatTaskTime } from "@/lib/tasks/local-dates";
 import { getPriorityChipDotClassName } from "@/lib/tasks/priority";
+import { DEFAULT_TASK_RECURRENCE } from "@/lib/tasks/recurrence";
+import { Bell, Repeat } from "lucide-react";
 
 type CalendarTaskChipProps = {
   task: CalendarTask;
@@ -12,29 +12,52 @@ type CalendarTaskChipProps = {
   onTaskSelect?: (taskId: string) => void;
 };
 
+const FALLBACK_RAIL = "#a8a29e";
+
 export function CalendarTaskChip({
   task,
   compact = false,
   onTaskSelect,
 }: CalendarTaskChipProps) {
-  const visibleLabels = compact ? task.labels.slice(0, 1) : task.labels.slice(0, 2);
-  const hiddenLabelCount =
-    task.labels.length -
-    visibleLabels.length +
-    task.unavailableLabelCount;
   const priorityDotClass = getPriorityChipDotClassName(task.priority);
+  const categoryColour = task.category?.colour ?? FALLBACK_RAIL;
+  const isRecurring = task.recurrence !== DEFAULT_TASK_RECURRENCE;
+  const hasReminder = Boolean(task.reminderAt) && !task.completed;
+  const timeLabel = formatTaskTime(task.dueAt);
+
+  const ariaBits = [
+    task.title,
+    timeLabel,
+    task.completed ? "completed" : null,
+    isRecurring ? "repeats" : null,
+    hasReminder ? "has reminder" : null,
+    task.priority === "high" || task.priority === "urgent"
+      ? `${task.priority} priority`
+      : null,
+  ].filter(Boolean);
 
   return (
     <button
       type="button"
-      onClick={() => onTaskSelect?.(task.id)}
-      className={`block w-full cursor-pointer rounded-md border border-stone-200 bg-stone-50 px-1.5 py-1 text-left transition hover:border-emerald-300 hover:bg-emerald-50/80 dark:border-stone-700 dark:bg-stone-800/80 dark:hover:border-emerald-800 dark:hover:bg-emerald-950/30 ${
-        task.completed ? "opacity-70" : ""
-      }`}
+      onClick={(event) => {
+        event.stopPropagation();
+        onTaskSelect?.(task.id);
+      }}
+      aria-label={ariaBits.join(", ")}
+      className={`group flex w-full cursor-pointer overflow-hidden rounded-md text-left transition focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500/40 ${
+        compact
+          ? "bg-stone-100/90 hover:bg-emerald-50 dark:bg-stone-800/70 dark:hover:bg-emerald-950/40"
+          : "bg-stone-50 hover:bg-emerald-50/80 dark:bg-stone-800/60 dark:hover:bg-emerald-950/30"
+      } ${task.completed ? "opacity-60" : ""}`}
     >
-      <p
-        className={`flex items-center gap-1 truncate text-[11px] font-medium leading-tight text-stone-900 dark:text-stone-100 sm:text-xs ${
-          task.completed ? "line-through text-stone-400 dark:text-stone-500" : ""
+      <span
+        className="w-1 shrink-0 self-stretch"
+        style={{ backgroundColor: categoryColour }}
+        aria-hidden="true"
+      />
+      <span
+        className={`flex min-w-0 flex-1 items-center gap-1 ${
+          compact ? "px-1.5 py-0.5" : "px-2 py-1.5"
         }`}
       >
         {priorityDotClass ? (
@@ -43,34 +66,41 @@ export function CalendarTaskChip({
             aria-hidden="true"
           />
         ) : null}
-        <span className="truncate">{task.title}</span>
-      </p>
-      <p className="mt-0.5 truncate text-[10px] text-stone-500 dark:text-stone-400 sm:text-[11px]">
-        {formatTaskTime(task.dueAt)}
-        {task.subtaskProgress ? (
-          <span className="ml-1.5 text-stone-400 dark:text-stone-500">
-            · {task.subtaskProgress.completedCount}/{task.subtaskProgress.totalCount}
+        <span
+          className={`min-w-0 flex-1 truncate font-medium leading-tight text-stone-900 dark:text-stone-100 ${
+            compact ? "text-[11px] sm:text-xs" : "text-sm"
+          } ${task.completed ? "text-stone-400 line-through dark:text-stone-500" : ""}`}
+        >
+          {task.title}
+        </span>
+        {isRecurring ? (
+          <Repeat
+            className="h-3 w-3 shrink-0 text-sky-600/80 dark:text-sky-400/80"
+            aria-hidden="true"
+            strokeWidth={2.25}
+          />
+        ) : null}
+        {hasReminder ? (
+          <Bell
+            className="h-3 w-3 shrink-0 text-amber-600/80 dark:text-amber-400/80"
+            aria-hidden="true"
+            strokeWidth={2.25}
+          />
+        ) : null}
+        <span
+          className={`shrink-0 tabular-nums text-stone-500 dark:text-stone-400 ${
+            compact ? "text-[10px]" : "text-xs"
+          }`}
+        >
+          {timeLabel}
+        </span>
+        {!compact && task.subtaskProgress ? (
+          <span className="hidden shrink-0 text-[10px] text-stone-400 sm:inline dark:text-stone-500">
+            {task.subtaskProgress.completedCount}/
+            {task.subtaskProgress.totalCount}
           </span>
         ) : null}
-      </p>
-      {!compact && (task.category || task.categoryUnavailable) ? (
-        <div className="mt-1 hidden overflow-hidden sm:block">
-          <CategoryBadge
-            category={task.category}
-            unavailable={task.categoryUnavailable}
-          />
-        </div>
-      ) : null}
-      {!compact && visibleLabels.length > 0 ? (
-        <div className="mt-1 hidden overflow-hidden sm:block">
-          <LabelBadges labels={visibleLabels} />
-        </div>
-      ) : null}
-      {!compact && hiddenLabelCount > 0 ? (
-        <p className="mt-0.5 hidden text-[10px] text-stone-400 sm:block dark:text-stone-500">
-          +{hiddenLabelCount} label{hiddenLabelCount === 1 ? "" : "s"}
-        </p>
-      ) : null}
+      </span>
     </button>
   );
 }

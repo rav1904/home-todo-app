@@ -87,81 +87,77 @@ export default async function CalendarPage({ searchParams }: CalendarPageProps) 
       ? splitListCalendarTasks(calendarTasks)
       : { overdue: [], upcomingByDay: {}, upcomingDayKeys: [] };
 
+  const warningMessages = [
+    categoriesError ? `Could not load categories: ${categoriesError}` : null,
+    labelsError ? `Could not load labels: ${labelsError}` : null,
+    labelCategoryLinksError
+      ? `Could not load label category links: ${labelCategoryLinksError}`
+      : null,
+    taskLabelsError ? `Could not load task labels: ${taskLabelsError}` : null,
+    historyError ? `Could not load due date history: ${historyError}` : null,
+    subtasksError ? `Could not load subtasks: ${subtasksError}` : null,
+  ].filter((message): message is string => Boolean(message));
+
+  const monthEmpty =
+    !error &&
+    calendarParams.view === "month" &&
+    calendarTasks.length === 0;
+
   return (
     <>
       <DashboardHeader
         title="Calendar"
-        description="Tasks grouped by due date"
+        description="Due dates at a glance"
         email={user?.email}
       />
-      <div className="flex-1 space-y-6 overflow-auto p-4 sm:p-6 lg:p-8">
+      <div className="flex-1 space-y-4 overflow-auto p-4 sm:p-6 lg:p-8">
         {error ? (
-          <div className="rounded-2xl border border-red-200 bg-red-50 p-6 text-sm text-red-700 dark:border-red-900/50 dark:bg-red-950/40 dark:text-red-300">
+          <div className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700 dark:border-red-900/50 dark:bg-red-950/40 dark:text-red-300">
             Could not load tasks: {error}
           </div>
         ) : null}
 
-        {categoriesError ? (
-          <div className="rounded-2xl border border-amber-200 bg-amber-50 p-6 text-sm text-amber-800 dark:border-amber-900/50 dark:bg-amber-950/40 dark:text-amber-300">
-            Could not load categories: {categoriesError}
-          </div>
-        ) : null}
-
-        {labelsError ? (
-          <div className="rounded-2xl border border-amber-200 bg-amber-50 p-6 text-sm text-amber-800 dark:border-amber-900/50 dark:bg-amber-950/40 dark:text-amber-300">
-            Could not load labels: {labelsError}
-          </div>
-        ) : null}
-
-        {labelCategoryLinksError ? (
-          <div className="rounded-2xl border border-amber-200 bg-amber-50 p-6 text-sm text-amber-800 dark:border-amber-900/50 dark:bg-amber-950/40 dark:text-amber-300">
-            Could not load label category links: {labelCategoryLinksError}
-          </div>
-        ) : null}
-
-        {taskLabelsError ? (
-          <div className="rounded-2xl border border-amber-200 bg-amber-50 p-6 text-sm text-amber-800 dark:border-amber-900/50 dark:bg-amber-950/40 dark:text-amber-300">
-            Could not load task labels: {taskLabelsError}
-          </div>
-        ) : null}
-
-        {historyError ? (
-          <div className="rounded-2xl border border-amber-200 bg-amber-50 p-6 text-sm text-amber-800 dark:border-amber-900/50 dark:bg-amber-950/40 dark:text-amber-300">
-            Could not load due date history: {historyError}
-          </div>
-        ) : null}
-
-        {subtasksError ? (
-          <div className="rounded-2xl border border-amber-200 bg-amber-50 p-6 text-sm text-amber-800 dark:border-amber-900/50 dark:bg-amber-950/40 dark:text-amber-300">
-            Could not load subtasks: {subtasksError}
+        {warningMessages.length > 0 ? (
+          <div className="space-y-2">
+            {warningMessages.map((message) => (
+              <div
+                key={message}
+                className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800 dark:border-amber-900/50 dark:bg-amber-950/40 dark:text-amber-300"
+              >
+                {message}
+              </div>
+            ))}
           </div>
         ) : null}
 
         {!error ? (
-          <CalendarClientShell
-            view={calendarParams.view}
-            viewSwitcherLinks={viewSwitcherLinks}
-            nav={nav}
-            monthDays={buildMonthGrid(calendarParams.year, calendarParams.month)}
-            weekDays={buildWeekDays(calendarParams.dateKey)}
-            dateKey={calendarParams.dateKey}
-            tasksByDay={tasksByDay}
-            listOverdue={listGroups.overdue}
-            listUpcomingByDay={listGroups.upcomingByDay}
-            listUpcomingDayKeys={listGroups.upcomingDayKeys}
-            modalTasksById={modalTasksById}
-            categories={categories}
-            labels={labels}
-            categoryIdsByLabelId={categoryIdsByLabelId}
-          />
-        ) : null}
+          <div className="mx-auto max-w-6xl space-y-3">
+            <CalendarClientShell
+              view={calendarParams.view}
+              viewSwitcherLinks={viewSwitcherLinks}
+              nav={nav}
+              monthDays={buildMonthGrid(
+                calendarParams.year,
+                calendarParams.month,
+              )}
+              weekDays={buildWeekDays(calendarParams.dateKey)}
+              dateKey={calendarParams.dateKey}
+              tasksByDay={tasksByDay}
+              listOverdue={listGroups.overdue}
+              listUpcomingByDay={listGroups.upcomingByDay}
+              listUpcomingDayKeys={listGroups.upcomingDayKeys}
+              modalTasksById={modalTasksById}
+              categories={categories}
+              labels={labels}
+              categoryIdsByLabelId={categoryIdsByLabelId}
+            />
 
-        {!error &&
-        calendarParams.view === "month" &&
-        calendarTasks.length === 0 ? (
-          <p className="text-sm text-stone-500 dark:text-stone-400">
-            No tasks with due dates this month.
-          </p>
+            {monthEmpty ? (
+              <p className="text-center text-sm text-stone-500 dark:text-stone-400">
+                No tasks with due dates this month.
+              </p>
+            ) : null}
+          </div>
         ) : null}
       </div>
     </>

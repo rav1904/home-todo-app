@@ -10,7 +10,7 @@ import {
 } from "@/lib/tasks/calendar";
 import type { CalendarNavLinks } from "@/lib/tasks/calendar-params";
 import { formatShortWeekday } from "@/lib/tasks/local-dates";
-import { useState } from "react";
+import { useRouter } from "next/navigation";
 
 type MonthCalendarProps = {
   nav: CalendarNavLinks;
@@ -19,16 +19,20 @@ type MonthCalendarProps = {
   onTaskSelect?: (taskId: string) => void;
 };
 
-function formatExpandedDayLabel(dayKey: string) {
+function formatDayViewLabel(dayKey: string) {
   const [yearPart, monthPart, dayPart] = dayKey.split("-").map(Number);
   return new Date(yearPart, monthPart - 1, dayPart).toLocaleDateString(
     undefined,
     {
-      weekday: "long",
-      month: "long",
       day: "numeric",
+      month: "long",
+      year: "numeric",
     },
   );
+}
+
+function dayViewHref(dayKey: string) {
+  return `/dashboard/calendar?view=day&date=${dayKey}`;
 }
 
 const WEEKDAY_LABELS = Array.from({ length: 7 }, (_, index) => {
@@ -42,24 +46,22 @@ export function MonthCalendar({
   tasksByDay,
   onTaskSelect,
 }: MonthCalendarProps) {
-  const [expandedDayKey, setExpandedDayKey] = useState<string | null>(null);
+  const router = useRouter();
 
-  function toggleDay(dayKey: string) {
-    setExpandedDayKey((current) => (current === dayKey ? null : dayKey));
+  function openDayView(dayKey: string) {
+    router.push(dayViewHref(dayKey));
   }
 
-  const expandedTasks = expandedDayKey ? (tasksByDay[expandedDayKey] ?? []) : [];
-
   return (
-    <div className="space-y-4">
+    <div className="space-y-3">
       <CalendarNav nav={nav} />
 
       <div className={`${cardClassName} overflow-hidden`}>
-        <div className="grid grid-cols-7 border-b border-stone-200 bg-stone-50 dark:border-stone-700 dark:bg-stone-800/50">
+        <div className="grid grid-cols-7 border-b border-stone-200/80 bg-stone-50/80 dark:border-stone-700/80 dark:bg-stone-800/40">
           {WEEKDAY_LABELS.map((label) => (
             <div
               key={label}
-              className="px-1 py-2 text-center text-[10px] font-medium uppercase tracking-wide text-stone-500 sm:px-2 sm:text-xs dark:text-stone-400"
+              className="px-0.5 py-2 text-center text-[10px] font-medium uppercase tracking-wide text-stone-500 sm:px-1 sm:text-xs dark:text-stone-400"
             >
               {label}
             </div>
@@ -71,42 +73,44 @@ export function MonthCalendar({
             const dayTasks = tasksByDay[day.dayKey] ?? [];
             const visibleTasks = dayTasks.slice(0, CALENDAR_VISIBLE_TASK_LIMIT);
             const hiddenCount = dayTasks.length - visibleTasks.length;
-            const isExpanded = expandedDayKey === day.dayKey;
+            const dayLabel = formatDayViewLabel(day.dayKey);
+            const openLabel = `Open day view for ${dayLabel}`;
 
             return (
               <div
                 key={day.dayKey}
-                className={`min-h-[5.5rem] border-b border-r border-stone-200 p-1 sm:min-h-[7rem] sm:p-1.5 dark:border-stone-700 ${
-                  day.isCurrentMonth
-                    ? "bg-white dark:bg-stone-900"
-                    : "bg-stone-50/80 dark:bg-stone-900/40"
-                } ${isExpanded ? "ring-2 ring-inset ring-emerald-500/40" : ""}`}
-              >
-                <button
-                  type="button"
-                  onClick={() => {
-                    if (dayTasks.length > 0) {
-                      toggleDay(day.dayKey);
-                    }
-                  }}
-                  className={`mb-1 flex h-6 w-6 items-center justify-center rounded-full text-xs font-medium transition ${
-                    day.isToday
-                      ? "bg-emerald-600 text-white"
-                      : day.isCurrentMonth
-                        ? "text-stone-700 hover:bg-stone-100 dark:text-stone-300 dark:hover:bg-stone-800"
-                        : "text-stone-400 dark:text-stone-500"
-                  } ${dayTasks.length > 0 ? "cursor-pointer" : "cursor-default"}`}
-                  aria-label={
-                    dayTasks.length > 0
-                      ? `Show ${dayTasks.length} task${dayTasks.length === 1 ? "" : "s"} for day ${day.dayNumber}`
-                      : `Day ${day.dayNumber}`
+                role="link"
+                tabIndex={0}
+                title={openLabel}
+                aria-label={openLabel}
+                onClick={() => openDayView(day.dayKey)}
+                onKeyDown={(event) => {
+                  if (event.key === "Enter" || event.key === " ") {
+                    event.preventDefault();
+                    openDayView(day.dayKey);
                   }
-                  aria-expanded={isExpanded}
+                }}
+                className={`min-h-[4.75rem] cursor-pointer border-b border-r border-stone-200/80 p-0.5 transition hover:bg-stone-100/90 sm:min-h-[6.5rem] sm:p-1 dark:border-stone-700/80 dark:hover:bg-stone-800/70 ${
+                  day.isCurrentMonth
+                    ? day.isToday
+                      ? "bg-emerald-50/40 hover:bg-emerald-50/70 dark:bg-emerald-950/20 dark:hover:bg-emerald-950/35"
+                      : "bg-white dark:bg-stone-900"
+                    : "bg-stone-50/70 dark:bg-stone-950/40"
+                }`}
+              >
+                <span
+                  className={`mb-0.5 flex h-6 w-6 items-center justify-center rounded-full text-xs font-medium ${
+                    day.isToday
+                      ? "bg-emerald-600 text-white shadow-sm shadow-emerald-600/20"
+                      : day.isCurrentMonth
+                        ? "text-stone-700 dark:text-stone-300"
+                        : "text-stone-400 dark:text-stone-600"
+                  }`}
                 >
                   {day.dayNumber}
-                </button>
+                </span>
 
-                <div className="space-y-1">
+                <div className="space-y-0.5">
                   {visibleTasks.map((task) => (
                     <CalendarTaskChip
                       key={task.id}
@@ -116,13 +120,9 @@ export function MonthCalendar({
                     />
                   ))}
                   {hiddenCount > 0 ? (
-                    <button
-                      type="button"
-                      onClick={() => toggleDay(day.dayKey)}
-                      className="w-full cursor-pointer rounded-md px-1 py-0.5 text-left text-[10px] font-medium text-emerald-700 transition hover:bg-emerald-50 sm:text-[11px] dark:text-emerald-400 dark:hover:bg-emerald-950/30"
-                    >
+                    <span className="block px-1 py-0.5 text-left text-[10px] font-medium text-emerald-700 sm:text-[11px] dark:text-emerald-400">
                       +{hiddenCount} more
-                    </button>
+                    </span>
                   ) : null}
                 </div>
               </div>
@@ -130,30 +130,6 @@ export function MonthCalendar({
           })}
         </div>
       </div>
-
-      {expandedDayKey && expandedTasks.length > 0 ? (
-        <section className={`${cardClassName} p-4 sm:p-5`}>
-          <div className="flex items-center justify-between gap-3">
-            <h3 className="text-sm font-semibold text-stone-900 dark:text-stone-100">
-              Tasks for {formatExpandedDayLabel(expandedDayKey)}
-            </h3>
-            <button
-              type="button"
-              onClick={() => setExpandedDayKey(null)}
-              className="cursor-pointer text-xs font-medium text-stone-500 transition hover:text-stone-700 dark:text-stone-400 dark:hover:text-stone-200"
-            >
-              Close
-            </button>
-          </div>
-          <ul className="mt-3 space-y-2">
-            {expandedTasks.map((task) => (
-              <li key={task.id}>
-                <CalendarTaskChip task={task} onTaskSelect={onTaskSelect} />
-              </li>
-            ))}
-          </ul>
-        </section>
-      ) : null}
     </div>
   );
 }
