@@ -17,6 +17,7 @@ import type { CalendarModalTask, CalendarTask } from "@/lib/tasks/calendar";
 import { aggregateDueDateHistoryCounts } from "@/lib/tasks/due-date-change";
 import { getListFetchBounds } from "@/lib/tasks/local-dates";
 import { parseTaskPriority } from "@/lib/tasks/priority";
+import { parseTaskRecurrence } from "@/lib/tasks/recurrence";
 import { fetchSubtasksByTaskId } from "@/lib/tasks/subtasks/group";
 import { getSubtaskProgress } from "@/lib/tasks/subtasks/progress";
 import type { TaskSubtask } from "@/lib/tasks/subtasks/types";
@@ -31,13 +32,14 @@ type RawTaskRow = {
   reminder_mode: string | null;
   reminder_offset_minutes: number | null;
   priority: string;
+  recurrence: string;
   completed: boolean;
   created_at: string;
   category_id: string | null;
 };
 
 const TASK_SELECT =
-  "id, title, description, due_at, reminder_at, reminder_mode, reminder_offset_minutes, priority, completed, created_at, category_id";
+  "id, title, description, due_at, reminder_at, reminder_mode, reminder_offset_minutes, priority, recurrence, completed, created_at, category_id";
 
 export type CalendarFetchResult = {
   calendarTasks: CalendarTask[];
@@ -199,6 +201,7 @@ export async function fetchCalendarPageData(
       reminderMode: task.reminder_mode,
       reminderOffsetMinutes: task.reminder_offset_minutes,
       priority: parseTaskPriority(task.priority),
+      recurrence: parseTaskRecurrence(task.recurrence),
       completed: task.completed,
       createdAt: task.created_at,
       categoryId: task.category_id,

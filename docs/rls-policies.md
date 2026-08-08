@@ -37,6 +37,15 @@ No new RLS policies — existing task owner policies cover all three. Reminder d
 
 **Priority v1:** `priority` text NOT NULL DEFAULT `'medium'` (`sql/tasks_priority.sql`), values `low` | `medium` | `high` | `urgent`. No new RLS — covered by task owner policies. Admin does not see other users’ priorities via task content.
 
+**Recurrence v1:** Columns on `tasks` (`sql/tasks_recurrence.sql`):
+
+| Column | Role |
+|--------|------|
+| `recurrence` | `none` / interval values; recurring requires `due_at` |
+| `spawned_from_task_id` | Parent occurrence; unique when set (dedup) |
+
+RPC `complete_task_with_recurrence(uuid)` runs as **SECURITY DEFINER** with `auth.uid()` ownership checks (owner-only). Completes the task and optionally inserts the next occurrence (labels + subtask templates). No new table policies. If an older INVOKER revision is installed, re-run `sql/tasks_recurrence_rpc_fix.sql`.
+
 ---
 
 ## `categories`

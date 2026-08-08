@@ -8,6 +8,7 @@
 -- Reminders v1: tasks.reminder_at + reminder_mode + reminder_offset_minutes
 --   (sql/tasks_reminder_at.sql)
 -- Priority v1: tasks.priority (sql/tasks_priority.sql)
+-- Recurrence v1: tasks.recurrence + spawned_from_task_id (sql/tasks_recurrence.sql)
 
 -- =============================================================================
 -- categories (admin-managed tree)
@@ -42,6 +43,8 @@ create table if not exists public.tasks (
   reminder_mode text, -- null | custom | relative_due
   reminder_offset_minutes integer, -- relative_due only: 60 | 1440 | 10080
   priority text not null default 'medium', -- low | medium | high | urgent
+  recurrence text not null default 'none', -- none | weekly | fortnightly | monthly | quarterly | semi_annual | annual
+  spawned_from_task_id uuid references public.tasks (id) on delete set null,
   completed boolean not null default false,
   category_id uuid references public.categories (id) on delete set null,
   created_at timestamptz not null default now()
@@ -60,6 +63,12 @@ create table if not exists public.tasks (
 
 -- Priority check (see sql/tasks_priority.sql):
 --   tasks_priority_check CHECK (priority IN ('low', 'medium', 'high', 'urgent'))
+
+-- Recurrence (see sql/tasks_recurrence.sql):
+--   tasks_recurrence_check
+--   tasks_recurrence_requires_due_at_check (recurrence = 'none' OR due_at IS NOT NULL)
+--   UNIQUE (spawned_from_task_id) WHERE spawned_from_task_id IS NOT NULL
+--   RPC: complete_task_with_recurrence(task_id) — complete + spawn next occurrence
 
 -- =============================================================================
 -- labels (hybrid: global + personal)

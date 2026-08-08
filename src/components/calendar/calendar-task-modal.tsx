@@ -73,6 +73,7 @@ export function CalendarTaskModal({
           reminderMode={task.reminderMode}
           reminderOffsetMinutes={task.reminderOffsetMinutes}
           priority={task.priority}
+          recurrence={task.recurrence}
           completed={task.completed}
           createdAt={task.createdAt}
           categoryId={task.categoryId}

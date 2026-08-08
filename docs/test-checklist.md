@@ -6,6 +6,21 @@ Manual checks for current product behaviour. Prefer a fresh browser session (or 
 
 ---
 
+## Recurrence v1 (SQL)
+
+- [x] Columns + unique `spawned_from_task_id` + RPC (`sql/tasks_recurrence.sql`)
+
+## Recurrence v1 (app)
+
+- [ ] Repeat select on add/edit/quick-add/calendar edit
+- [ ] Recurring requires due date
+- [ ] Complete (checkbox) spawns next occurrence once
+- [ ] Edit save → complete uses RPC (no bare completed flip)
+- [ ] Labels, priority, category, recurrence, subtasks copied; relative/custom reminders correct
+- [ ] Double-complete creates only one child
+- [ ] Calendar still by `due_at`
+- [ ] Uncomplete does not delete spawned child
+
 ## Focus View v1
 
 - [ ] Sidebar Focus between Overview and Tasks → `/dashboard/focus`

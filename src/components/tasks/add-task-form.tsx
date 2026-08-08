@@ -4,6 +4,7 @@ import { CategorySelect } from "@/components/tasks/category-select";
 import { DueDatetimeFields } from "@/components/tasks/due-datetime-fields";
 import { LabelSelect } from "@/components/tasks/label-select";
 import { ReminderFields } from "@/components/tasks/reminder-fields";
+import { RecurrenceSelect } from "@/components/tasks/recurrence-select";
 import {
   DEFAULT_TASK_PRIORITY,
   PrioritySelect,
@@ -13,6 +14,11 @@ import type { Label } from "@/lib/labels/types";
 import { syncTaskLabels } from "@/lib/labels/sync-task-labels";
 import { datetimeLocalValueToIso } from "@/lib/tasks/due-datetime";
 import type { TaskPriority } from "@/lib/tasks/priority";
+import {
+  DEFAULT_TASK_RECURRENCE,
+  validateRecurrenceDueAt,
+  type TaskRecurrence,
+} from "@/lib/tasks/recurrence";
 import {
   emptyReminderFormState,
   syncReminderFormWithDueLocal,
@@ -49,6 +55,9 @@ export function AddTaskForm({
     emptyReminderFormState,
   );
   const [priority, setPriority] = useState<TaskPriority>(DEFAULT_TASK_PRIORITY);
+  const [recurrence, setRecurrence] = useState<TaskRecurrence>(
+    DEFAULT_TASK_RECURRENCE,
+  );
   const [categoryId, setCategoryId] = useState<string | null>(null);
   const [labelIds, setLabelIds] = useState<string[]>([]);
   const [extraLabels, setExtraLabels] = useState<Label[]>([]);
@@ -94,6 +103,13 @@ export function AddTaskForm({
     }
 
     const dueAtIso = datetimeLocalValueToIso(dueAt);
+    const recurrenceError = validateRecurrenceDueAt(recurrence, dueAtIso);
+    if (recurrenceError) {
+      setError(recurrenceError);
+      setLoading(false);
+      return;
+    }
+
     const reminderColumns = toReminderDbColumns(dueAtIso, reminder);
 
     const { data: createdTask, error: insertError } = await supabase
@@ -105,6 +121,7 @@ export function AddTaskForm({
         due_at: dueAtIso,
         ...reminderColumns,
         priority,
+        recurrence,
         category_id: categoryId,
       })
       .select("id")
@@ -140,6 +157,7 @@ export function AddTaskForm({
     setDueAt("");
     setReminder(emptyReminderFormState());
     setPriority(DEFAULT_TASK_PRIORITY);
+    setRecurrence(DEFAULT_TASK_RECURRENCE);
     setCategoryId(null);
     setLabelIds([]);
     setExtraLabels([]);
@@ -215,6 +233,13 @@ export function AddTaskForm({
           id="task-priority"
           value={priority}
           onChange={setPriority}
+        />
+
+        <RecurrenceSelect
+          id="task-recurrence"
+          value={recurrence}
+          onChange={setRecurrence}
+          dueLocal={dueAt}
         />
 
         <CategorySelect

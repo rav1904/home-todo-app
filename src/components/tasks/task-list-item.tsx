@@ -16,11 +16,15 @@ import {
   PriorityBadge,
   PrioritySelect,
 } from "@/components/tasks/priority-select";
+import { RecurrenceSelect } from "@/components/tasks/recurrence-select";
 import type { CategoryDisplay } from "@/lib/categories/tree";
 import type { Category } from "@/lib/categories/types";
 import type { TaskLabelDisplay } from "@/lib/labels/display";
 import type { Label } from "@/lib/labels/types";
 import { syncTaskLabels } from "@/lib/labels/sync-task-labels";
+import {
+  completeTaskWithRecurrence,
+} from "@/lib/tasks/complete-with-recurrence";
 import {
   datetimeLocalValueToIso,
   isoToDatetimeLocalValue,
@@ -30,6 +34,14 @@ import {
   parseTaskPriority,
   type TaskPriority,
 } from "@/lib/tasks/priority";
+import {
+  DEFAULT_TASK_RECURRENCE,
+  getRecurrenceBadgeText,
+  parseTaskRecurrence,
+  RECURRENCE_NEXT_OCCURRENCE_HINT,
+  validateRecurrenceDueAt,
+  type TaskRecurrence,
+} from "@/lib/tasks/recurrence";
 import {
   getReminderCardLabel,
   reminderFormFromDb,
@@ -60,6 +72,7 @@ type TaskListItemProps = {
   reminderMode?: string | null;
   reminderOffsetMinutes?: number | null;
   priority?: TaskPriority | string | null;
+  recurrence?: TaskRecurrence | string | null;
   completed: boolean;
   createdAt: string;
   categoryId: string | null;
@@ -124,6 +137,7 @@ export function TaskListItem({
   reminderMode = null,
   reminderOffsetMinutes = null,
   priority = DEFAULT_TASK_PRIORITY,
+  recurrence = DEFAULT_TASK_RECURRENCE,
   completed,
   createdAt,
   categoryId,
@@ -156,6 +170,9 @@ export function TaskListItem({
   );
   const [editPriority, setEditPriority] = useState<TaskPriority>(() =>
     parseTaskPriority(priority),
+  );
+  const [editRecurrence, setEditRecurrence] = useState<TaskRecurrence>(() =>
+    parseTaskRecurrence(recurrence),
   );
   const [editCategoryId, setEditCategoryId] = useState<string | null>(categoryId);
   const [editLabelIds, setEditLabelIds] = useState<string[]>(labelIds);
@@ -191,6 +208,7 @@ export function TaskListItem({
       }),
     );
     setEditPriority(parseTaskPriority(priority));
+    setEditRecurrence(parseTaskRecurrence(recurrence));
     setEditCategoryId(categoryId);
     setEditLabelIds(labelIds);
     setExtraLabels([]);
@@ -231,8 +249,16 @@ export function TaskListItem({
 
     const supabase = createClient();
     const newDueAt = datetimeLocalValueToIso(editDueAt);
+    const recurrenceError = validateRecurrenceDueAt(editRecurrence, newDueAt);
+    if (recurrenceError) {
+      setError(recurrenceError);
+      setLoading(false);
+      return;
+    }
+
     const reminderColumns = toReminderDbColumns(newDueAt, editReminder);
     const dueAtChanged = !dueAtValuesEqual(dueAt, newDueAt);
+    const becomingComplete = !completed && editCompleted;
 
     const { error: updateError } = await supabase
       .from("tasks")
@@ -242,8 +268,10 @@ export function TaskListItem({
         due_at: newDueAt,
         ...reminderColumns,
         priority: editPriority,
-        completed: editCompleted,
+        recurrence: editRecurrence,
         category_id: editCategoryId,
+        // RPC handles completed=true + spawn; never flip completed true here.
+        ...(becomingComplete ? {} : { completed: editCompleted }),
       })
       .eq("id", id);
 
@@ -263,6 +291,23 @@ export function TaskListItem({
       setError(labelsError.message);
       setLoading(false);
       return;
+    }
+
+    if (becomingComplete) {
+      const { data: completeData, error: completeError } =
+        await completeTaskWithRecurrence(supabase, id);
+      if (completeError) {
+        setError(completeError);
+        setLoading(false);
+        return;
+      }
+      if (completeData?.next_task_id) {
+        console.info("[TaskListItem] next occurrence created", {
+          id,
+          next_task_id: completeData.next_task_id,
+          next_due_at: completeData.next_due_at ?? null,
+        });
+      }
     }
 
     if (dueAtChanged) {
@@ -364,6 +409,14 @@ export function TaskListItem({
             labelClassName="mb-1.5 block text-sm font-medium text-stone-700"
           />
 
+          <RecurrenceSelect
+            id={`edit-recurrence-${id}`}
+            value={editRecurrence}
+            onChange={setEditRecurrence}
+            dueLocal={editDueAt}
+            labelClassName="mb-1.5 block text-sm font-medium text-stone-700"
+          />
+
           <CategorySelect
             id={`edit-category-${id}`}
             categories={categories}
@@ -444,6 +497,8 @@ export function TaskListItem({
     reminderOffsetMinutes,
   });
   const taskPriority = parseTaskPriority(priority);
+  const taskRecurrence = parseTaskRecurrence(recurrence);
+  const recurrenceBadgeText = getRecurrenceBadgeText(taskRecurrence);
 
   const readContent = (
     <>
@@ -504,9 +559,19 @@ export function TaskListItem({
               {completed ? "Completed" : "Open"}
             </span>
             <PriorityBadge priority={taskPriority} />
+            {recurrenceBadgeText ? (
+              <span className="rounded-full bg-sky-50 px-2.5 py-1 text-xs font-medium text-sky-800 dark:bg-sky-950/50 dark:text-sky-300">
+                {recurrenceBadgeText}
+              </span>
+            ) : null}
           </div>
         </div>
       </div>
+      {taskRecurrence !== DEFAULT_TASK_RECURRENCE && !completed ? (
+        <p className="mt-2 pl-8 text-xs text-stone-500 dark:text-stone-400">
+          {RECURRENCE_NEXT_OCCURRENCE_HINT}
+        </p>
+      ) : null}
       <TaskSubtaskList taskId={id} subtasks={subtasks} />
       <div className="mt-4 flex items-center justify-between gap-4">
         <dl className="flex flex-wrap gap-x-6 gap-y-2 text-sm text-stone-500 dark:text-stone-400">

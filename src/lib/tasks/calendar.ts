@@ -3,6 +3,7 @@ import type { TaskLabelDisplay } from "@/lib/labels/display";
 import type { Label } from "@/lib/labels/types";
 import type { DueDateHistoryCounts } from "@/lib/tasks/due-date-change";
 import type { TaskPriority } from "@/lib/tasks/priority";
+import type { TaskRecurrence } from "@/lib/tasks/recurrence";
 import type { SubtaskProgress } from "@/lib/tasks/subtasks/progress";
 import type { TaskSubtask } from "@/lib/tasks/subtasks/types";
 import {
@@ -36,6 +37,7 @@ export type CalendarModalTask = {
   reminderMode: string | null;
   reminderOffsetMinutes: number | null;
   priority: TaskPriority;
+  recurrence: TaskRecurrence;
   completed: boolean;
   createdAt: string;
   categoryId: string | null;

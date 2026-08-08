@@ -8,7 +8,7 @@ Last updated: 2026-08-08
 
 ## Current milestone
 
-**v1.3 — Focus View v1**
+**v1.4 — Recurring Tasks v1**
 
 ## What is working
 
@@ -32,6 +32,7 @@ Last updated: 2026-08-08
 - **Reminders** — `reminder_at` + `reminder_mode` + `reminder_offset_minutes`; presets: none / custom / 1h / 1d / 1w before due; relative recalculates with due; overview sections; no email/push
 - **Priority** — `low` / `medium` / `high` / `urgent` (default medium); forms + card badge; sort `priority_desc`; calendar chips show high/urgent dot only
 - **Focus** — `/dashboard/focus`; open tasks only; exclusive sections (overdue → due today → reminders → high/urgent → up next); full `TaskListItem`
+- **Recurrence** — weekly…annual on tasks; complete via RPC spawns next occurrence (labels + subtasks); due required when repeating
 
 ### Subtasks / checklist
 - **`task_subtasks` table** — per-task checklist owned by task user; RLS by `user_id`
@@ -101,7 +102,7 @@ Last updated: 2026-08-08
 - Priority filter on Tasks page
 - Email / browser push reminders
 - Reminder snooze / dismiss state
-- Recurring tasks
+- Recurrence series edit / delete future / catch-up loops
 - Multi-user task assignment / sharing
 - Task-level permissions
 - Category / label filters on dashboard overview (tasks page only)
@@ -130,12 +131,13 @@ Last updated: 2026-08-08
 | `task_subtasks` | Done (`sql/task_subtasks.sql`) |
 | `tasks.reminder_at` (+ mode/offset) | Done (`sql/tasks_reminder_at.sql`; no new RLS) |
 | `tasks.priority` | Done (`sql/tasks_priority.sql`; no new RLS) |
+| `tasks.recurrence` (+ spawn RPC) | Done (`sql/tasks_recurrence.sql`) |
 | Admin env vars | Done (server-side only) |
 | CLI / full migrations in repo | Not set up |
 
 ## Database tables created so far
 
-Mostly created in Supabase SQL editor. Repo scripts: `sql/task_subtasks.sql`, `sql/labels_personal_select_archived.sql`, `sql/label_categories.sql`, `sql/tasks_reminder_at.sql`, `sql/tasks_priority.sql`. Reference snapshot: `docs/database-schema.sql`.
+Mostly created in Supabase SQL editor. Repo scripts: `sql/task_subtasks.sql`, `sql/labels_personal_select_archived.sql`, `sql/label_categories.sql`, `sql/tasks_reminder_at.sql`, `sql/tasks_priority.sql`, `sql/tasks_recurrence.sql`. Reference snapshot: `docs/database-schema.sql`.
 
 ### `tasks`
 
@@ -150,6 +152,8 @@ Mostly created in Supabase SQL editor. Repo scripts: `sql/task_subtasks.sql`, `s
 | `reminder_mode` | text | null / `custom` / `relative_due` |
 | `reminder_offset_minutes` | int | Relative only: 60 / 1440 / 10080 |
 | `priority` | text | `low` / `medium` / `high` / `urgent`; default `medium` (`sql/tasks_priority.sql`) |
+| `recurrence` | text | `none` / weekly…annual; default `none` (`sql/tasks_recurrence.sql`) |
+| `spawned_from_task_id` | uuid | Nullable FK → parent occurrence; unique when set |
 | `completed` | boolean | Default false |
 | `category_id` | uuid | Nullable FK → `categories`, ON DELETE SET NULL |
 | `created_at` | timestamptz | Default now |
@@ -224,6 +228,7 @@ Mostly created in Supabase SQL editor. Repo scripts: `sql/task_subtasks.sql`, `s
 |------|--------|
 | Tasks page | `src/app/dashboard/tasks/page.tsx` |
 | Focus page | `src/app/dashboard/focus/page.tsx`, `src/lib/tasks/focus.ts` |
+| Recurrence | `src/lib/tasks/recurrence.ts`, `src/lib/tasks/complete-with-recurrence.ts`, `src/components/tasks/recurrence-select.tsx`, `sql/tasks_recurrence.sql` |
 | Task components | `src/components/tasks/*` |
 | Label picker | `src/components/tasks/label-select.tsx` |
 | Label ↔ category | `src/lib/labels/category-links.ts`, `src/components/admin/label-category-link-fields.tsx` |
@@ -237,7 +242,7 @@ Mostly created in Supabase SQL editor. Repo scripts: `sql/task_subtasks.sql`, `s
 | Theme | `src/components/theme/*` |
 | Categories | `src/lib/categories/*` |
 | Admin | `src/app/dashboard/admin/*`, `src/components/admin/*` |
-| SQL scripts | `sql/task_subtasks.sql`, `sql/labels_personal_select_archived.sql`, `sql/label_categories.sql`, `sql/tasks_reminder_at.sql`, `sql/tasks_priority.sql` |
+| SQL scripts | `sql/task_subtasks.sql`, `sql/labels_personal_select_archived.sql`, `sql/label_categories.sql`, `sql/tasks_reminder_at.sql`, `sql/tasks_priority.sql`, `sql/tasks_recurrence.sql` |
 | Docs | `docs/database-schema.sql`, `docs/rls-policies.md`, `docs/test-checklist.md` |
 
 ## Latest important commits
@@ -262,4 +267,4 @@ Mostly created in Supabase SQL editor. Repo scripts: `sql/task_subtasks.sql`, `s
 
 ## Next recommended step
 
-Manual-test Focus View sections and exclusive grouping, then deployment prep or polish.
+Manual-test recurring complete (spawn next due, labels, subtasks, reminders), then deployment prep or polish.

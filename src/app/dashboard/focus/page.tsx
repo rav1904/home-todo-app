@@ -31,6 +31,8 @@ type FocusTask = FocusTaskLike & {
   description: string | null;
   reminder_mode: string | null;
   reminder_offset_minutes: number | null;
+  priority: string | null;
+  recurrence: string | null;
   category_id: string | null;
 };
 
@@ -85,7 +87,7 @@ export default async function FocusPage() {
     supabase
       .from("tasks")
       .select(
-        "id, title, description, due_at, reminder_at, reminder_mode, reminder_offset_minutes, priority, completed, created_at, category_id",
+        "id, title, description, due_at, reminder_at, reminder_mode, reminder_offset_minutes, priority, recurrence, completed, created_at, category_id",
       )
       .eq("completed", false)
       .order("created_at", { ascending: false }),
@@ -195,6 +197,7 @@ export default async function FocusPage() {
         reminderMode={task.reminder_mode}
         reminderOffsetMinutes={task.reminder_offset_minutes}
         priority={task.priority}
+        recurrence={task.recurrence}
         completed={task.completed}
         createdAt={task.created_at}
         categoryId={task.category_id}
