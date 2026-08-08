@@ -59,7 +59,7 @@ export function LabelAdminPanel({
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editValues, setEditValues] = useState<LabelFormValues | null>(null);
   const [editCategoryIds, setEditCategoryIds] = useState<string[]>([]);
-  const [sortMode, setSortMode] = useState<LabelSortMode>("custom");
+  const [sortMode, setSortMode] = useState<LabelSortMode>("az");
   const [draggedLabelId, setDraggedLabelId] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -497,9 +497,9 @@ export function LabelAdminPanel({
           <div className="flex flex-wrap gap-2">
             {(
               [
-                ["custom", "Custom"],
                 ["az", "A-Z"],
                 ["za", "Z-A"],
+                ["custom", "Custom"],
               ] as const
             ).map(([mode, labelText]) => (
               <button

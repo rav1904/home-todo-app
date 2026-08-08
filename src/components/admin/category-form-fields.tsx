@@ -54,6 +54,10 @@ export function CategoryFormFields({
               </option>
             ))}
           </select>
+          <p className="mt-1.5 text-xs text-stone-500 dark:text-stone-400">
+            Only top-level categories can be parents. Categories with
+            subcategories cannot be nested under another category.
+          </p>
         </div>
       ) : null}
 

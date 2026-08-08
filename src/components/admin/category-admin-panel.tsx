@@ -47,7 +47,7 @@ export function CategoryAdminPanel({ categories }: CategoryAdminPanelProps) {
   const [createValues, setCreateValues] = useState(createEmptyCategoryFormValues());
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editValues, setEditValues] = useState<CategoryFormValues | null>(null);
-  const [sortMode, setSortMode] = useState<CategorySortMode>("custom");
+  const [sortMode, setSortMode] = useState<CategorySortMode>("az");
   const [draggedCategoryId, setDraggedCategoryId] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -194,17 +194,68 @@ export function CategoryAdminPanel({ categories }: CategoryAdminPanelProps) {
       (category) => category.id === editingId,
     );
 
+    if (!originalCategory) {
+      setError("Could not find that category.");
+      setLoading(false);
+      return;
+    }
+
+    const nextParentId = editValues.parent_id;
+
+    // Two-level tree only: a main category with children cannot become a subcategory.
+    if (nextParentId !== null) {
+      const hasChildCategories = categories.some(
+        (category) => category.parent_id === editingId,
+      );
+      if (hasChildCategories) {
+        setError(
+          "This category has subcategories. Move or remove those first before nesting it under another category.",
+        );
+        setLoading(false);
+        return;
+      }
+
+      const parentCategory = categories.find(
+        (category) => category.id === nextParentId,
+      );
+      if (!parentCategory || parentCategory.parent_id !== null) {
+        setError("Parent must be a top-level category.");
+        setLoading(false);
+        return;
+      }
+
+      if (nextParentId === editingId) {
+        setError("A category cannot be its own parent.");
+        setLoading(false);
+        return;
+      }
+    }
+
+    const parentChanged = originalCategory.parent_id !== nextParentId;
+    const updatePayload: {
+      name: string;
+      colour: string;
+      icon_name: string;
+      parent_id: string | null;
+      updated_at: string;
+      sort_order?: number;
+    } = {
+      name: editValues.name.trim(),
+      colour: editValues.colour,
+      icon_name: editValues.icon_name,
+      parent_id: nextParentId,
+      updated_at: new Date().toISOString(),
+    };
+
+    // Place the category at the end of its new sibling group when parent changes.
+    if (parentChanged) {
+      updatePayload.sort_order = getNextSortOrder(categories, nextParentId);
+    }
+
     const supabase = createClient();
     const { error: updateError } = await supabase
       .from("categories")
-      .update({
-        name: editValues.name.trim(),
-        colour: editValues.colour,
-        icon_name: editValues.icon_name,
-        parent_id:
-          originalCategory?.parent_id === null ? null : editValues.parent_id,
-        updated_at: new Date().toISOString(),
-      })
+      .update(updatePayload)
       .eq("id", editingId);
 
     if (updateError) {
@@ -351,7 +402,7 @@ export function CategoryAdminPanel({ categories }: CategoryAdminPanelProps) {
               mainCategories={activeMainCategories.filter(
                 (main) => main.id !== category.id,
               )}
-              showParentSelect={category.parent_id !== null}
+              showParentSelect
             />
             <div className="flex flex-wrap gap-2">
               <button
@@ -490,9 +541,9 @@ export function CategoryAdminPanel({ categories }: CategoryAdminPanelProps) {
           <div className="flex flex-wrap gap-2">
             {(
               [
-                ["custom", "Custom"],
                 ["az", "A-Z"],
                 ["za", "Z-A"],
+                ["custom", "Custom"],
               ] as const
             ).map(([mode, label]) => (
               <button
