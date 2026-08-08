@@ -102,10 +102,10 @@ export function Sidebar({ showAdminLink = false }: SidebarProps) {
             </div>
             <div className="min-w-0">
               <p className="truncate text-sm font-semibold text-stone-900 dark:text-stone-100">
-                Workspace
+                Work Hard / Play Hard
               </p>
               <p className="truncate text-xs text-stone-500 dark:text-stone-400">
-                Home tasks
+                To Do
               </p>
             </div>
           </div>

@@ -83,7 +83,7 @@ export function TaskCompleteToggle({
         aria-label={`Mark "${title}" as ${completed ? "incomplete" : "complete"}`}
         aria-invalid={error ? true : undefined}
         title={error ?? success ?? undefined}
-        className="mt-1 h-5 w-5 shrink-0 cursor-pointer rounded border-stone-300 text-emerald-600 focus:ring-emerald-500/20 disabled:cursor-not-allowed disabled:opacity-60"
+        className="mt-1 h-5 w-5 shrink-0 cursor-pointer rounded border-stone-300 text-accent focus:ring-accent/20 disabled:cursor-not-allowed disabled:opacity-60"
       />
       {error ? (
         <span
@@ -96,7 +96,7 @@ export function TaskCompleteToggle({
       {success ? (
         <span
           role="status"
-          className="absolute left-0 top-7 z-10 w-48 rounded-md bg-emerald-50 px-2 py-1 text-xs text-emerald-800 shadow-sm dark:bg-emerald-950/80 dark:text-emerald-300"
+          className="absolute left-0 top-7 z-10 w-48 rounded-md bg-accent-muted px-2 py-1 text-xs text-accent-ink shadow-sm dark:bg-accent-muted dark:text-accent-ink"
         >
           {success}
         </span>

@@ -61,7 +61,7 @@ export function LabelCategoryLinkFields({
                   checked={mainChecked}
                   disabled={disabled}
                   onChange={() => onChange(toggleCategoryId(value, main.id))}
-                  className="h-4 w-4 cursor-pointer rounded border-stone-300 text-emerald-600 focus:ring-emerald-500/20"
+                  className="h-4 w-4 cursor-pointer rounded border-stone-300 text-accent focus:ring-accent/20"
                 />
                 <span
                   className="inline-flex h-5 w-5 items-center justify-center rounded-md text-white"
@@ -94,7 +94,7 @@ export function LabelCategoryLinkFields({
                           onChange={() =>
                             onChange(toggleCategoryId(value, sub.id))
                           }
-                          className="h-4 w-4 cursor-pointer rounded border-stone-300 text-emerald-600 focus:ring-emerald-500/20"
+                          className="h-4 w-4 cursor-pointer rounded border-stone-300 text-accent focus:ring-accent/20"
                         />
                         <span
                           className="inline-flex h-5 w-5 items-center justify-center rounded-md text-white"

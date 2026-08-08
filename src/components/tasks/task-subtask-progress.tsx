@@ -42,7 +42,7 @@ export function TaskSubtaskProgress({
         aria-label={`${progress.completedCount} of ${progress.totalCount} subtasks completed`}
       >
         <div
-          className="h-full rounded-full bg-emerald-500 transition-all dark:bg-emerald-400"
+          className="h-full rounded-full bg-accent-muted0 transition-all dark:bg-success"
           style={{ width: `${progress.percent}%` }}
         />
       </div>
@@ -55,7 +55,7 @@ export function TaskSubtaskProgress({
         type="button"
         onClick={onToggle}
         aria-expanded={expanded}
-        className={`w-full cursor-pointer rounded-lg text-left transition hover:bg-stone-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500/30 dark:hover:bg-stone-800/60 ${
+        className={`w-full cursor-pointer rounded-lg text-left transition hover:bg-stone-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-accent/30 dark:hover:bg-stone-800/60 ${
           compact ? "mt-2 p-1.5" : "mt-3 p-2"
         }`}
       >

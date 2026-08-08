@@ -177,7 +177,7 @@ function OverviewPanel({
           {href ? (
             <Link
               href={href}
-              className="text-base font-semibold text-stone-900 transition hover:text-emerald-700 dark:text-stone-100 dark:hover:text-emerald-300"
+              className="text-base font-semibold text-stone-900 transition hover:text-accent-ink dark:text-stone-100 dark:hover:text-accent-hover"
             >
               {title}
             </Link>
@@ -292,7 +292,7 @@ export default async function DashboardPage() {
   const focusLink = (
     <Link
       href="/dashboard/focus"
-      className="text-sm font-medium text-emerald-700 transition hover:text-emerald-800 dark:text-emerald-400 dark:hover:text-emerald-300"
+      className="text-sm font-medium text-accent-ink transition hover:text-accent-ink dark:text-accent dark:hover:text-accent-hover"
     >
       Open Focus
     </Link>
@@ -301,7 +301,7 @@ export default async function DashboardPage() {
   const tasksLink = (
     <Link
       href="/dashboard/tasks"
-      className="text-sm font-medium text-emerald-700 transition hover:text-emerald-800 dark:text-emerald-400 dark:hover:text-emerald-300"
+      className="text-sm font-medium text-accent-ink transition hover:text-accent-ink dark:text-accent dark:hover:text-accent-hover"
     >
       Go to Tasks
     </Link>

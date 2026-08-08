@@ -24,14 +24,14 @@ function WeekDayColumn({
   return (
     <section
       className={`flex min-h-[12rem] w-[9.75rem] shrink-0 snap-start flex-col border-r border-stone-200/80 p-2.5 last:border-r-0 sm:w-[11rem] lg:min-h-[16rem] lg:w-auto lg:min-w-0 lg:p-3 dark:border-stone-700/80 ${
-        day.isToday ? "bg-emerald-50/35 dark:bg-emerald-950/15" : ""
+        day.isToday ? "bg-accent-muted/60 dark:bg-accent-muted/50" : ""
       }`}
     >
       <div className="mb-2 flex items-center gap-2">
         <span
           className={`flex h-7 w-7 items-center justify-center rounded-full text-xs font-medium ${
             day.isToday
-              ? "bg-emerald-600 text-white shadow-sm shadow-emerald-600/20"
+              ? "bg-accent text-white shadow-sm shadow-accent/20"
               : "bg-stone-100 text-stone-700 dark:bg-stone-800 dark:text-stone-300"
           }`}
         >

@@ -221,7 +221,7 @@ export function LabelSelect({
           Labels
           <span className="font-normal text-stone-400 dark:text-stone-500">
             {" "}
-            · optional
+            Â· optional
           </span>
         </p>
         {!showCreateForm ? (
@@ -231,7 +231,7 @@ export function LabelSelect({
               setShowCreateForm(true);
               setCreateError(null);
             }}
-            className="cursor-pointer text-xs font-medium text-emerald-700 transition hover:text-emerald-800 dark:text-emerald-400 dark:hover:text-emerald-300"
+            className="cursor-pointer text-xs font-medium text-accent-ink transition hover:text-accent-ink dark:text-accent dark:hover:text-accent-hover"
           >
             + New
           </button>

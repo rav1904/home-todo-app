@@ -213,7 +213,7 @@ export function UserCategoryAccessPanel({
                                     onChange={() =>
                                       toggleCategory(appUser.id, category.id)
                                     }
-                                    className="rounded border-stone-300 text-emerald-600 focus:ring-emerald-500"
+                                    className="rounded border-stone-300 text-accent focus:ring-accent"
                                   />
                                   <span
                                     className="inline-block h-2.5 w-2.5 shrink-0 rounded-full"
@@ -255,7 +255,7 @@ export function UserCategoryAccessPanel({
                     ) : null}
                   </td>
                   <td className="py-3 pr-4 align-top font-medium text-stone-900 dark:text-stone-100">
-                    {appUser.email ?? "—"}
+                    {appUser.email ?? "â€”"}
                   </td>
                   <td className="py-3 pr-4 align-top">
                     {formatDateTime(appUser.createdAt)}
@@ -269,11 +269,11 @@ export function UserCategoryAccessPanel({
                     <button
                       type="button"
                       onClick={() => toggleExpanded(appUser.id)}
-                      className="cursor-pointer text-left text-sm font-medium text-emerald-700 transition hover:text-emerald-800 dark:text-emerald-400 dark:hover:text-emerald-300"
+                      className="cursor-pointer text-left text-sm font-medium text-accent-ink transition hover:text-accent-ink dark:text-accent dark:hover:text-accent-hover"
                     >
                       {selectedCount === 0
-                        ? "Personal only · Edit"
-                        : `${selectedCount} global · Edit`}
+                        ? "Personal only Â· Edit"
+                        : `${selectedCount} global Â· Edit`}
                     </button>
                   </td>
                 </tr>

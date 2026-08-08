@@ -93,7 +93,7 @@ export function MonthCalendar({
                 className={`min-h-[4.75rem] cursor-pointer border-b border-r border-stone-200/80 p-0.5 transition hover:bg-stone-100/90 sm:min-h-[6.5rem] sm:p-1 dark:border-stone-700/80 dark:hover:bg-stone-800/70 ${
                   day.isCurrentMonth
                     ? day.isToday
-                      ? "bg-emerald-50/40 hover:bg-emerald-50/70 dark:bg-emerald-950/20 dark:hover:bg-emerald-950/35"
+                      ? "bg-accent-muted/70 hover:bg-accent-muted dark:bg-accent-muted/60 dark:hover:bg-accent-muted"
                       : "bg-white dark:bg-stone-900"
                     : "bg-stone-50/70 dark:bg-stone-950/40"
                 }`}
@@ -101,7 +101,7 @@ export function MonthCalendar({
                 <span
                   className={`mb-0.5 flex h-6 w-6 items-center justify-center rounded-full text-xs font-medium ${
                     day.isToday
-                      ? "bg-emerald-600 text-white shadow-sm shadow-emerald-600/20"
+                      ? "bg-accent text-white shadow-sm shadow-accent/20"
                       : day.isCurrentMonth
                         ? "text-stone-700 dark:text-stone-300"
                         : "text-stone-400 dark:text-stone-600"
@@ -120,7 +120,7 @@ export function MonthCalendar({
                     />
                   ))}
                   {hiddenCount > 0 ? (
-                    <span className="block px-1 py-0.5 text-left text-[10px] font-medium text-emerald-700 sm:text-[11px] dark:text-emerald-400">
+                    <span className="block px-1 py-0.5 text-left text-[10px] font-medium text-accent-ink sm:text-[11px] dark:text-accent">
                       +{hiddenCount} more
                     </span>
                   ) : null}

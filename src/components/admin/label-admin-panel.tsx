@@ -356,7 +356,7 @@ export function LabelAdminPanel({
               <button
                 type="submit"
                 disabled={loading}
-                className="cursor-pointer rounded-xl bg-emerald-600 px-4 py-2 text-sm font-medium text-white transition hover:bg-emerald-700 disabled:cursor-not-allowed disabled:opacity-60"
+                className="cursor-pointer rounded-xl bg-accent px-4 py-2 text-sm font-medium text-white transition hover:bg-accent-hover disabled:cursor-not-allowed disabled:opacity-60"
               >
                 {loading ? "Saving..." : "Save changes"}
               </button>
@@ -476,7 +476,7 @@ export function LabelAdminPanel({
           <button
             type="submit"
             disabled={loading}
-            className="cursor-pointer rounded-xl bg-emerald-600 px-4 py-2.5 text-sm font-medium text-white transition hover:bg-emerald-700 disabled:cursor-not-allowed disabled:opacity-60"
+            className="cursor-pointer rounded-xl bg-accent px-4 py-2.5 text-sm font-medium text-white transition hover:bg-accent-hover disabled:cursor-not-allowed disabled:opacity-60"
           >
             {loading ? "Creating..." : "Create label"}
           </button>
@@ -508,7 +508,7 @@ export function LabelAdminPanel({
                 onClick={() => setSortMode(mode)}
                 className={`cursor-pointer rounded-lg px-3 py-1.5 text-sm font-medium transition ${
                   sortMode === mode
-                    ? "bg-emerald-50 text-emerald-800 dark:bg-emerald-950/50 dark:text-emerald-300"
+                    ? "bg-accent-muted text-accent-ink dark:bg-accent-muted dark:text-accent-ink"
                     : "border border-stone-200 bg-white text-stone-600 hover:bg-stone-50 dark:border-stone-600 dark:bg-stone-800 dark:text-stone-300 dark:hover:bg-stone-700"
                 }`}
               >

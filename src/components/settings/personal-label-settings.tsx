@@ -195,7 +195,7 @@ export function PersonalLabelSettings({
               <button
                 type="submit"
                 disabled={loading}
-                className="cursor-pointer rounded-xl bg-emerald-600 px-4 py-2 text-sm font-medium text-white transition hover:bg-emerald-700 disabled:cursor-not-allowed disabled:opacity-60"
+                className="cursor-pointer rounded-xl bg-accent px-4 py-2 text-sm font-medium text-white transition hover:bg-accent-hover disabled:cursor-not-allowed disabled:opacity-60"
               >
                 {loading ? "Saving..." : "Save changes"}
               </button>
@@ -228,7 +228,7 @@ export function PersonalLabelSettings({
             </span>
             {!label.active ? (
               <p className="mt-2 text-xs text-stone-500 dark:text-stone-400">
-                Archived — hidden from task label pickers
+                Archived â€” hidden from task label pickers
               </p>
             ) : null}
           </div>
@@ -286,7 +286,7 @@ export function PersonalLabelSettings({
               setShowCreateForm(true);
               setError(null);
             }}
-            className="cursor-pointer rounded-xl bg-emerald-600 px-4 py-2 text-sm font-medium text-white transition hover:bg-emerald-700"
+            className="cursor-pointer rounded-xl bg-accent px-4 py-2 text-sm font-medium text-white transition hover:bg-accent-hover"
           >
             New personal label
           </button>
@@ -314,7 +314,7 @@ export function PersonalLabelSettings({
             <button
               type="submit"
               disabled={loading}
-              className="cursor-pointer rounded-xl bg-emerald-600 px-4 py-2 text-sm font-medium text-white transition hover:bg-emerald-700 disabled:cursor-not-allowed disabled:opacity-60"
+              className="cursor-pointer rounded-xl bg-accent px-4 py-2 text-sm font-medium text-white transition hover:bg-accent-hover disabled:cursor-not-allowed disabled:opacity-60"
             >
               {loading ? "Creating..." : "Create label"}
             </button>

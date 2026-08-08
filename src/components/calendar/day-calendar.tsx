@@ -27,7 +27,7 @@ export function DayCalendar({ nav, tasks, onTaskSelect }: DayCalendarProps) {
             </p>
             <Link
               href="/dashboard/tasks"
-              className="mt-4 inline-flex text-sm font-medium text-emerald-700 transition hover:text-emerald-800 dark:text-emerald-400 dark:hover:text-emerald-300"
+              className="mt-4 inline-flex text-sm font-medium text-accent-ink transition hover:text-accent-ink dark:text-accent dark:hover:text-accent-hover"
             >
               Browse tasks
             </Link>

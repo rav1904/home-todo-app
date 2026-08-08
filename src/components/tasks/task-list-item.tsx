@@ -390,7 +390,7 @@ export function TaskListItem({
   const wrapperClassName = embedded
     ? ""
     : isEditing
-      ? "rounded-2xl border border-emerald-200 bg-white p-4 shadow-sm dark:border-emerald-900/50 dark:bg-stone-900"
+      ? "rounded-2xl border border-accent/30 bg-white p-4 shadow-sm dark:border-accent/40 dark:bg-stone-900"
       : `${cardClassName} p-4`;
 
   if (isEditing) {
@@ -423,7 +423,7 @@ export function TaskListItem({
               Notes
               <span className="font-normal text-stone-400 dark:text-stone-500">
                 {" "}
-                · optional
+                Â· optional
               </span>
             </label>
             <textarea
@@ -504,7 +504,7 @@ export function TaskListItem({
             type="checkbox"
             checked={editCompleted}
             onChange={(event) => setEditCompleted(event.target.checked)}
-            className="h-4 w-4 cursor-pointer rounded border-stone-300 text-emerald-600 focus:ring-emerald-500/20"
+            className="h-4 w-4 cursor-pointer rounded border-stone-300 text-accent focus:ring-accent/20"
           />
           Mark as completed
         </label>
@@ -615,7 +615,7 @@ export function TaskListItem({
             {reminderLabel ? (
               <>
                 <span className="text-stone-300 dark:text-stone-600" aria-hidden>
-                  ·
+                  Â·
                 </span>
                 <span
                   className={
@@ -631,7 +631,7 @@ export function TaskListItem({
             {recurrenceBadgeText ? (
               <>
                 <span className="text-stone-300 dark:text-stone-600" aria-hidden>
-                  ·
+                  Â·
                 </span>
                 <span className="text-sky-700 dark:text-sky-300">
                   {recurrenceBadgeText}

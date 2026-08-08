@@ -110,7 +110,7 @@ function FocusSection({
 function FocusEmptyState() {
   return (
     <div className="rounded-xl border border-dashed border-stone-300 bg-white px-6 py-12 text-center dark:border-stone-600 dark:bg-stone-900">
-      <div className="mx-auto flex h-11 w-11 items-center justify-center rounded-full bg-emerald-50 text-emerald-700 dark:bg-emerald-950/50 dark:text-emerald-300">
+      <div className="mx-auto flex h-11 w-11 items-center justify-center rounded-full bg-accent-muted text-accent-ink dark:bg-accent-muted dark:text-accent-ink">
         <Check className="h-5 w-5" strokeWidth={2.25} aria-hidden="true" />
       </div>
       <h2 className="mt-4 text-lg font-semibold text-stone-900 dark:text-stone-100">
@@ -121,7 +121,7 @@ function FocusEmptyState() {
       </p>
       <Link
         href="/dashboard/tasks"
-        className="mt-5 inline-flex cursor-pointer text-sm font-medium text-emerald-700 transition hover:text-emerald-800 dark:text-emerald-400 dark:hover:text-emerald-300"
+        className="mt-5 inline-flex cursor-pointer text-sm font-medium text-accent-ink transition hover:text-accent-ink dark:text-accent dark:hover:text-accent-hover"
       >
         Browse all tasks
       </Link>
@@ -321,7 +321,7 @@ export default async function FocusPage() {
           <div className="mx-auto max-w-3xl space-y-4">
             <FocusSection
               title="Overdue"
-              description="Past due — handle these first"
+              description="Past due â€” handle these first"
               count={sections.overdue.length}
               tone="danger"
               tasks={sections.overdue}

@@ -96,7 +96,7 @@ export function CategoryFormFields({
                 onClick={() => onChange({ ...values, icon_name: iconName })}
                 className={`flex h-10 items-center justify-center rounded-xl border transition ${
                   isSelected
-                    ? "border-emerald-500 bg-emerald-50 text-emerald-700 dark:border-emerald-500 dark:bg-emerald-950/50 dark:text-emerald-300"
+                    ? "border-accent bg-accent-muted text-accent-ink dark:border-accent dark:bg-accent-muted dark:text-accent-ink"
                     : "border-stone-200 bg-white text-stone-600 hover:bg-stone-50 dark:border-stone-600 dark:bg-stone-800 dark:text-stone-300 dark:hover:bg-stone-700"
                 }`}
               >

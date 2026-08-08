@@ -242,7 +242,7 @@ export function TaskSubtaskList({
                   onChange={() => void handleToggleComplete(subtask)}
                   disabled={loading}
                   aria-label={`Mark "${subtask.title}" as ${subtask.completed ? "incomplete" : "complete"}`}
-                  className="mt-1 h-4 w-4 shrink-0 cursor-pointer rounded border-stone-300 text-emerald-600 focus:ring-emerald-500/20 disabled:cursor-not-allowed disabled:opacity-60"
+                  className="mt-1 h-4 w-4 shrink-0 cursor-pointer rounded border-stone-300 text-accent focus:ring-accent/20 disabled:cursor-not-allowed disabled:opacity-60"
                 />
 
                 <div className="min-w-0 flex-1">
@@ -265,7 +265,7 @@ export function TaskSubtaskList({
                         <button
                           type="submit"
                           disabled={loading}
-                          className="cursor-pointer rounded-lg bg-emerald-600 px-3 py-1 text-xs font-medium text-white transition hover:bg-emerald-700 disabled:cursor-not-allowed disabled:opacity-60"
+                          className="cursor-pointer rounded-lg bg-accent px-3 py-1 text-xs font-medium text-white transition hover:bg-accent-hover disabled:cursor-not-allowed disabled:opacity-60"
                         >
                           Save
                         </button>
@@ -344,7 +344,7 @@ export function TaskSubtaskList({
         <button
           type="submit"
           disabled={loading}
-          className="cursor-pointer shrink-0 rounded-xl bg-emerald-600 px-4 py-2.5 text-sm font-medium text-white transition hover:bg-emerald-700 disabled:cursor-not-allowed disabled:opacity-60"
+          className="cursor-pointer shrink-0 rounded-xl bg-accent px-4 py-2.5 text-sm font-medium text-white transition hover:bg-accent-hover disabled:cursor-not-allowed disabled:opacity-60"
         >
           Add
         </button>

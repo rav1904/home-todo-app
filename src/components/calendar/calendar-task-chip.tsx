@@ -44,10 +44,10 @@ export function CalendarTaskChip({
         onTaskSelect?.(task.id);
       }}
       aria-label={ariaBits.join(", ")}
-      className={`group flex w-full cursor-pointer overflow-hidden rounded-md text-left transition focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500/40 ${
+      className={`group flex w-full cursor-pointer overflow-hidden rounded-md text-left transition focus:outline-none focus-visible:ring-2 focus-visible:ring-accent/40 ${
         compact
-          ? "bg-stone-100/90 hover:bg-emerald-50 dark:bg-stone-800/70 dark:hover:bg-emerald-950/40"
-          : "bg-stone-50 hover:bg-emerald-50/80 dark:bg-stone-800/60 dark:hover:bg-emerald-950/30"
+          ? "bg-stone-100/90 hover:bg-accent-muted dark:bg-stone-800/70 dark:hover:bg-accent-muted"
+          : "bg-stone-50 hover:bg-accent-muted/80 dark:bg-stone-800/60 dark:hover:bg-accent-muted/80"
       } ${task.completed ? "opacity-60" : ""}`}
     >
       <span
