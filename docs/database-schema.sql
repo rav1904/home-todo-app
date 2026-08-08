@@ -4,14 +4,15 @@
 -- Last updated: 2026-08-08
 --
 -- Tables: tasks, categories, labels, task_labels, label_categories,
---         task_due_date_changes, task_subtasks
+--         user_category_access, task_due_date_changes, task_subtasks
 -- Reminders v1: tasks.reminder_at + reminder_mode + reminder_offset_minutes
 --   (sql/tasks_reminder_at.sql)
 -- Priority v1: tasks.priority (sql/tasks_priority.sql)
 -- Recurrence v1: tasks.recurrence + spawned_from_task_id (sql/tasks_recurrence.sql)
+-- Category access: Personal per user + global grants (sql/categories_personal_and_access.sql)
 
 -- =============================================================================
--- categories (admin-managed tree)
+-- categories (global admin tree + per-user Personal)
 -- =============================================================================
 
 create table if not exists public.categories (
@@ -22,12 +23,39 @@ create table if not exists public.categories (
   icon_name text not null,
   sort_order integer not null default 0,
   active boolean not null default true,
+  scope text not null default 'global'
+    check (scope in ('global', 'personal')),
+  user_id uuid references auth.users (id) on delete cascade,
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now()
+  -- global: user_id is null; name may not be 'Personal'
+  -- personal: user_id = owner; parent_id null; name = 'Personal'; one per user
 );
 
--- Unique names per level are enforced with partial unique indexes in Supabase
--- (main categories vs siblings under the same parent).
+-- Partial unique indexes (see sql/categories_personal_and_access.sql):
+--   categories_global_main_name_uidx  (lower(name)) where scope=global and parent_id is null
+--   categories_global_sub_name_uidx   (parent_id, lower(name)) where scope=global and parent_id is not null
+--   categories_personal_user_uidx     (user_id) where scope=personal
+
+-- Provisioning:
+--   ensure_personal_category_for_user(uuid) — internal SECURITY DEFINER
+--   ensure_my_personal_category() — authenticated; uses auth.uid() only
+--   auth.users AFTER INSERT trigger creates Personal
+
+-- =============================================================================
+-- user_category_access (admin grants of global top-level categories)
+-- =============================================================================
+
+create table if not exists public.user_category_access (
+  user_id uuid not null references auth.users (id) on delete cascade,
+  category_id uuid not null references public.categories (id) on delete cascade,
+  granted_by uuid references auth.users (id) on delete set null,
+  created_at timestamptz not null default now(),
+  primary key (user_id, category_id)
+);
+
+-- Trigger: category_id must be scope=global and parent_id is null.
+-- Personal access is NOT stored here.
 
 -- =============================================================================
 -- tasks
@@ -121,11 +149,13 @@ create index if not exists label_categories_category_id_idx
 --   BEFORE INSERT OR UPDATE OF label_id → labels.scope must be 'global'.
 
 -- App picker rules (Phase C; no extra DB columns):
---   - No category selected → show personal labels only
---   - Main category → globals linked to that main
+--   - No category / Personal category → show personal labels only
+--   - Main global category → globals linked to that main
 --   - Subcategory → globals linked to sub OR parent main
 --   - Personal labels always available
 --   - Existing task_labels rows are not auto-removed when category changes
+-- label_categories must not link to Personal categories
+--   (sql/categories_personal_and_access.sql)
 
 -- =============================================================================
 -- task_due_date_changes

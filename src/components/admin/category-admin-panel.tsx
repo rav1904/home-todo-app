@@ -147,6 +147,8 @@ export function CategoryAdminPanel({ categories }: CategoryAdminPanelProps) {
       sort_order: getNextSortOrder(categories, createValues.parent_id),
       parent_id: createValues.parent_id,
       active: true,
+      scope: "global",
+      user_id: null,
       updated_at: new Date().toISOString(),
     });
 

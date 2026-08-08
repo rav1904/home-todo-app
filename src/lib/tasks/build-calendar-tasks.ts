@@ -1,3 +1,4 @@
+import { loadAccessibleCategories } from "@/lib/categories/access";
 import {
   buildCategoryLookup,
   getCategoryDisplay,
@@ -79,21 +80,14 @@ export async function fetchCalendarPageData(
     tasksQuery = tasksQuery.lte("due_at", upcomingEnd.toISOString());
   }
 
+  const categoriesResult = await loadAccessibleCategories(supabase);
+
   const [
     { data: tasks, error },
-    { data: categories, error: categoriesError },
     { data: labels, error: labelsError },
     { data: labelCategoryLinks, error: labelCategoryLinksError },
   ] = await Promise.all([
     tasksQuery,
-    supabase
-      .from("categories")
-      .select(
-        "id, parent_id, name, colour, icon_name, sort_order, active, created_at, updated_at",
-      )
-      .eq("active", true)
-      .order("sort_order", { ascending: true })
-      .order("name", { ascending: true }),
     supabase
       .from("labels")
       .select(LABEL_SELECT_FIELDS)
@@ -104,7 +98,8 @@ export async function fetchCalendarPageData(
     supabase.from("label_categories").select(LABEL_CATEGORY_LINK_FIELDS),
   ]);
 
-  const activeCategories = (categories ?? []) as Category[];
+  const categoriesError = categoriesResult.error;
+  const activeCategories = categoriesResult.categories;
   const activeLabels = (labels ?? []) as Label[];
   const categoryIdsByLabelId = groupCategoryIdsByLabel(
     (labelCategoryLinks ?? []) as LabelCategoryLink[],

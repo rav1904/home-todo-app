@@ -50,12 +50,42 @@ RPC `complete_task_with_recurrence(uuid)` runs as **SECURITY DEFINER** with `aut
 
 ## `categories`
 
-| Op | Who | Rule (expected) |
-|----|-----|-----------------|
-| SELECT | Authenticated | Active categories readable by signed-in users (pickers / filters) |
-| INSERT / UPDATE / DELETE | Admin | JWT email = admin |
+Source: `sql/categories_personal_and_access.sql` (replaces earlier editor-only policies).
 
-Archived categories (`active = false`) remain admin-visible; user pickers filter active in the app.
+| Op | Who | Rule |
+|----|-----|------|
+| SELECT | Owner | Own Personal (`scope = 'personal'` and `user_id = auth.uid()`) |
+| SELECT | Non-admin | Active global mains with a grant, or active global subs whose parent is granted |
+| SELECT | Admin | All global categories (any `active`); **not** other users’ Personal |
+| INSERT / UPDATE / DELETE | Admin | Global only (`scope = 'global'`) |
+
+Personal rows are provisioned by `ensure_personal_category_for_user` / `ensure_my_personal_category` / `auth.users` trigger — not by client INSERT policies.
+
+Global categories cannot be named `Personal`. One Personal category per user.
+
+---
+
+## `user_category_access`
+
+Source: `sql/categories_personal_and_access.sql`
+
+| Op | Who | Rule |
+|----|-----|------|
+| SELECT | Owner or admin | Own grants, or all grants if admin |
+| INSERT / DELETE | Admin | Admin email only |
+
+Trigger: granted `category_id` must be global top-level (`scope = 'global'`, `parent_id` null). Personal is never stored here.
+
+---
+
+## Task category assignment
+
+Trigger `tasks_enforce_category_access` (not RLS WITH CHECK):
+
+- `category_id` null allowed (legacy uncategorised)
+- UPDATE with unchanged `category_id` allowed (complete/edit after revoke)
+- INSERT with `spawned_from_task_id`: parent must exist; `NEW.user_id = parent.user_id`; `NEW.category_id` must match parent (no generic spawn bypass)
+- Else require `user_can_use_category(category_id)` (own Personal, admin globals, or grant tree)
 
 ---
 
@@ -95,13 +125,15 @@ Source: `sql/label_categories.sql`
 
 | Policy | Op | Rule |
 |--------|----|------|
-| Authenticated users can view label category links | SELECT | `to authenticated` / `using (true)` |
+| Users can view label links for usable categories | SELECT | Admin, or `user_can_use_category(category_id)` |
 | Admin can insert label category links | INSERT | Admin email **and** linked label `scope = 'global'` |
 | Admin can delete label category links | DELETE | Admin email |
 
-**Trigger:** `label_categories_require_global_label` — only global labels may be linked.
+**Triggers:**
+- `label_categories_require_global_label` — only global labels may be linked
+- `label_categories_require_global_category` — only global categories may be linked (never Personal)
 
-Personal labels must never appear in this table.
+Personal labels must never appear in this table. Personal categories must never appear in this table.
 
 ---
 
@@ -145,4 +177,5 @@ Not used for categories, labels, label links, task content, subtasks, or due-dat
 Phase C label picker filtering is **application logic** (`src/lib/labels/category-links.ts`, `LabelSelect`):
 
 - Filters which global labels are offered based on `label_categories` + selected category.
+- Personal category (and no category) → personal labels only.
 - Does not change RLS or auto-detach labels.

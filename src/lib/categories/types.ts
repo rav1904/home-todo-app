@@ -1,3 +1,5 @@
+export type CategoryScope = "global" | "personal";
+
 export type Category = {
   id: string;
   parent_id: string | null;
@@ -6,6 +8,8 @@ export type Category = {
   icon_name: string;
   sort_order: number;
   active: boolean;
+  scope: CategoryScope;
+  user_id: string | null;
   created_at: string;
   updated_at: string;
 };

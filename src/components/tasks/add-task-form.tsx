@@ -13,6 +13,7 @@ import {
   TaskFormMoreDetails,
   TaskFormNotesToggle,
 } from "@/components/tasks/task-form-shared";
+import { getPersonalCategoryId } from "@/lib/categories/access";
 import type { Category } from "@/lib/categories/types";
 import type { Label } from "@/lib/labels/types";
 import { syncTaskLabels } from "@/lib/labels/sync-task-labels";
@@ -45,6 +46,7 @@ type AddTaskFormProps = {
   categories: Category[];
   labels: Label[];
   categoryIdsByLabelId?: Record<string, string[]>;
+  defaultCategoryId?: string | null;
   showHeading?: boolean;
   embedded?: boolean;
   onSuccess?: () => void;
@@ -54,6 +56,7 @@ export function AddTaskForm({
   categories,
   labels,
   categoryIdsByLabelId = {},
+  defaultCategoryId = null,
   showHeading = true,
   embedded = false,
   onSuccess,
@@ -70,7 +73,9 @@ export function AddTaskForm({
   const [recurrence, setRecurrence] = useState<TaskRecurrence>(
     DEFAULT_TASK_RECURRENCE,
   );
-  const [categoryId, setCategoryId] = useState<string | null>(null);
+  const [categoryId, setCategoryId] = useState<string | null>(
+    () => defaultCategoryId ?? getPersonalCategoryId(categories),
+  );
   const [labelIds, setLabelIds] = useState<string[]>([]);
   const [extraLabels, setExtraLabels] = useState<Label[]>([]);
   const [detailsOpen, setDetailsOpen] = useState(false);
@@ -192,7 +197,7 @@ export function AddTaskForm({
     setReminder(emptyReminderFormState());
     setPriority(DEFAULT_TASK_PRIORITY);
     setRecurrence(DEFAULT_TASK_RECURRENCE);
-    setCategoryId(null);
+    setCategoryId(defaultCategoryId ?? getPersonalCategoryId(categories));
     setLabelIds([]);
     setExtraLabels([]);
     setDetailsOpen(false);

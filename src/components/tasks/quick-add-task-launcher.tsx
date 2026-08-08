@@ -1,6 +1,11 @@
 "use client";
 
 import { AddTaskForm } from "@/components/tasks/add-task-form";
+import {
+  CATEGORY_SELECT_FIELDS,
+  ensureMyPersonalCategory,
+  getPersonalCategoryId,
+} from "@/lib/categories/access";
 import type { Category } from "@/lib/categories/types";
 import {
   groupCategoryIdsByLabel,
@@ -15,6 +20,9 @@ import { useCallback, useEffect, useState } from "react";
 export function QuickAddTaskLauncher() {
   const [open, setOpen] = useState(false);
   const [categories, setCategories] = useState<Category[]>([]);
+  const [personalCategoryId, setPersonalCategoryId] = useState<string | null>(
+    null,
+  );
   const [labels, setLabels] = useState<Label[]>([]);
   const [categoryIdsByLabelId, setCategoryIdsByLabelId] = useState<
     Record<string, string[]>
@@ -32,6 +40,13 @@ export function QuickAddTaskLauncher() {
     setFetchError(null);
 
     const supabase = createClient();
+    const ensureResult = await ensureMyPersonalCategory(supabase);
+    if (ensureResult.error) {
+      setFetchError(ensureResult.error.message);
+      setLoading(false);
+      return;
+    }
+
     const [
       { data: categoryRows, error: categoriesError },
       { data: labelRows, error: labelsError },
@@ -39,9 +54,7 @@ export function QuickAddTaskLauncher() {
     ] = await Promise.all([
       supabase
         .from("categories")
-        .select(
-          "id, parent_id, name, colour, icon_name, sort_order, active, created_at, updated_at",
-        )
+        .select(CATEGORY_SELECT_FIELDS)
         .eq("active", true)
         .order("sort_order", { ascending: true })
         .order("name", { ascending: true }),
@@ -66,7 +79,11 @@ export function QuickAddTaskLauncher() {
       return;
     }
 
-    setCategories((categoryRows ?? []) as Category[]);
+    const nextCategories = (categoryRows ?? []) as Category[];
+    setCategories(nextCategories);
+    setPersonalCategoryId(
+      ensureResult.id ?? getPersonalCategoryId(nextCategories),
+    );
     setLabels((labelRows ?? []) as Label[]);
     setCategoryIdsByLabelId(
       groupCategoryIdsByLabel((linkRows ?? []) as LabelCategoryLink[]),
@@ -152,6 +169,7 @@ export function QuickAddTaskLauncher() {
                 categories={categories}
                 labels={labels}
                 categoryIdsByLabelId={categoryIdsByLabelId}
+                defaultCategoryId={personalCategoryId}
                 showHeading={false}
                 embedded
                 onSuccess={() => setOpen(false)}

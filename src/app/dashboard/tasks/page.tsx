@@ -2,6 +2,7 @@ import { AddTaskForm } from "@/components/tasks/add-task-form";
 import { TaskFiltersBar } from "@/components/tasks/task-filters-bar";
 import { TaskListItem } from "@/components/tasks/task-list-item";
 import { DashboardHeader } from "@/components/dashboard/header";
+import { loadAccessibleCategories } from "@/lib/categories/access";
 import {
   filterTasksByCategory,
   parseCategoryFilterParam,
@@ -11,7 +12,6 @@ import {
   buildCategoryTree,
   getCategoryDisplay,
 } from "@/lib/categories/tree";
-import type { Category } from "@/lib/categories/types";
 import {
   buildLabelLookup,
   resolveTaskLabelDisplay,
@@ -64,9 +64,10 @@ export default async function TasksPage({ searchParams }: TasksPageProps) {
     data: { user },
   } = await supabase.auth.getUser();
 
+  const categoriesResult = await loadAccessibleCategories(supabase);
+
   const [
     { data: tasks, error },
-    { data: categories, error: categoriesError },
     { data: labels, error: labelsError },
     { data: labelCategoryLinks, error: labelCategoryLinksError },
   ] = await Promise.all([
@@ -74,14 +75,6 @@ export default async function TasksPage({ searchParams }: TasksPageProps) {
       .from("tasks")
       .select("id, title, description, due_at, reminder_at, reminder_mode, reminder_offset_minutes, priority, recurrence, completed, created_at, category_id")
       .order("created_at", { ascending: false }),
-    supabase
-      .from("categories")
-      .select(
-        "id, parent_id, name, colour, icon_name, sort_order, active, created_at, updated_at",
-      )
-      .eq("active", true)
-      .order("sort_order", { ascending: true })
-      .order("name", { ascending: true }),
     supabase
       .from("labels")
       .select(LABEL_SELECT_FIELDS)
@@ -92,7 +85,9 @@ export default async function TasksPage({ searchParams }: TasksPageProps) {
     supabase.from("label_categories").select(LABEL_CATEGORY_LINK_FIELDS),
   ]);
 
-  const activeCategories = (categories ?? []) as Category[];
+  const categoriesError = categoriesResult.error;
+  const activeCategories = categoriesResult.categories;
+  const personalCategoryId = categoriesResult.personalCategoryId;
   const activeLabels = (labels ?? []) as Label[];
   const categoryIdsByLabelId = groupCategoryIdsByLabel(
     (labelCategoryLinks ?? []) as LabelCategoryLink[],
@@ -205,6 +200,7 @@ export default async function TasksPage({ searchParams }: TasksPageProps) {
           categories={activeCategories}
           labels={activeLabels}
           categoryIdsByLabelId={categoryIdsByLabelId}
+          defaultCategoryId={personalCategoryId}
         />
 
         {labelsError ? (

@@ -238,9 +238,9 @@ export function LabelSelect({
         ) : null}
       </div>
 
-      {!categoryId ? (
+      {relevantCategoryIds.length === 0 ? (
         <p className="text-xs text-stone-500 dark:text-stone-400">
-          Pick a category for shared labels. Personal labels always show.
+          Shared labels need a global category. Personal labels always show.
         </p>
       ) : null}
 
@@ -268,7 +268,7 @@ export function LabelSelect({
           </p>
           <div className="flex flex-wrap gap-1.5">{global.map(renderLabelChip)}</div>
         </div>
-      ) : categoryId && personal.length > 0 ? (
+      ) : relevantCategoryIds.length > 0 && personal.length > 0 ? (
         <p className="text-xs text-stone-500 dark:text-stone-400">
           No shared labels linked to this category.
         </p>
@@ -285,14 +285,16 @@ export function LabelSelect({
         </div>
       ) : null}
 
-      {categoryId && global.length === 0 && personal.length === 0 ? (
+      {relevantCategoryIds.length > 0 &&
+      global.length === 0 &&
+      personal.length === 0 ? (
         <p className="text-xs text-stone-500 dark:text-stone-400">
           No labels yet. Create a personal one, or ask an admin to link shared
           labels.
         </p>
       ) : null}
 
-      {!categoryId && personal.length === 0 ? (
+      {relevantCategoryIds.length === 0 && personal.length === 0 ? (
         <p className="text-xs text-stone-500 dark:text-stone-400">
           No personal labels yet.
         </p>

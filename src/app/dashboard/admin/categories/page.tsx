@@ -1,6 +1,7 @@
 import { CategoryAdminPanel } from "@/components/admin/category-admin-panel";
 import { DashboardHeader } from "@/components/dashboard/header";
 import { isAdminUser } from "@/lib/admin";
+import { CATEGORY_SELECT_FIELDS } from "@/lib/categories/access";
 import type { Category } from "@/lib/categories/types";
 import { adminPageErrorClassName } from "@/lib/ui/field-classes";
 import { createClient } from "@/lib/supabase/server";
@@ -18,9 +19,8 @@ export default async function AdminCategoriesPage() {
 
   const { data: categories, error } = await supabase
     .from("categories")
-    .select(
-      "id, parent_id, name, colour, icon_name, sort_order, active, created_at, updated_at",
-    )
+    .select(CATEGORY_SELECT_FIELDS)
+    .eq("scope", "global")
     .order("sort_order", { ascending: true })
     .order("name", { ascending: true });
 
@@ -28,7 +28,7 @@ export default async function AdminCategoriesPage() {
     <>
       <DashboardHeader
         title="Category management"
-        description="Admin-managed categories and subcategories"
+        description="Admin-managed global categories and subcategories"
         email={user.email}
       />
       <div className="flex-1 overflow-auto p-4 sm:p-6 lg:p-8">

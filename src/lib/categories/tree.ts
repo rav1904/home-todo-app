@@ -1,3 +1,4 @@
+import { sortMainsPersonalFirst } from "@/lib/categories/access";
 import { sortCategories } from "@/lib/categories/sort";
 import type { Category } from "@/lib/categories/types";
 
@@ -15,9 +16,8 @@ export type CategoryDisplay = {
 };
 
 export function buildCategoryTree(categories: Category[]): CategoryTree {
-  const mains = sortCategories(
+  const mains = sortMainsPersonalFirst(
     categories.filter((category) => category.parent_id === null),
-    "custom",
   );
 
   const subsByParent: Record<string, Category[]> = {};

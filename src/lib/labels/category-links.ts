@@ -75,6 +75,11 @@ export function getRelevantCategoryIdsForLabelPicker(
     return [];
   }
 
+  // Personal category → personal labels only (same as no category).
+  if (category.scope === "personal") {
+    return [];
+  }
+
   if (category.parent_id) {
     return [category.id, category.parent_id];
   }

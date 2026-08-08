@@ -71,20 +71,22 @@ Last updated: 2026-08-08
 - Appearance: System / Light / Dark (reuses `ThemeToggle`)
 - Personal labels: create, edit name/colour, archive / reactivate, Cancel on create/edit
 
-### Categories (Phases A–D)
-- **`categories` table** — global admin-managed tree (main + sub), colour, icon, sort order, archive via `active`
-- **`tasks.category_id`** — optional assignment to main or subcategory
-- **Admin** — `/dashboard/admin/categories` (create, edit, archive/reactivate, custom/A-Z/Z-A sort, drag + arrows)
-- **Task assignment** — main + optional sub dropdowns on add/edit; badge on task card
+### Categories (Phases A–D + per-user access)
+- **`categories` table** — global admin-managed tree (main + sub) plus per-user private `Personal` (`scope`, `user_id`)
+- **`user_category_access`** — admin grants of global top-level categories; subs inherit; Personal never stored here
+- **`tasks.category_id`** — optional; new tasks default to Personal; null kept for legacy uncategorised
+- **Admin** — `/dashboard/admin/categories` manages **global** only; Users panel grants global access
+- **Task assignment** — main + optional sub dropdowns on add/edit; badge on task card; RLS/trigger enforce allowed categories
 - **Task filtering** — URL param `?category=`
 - 20 Lucide icons; preset colours + validated hex
+- Apply: `sql/categories_personal_and_access.sql`
 
 ### Admin (users)
 - Admin panel at `/dashboard/admin`
-- Read-only user list with Google profile metadata
-- Aggregate task counts per user (total, outstanding, completed)
+- User list with Google profile metadata + per-user global category access controls
 - Admin sub-nav: Users | Categories | Labels
-- Admin cannot see other users’ task content or personal labels
+- Admin cannot see other users’ task content, personal labels, or Personal categories
+- Admin task UI: own Personal + all global categories
 
 ## Privacy / security
 
@@ -93,8 +95,10 @@ Last updated: 2026-08-08
 - `SUPABASE_SERVICE_ROLE_KEY` is server-side only
 - Service role is used only for Auth Admin user listing and aggregate task counts — not for categories, labels, or task content
 - Task RLS: `user_id = auth.uid()`
+- Category RLS: own Personal; granted active globals (or all globals for admin); admin mutates global only
 - Label RLS: active global readable by all; personal SELECT/UPDATE only for `created_by = auth.uid()` (active + archived); admin manages global only
-- `label_categories`: authenticated SELECT; admin INSERT/DELETE; trigger enforces global-only links
+- `label_categories`: SELECT usable categories only; admin INSERT/DELETE; triggers enforce global label + global category
+- Task category trigger: blocks ungranted `category_id`; strict recurrence spawn checks
 - Admin does not see task titles, descriptions, due dates, or task lists for other users
 
 ## What is not built yet
@@ -137,7 +141,7 @@ Last updated: 2026-08-08
 
 ## Database tables created so far
 
-Mostly created in Supabase SQL editor. Repo scripts: `sql/task_subtasks.sql`, `sql/labels_personal_select_archived.sql`, `sql/label_categories.sql`, `sql/tasks_reminder_at.sql`, `sql/tasks_priority.sql`, `sql/tasks_recurrence.sql`. Reference snapshot: `docs/database-schema.sql`.
+Mostly created in Supabase SQL editor. Repo scripts: `sql/task_subtasks.sql`, `sql/labels_personal_select_archived.sql`, `sql/label_categories.sql`, `sql/tasks_reminder_at.sql`, `sql/tasks_priority.sql`, `sql/tasks_recurrence.sql`, `sql/categories_personal_and_access.sql`. Reference snapshot: `docs/database-schema.sql`.
 
 ### `tasks`
 
@@ -242,7 +246,7 @@ Mostly created in Supabase SQL editor. Repo scripts: `sql/task_subtasks.sql`, `s
 | Theme | `src/components/theme/*` |
 | Categories | `src/lib/categories/*` |
 | Admin | `src/app/dashboard/admin/*`, `src/components/admin/*` |
-| SQL scripts | `sql/task_subtasks.sql`, `sql/labels_personal_select_archived.sql`, `sql/label_categories.sql`, `sql/tasks_reminder_at.sql`, `sql/tasks_priority.sql`, `sql/tasks_recurrence.sql` |
+| SQL scripts | `sql/task_subtasks.sql`, `sql/labels_personal_select_archived.sql`, `sql/label_categories.sql`, `sql/tasks_reminder_at.sql`, `sql/tasks_priority.sql`, `sql/tasks_recurrence.sql`, `sql/categories_personal_and_access.sql` |
 | Docs | `docs/database-schema.sql`, `docs/rls-policies.md`, `docs/test-checklist.md` |
 
 ## Latest important commits

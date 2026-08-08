@@ -1,24 +1,16 @@
+import { UserCategoryAccessPanel } from "@/components/admin/user-category-access-panel";
 import { DashboardHeader } from "@/components/dashboard/header";
-import { UserAvatar } from "@/components/ui/user-avatar";
 import { isAdminUser } from "@/lib/admin";
 import {
   countRecentlyJoinedUsers,
   listAppUsers,
   RECENT_JOIN_DAYS,
 } from "@/lib/admin/users";
+import { CATEGORY_SELECT_FIELDS } from "@/lib/categories/access";
+import type { Category } from "@/lib/categories/types";
 import { cardClassName } from "@/lib/ui/field-classes";
 import { createClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
-
-function formatDateTime(value: string) {
-  return new Date(value).toLocaleString(undefined, {
-    year: "numeric",
-    month: "short",
-    day: "numeric",
-    hour: "numeric",
-    minute: "2-digit",
-  });
-}
 
 export default async function AdminPage() {
   const supabase = await createClient();
@@ -45,6 +37,23 @@ export default async function AdminPage() {
         ? error.message
         : "Could not load users from Supabase Auth.";
   }
+
+  const [
+    { data: globalMains, error: categoriesError },
+    { data: grants, error: grantsError },
+  ] = await Promise.all([
+    supabase
+      .from("categories")
+      .select(CATEGORY_SELECT_FIELDS)
+      .eq("scope", "global")
+      .is("parent_id", null)
+      .order("sort_order", { ascending: true })
+      .order("name", { ascending: true }),
+    supabase.from("user_category_access").select("user_id, category_id"),
+  ]);
+
+  const accessError =
+    categoriesError?.message ?? grantsError?.message ?? null;
 
   return (
     <>
@@ -90,62 +99,29 @@ export default async function AdminPage() {
                 Users
               </h2>
               <p className="mt-1 text-sm text-stone-500 dark:text-stone-400">
-                Read-only list of app users. Task data is not shown here.
+                Grant global top-level categories per user. Personal is private
+                and automatic. Task content is never shown here.
               </p>
+
+              {accessError ? (
+                <div className="mt-4 rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-800 dark:border-amber-900/50 dark:bg-amber-950/40 dark:text-amber-300">
+                  Could not load category access data: {accessError}. Apply{" "}
+                  <code className="text-xs">sql/categories_personal_and_access.sql</code>{" "}
+                  if you have not already.
+                </div>
+              ) : null}
 
               {users.length === 0 ? (
                 <p className="mt-4 text-sm text-stone-500 dark:text-stone-400">
                   No users found.
                 </p>
               ) : (
-                <div className="mt-4 overflow-x-auto">
-                  <table className="w-full min-w-[720px] text-left text-sm">
-                    <thead>
-                      <tr className="border-b border-stone-200 text-stone-500 dark:border-stone-700 dark:text-stone-400">
-                        <th className="pb-3 pr-4 font-medium">Name</th>
-                        <th className="pb-3 pr-4 font-medium">Email</th>
-                        <th className="pb-3 pr-4 font-medium">User ID</th>
-                        <th className="pb-3 pr-4 font-medium">Created</th>
-                        <th className="pb-3 font-medium">Last sign-in</th>
-                      </tr>
-                    </thead>
-                    <tbody className="text-stone-700 dark:text-stone-300">
-                      {users.map((appUser) => (
-                        <tr
-                          key={appUser.id}
-                          className="border-b border-stone-100 last:border-0 dark:border-stone-800"
-                        >
-                          <td className="py-3 pr-4">
-                            <div className="flex min-w-0 items-center gap-2.5">
-                              <UserAvatar
-                                name={appUser.displayName}
-                                avatarUrl={appUser.avatarUrl}
-                                size="sm"
-                              />
-                              <span className="truncate font-medium text-stone-900 dark:text-stone-100">
-                                {appUser.displayName}
-                              </span>
-                            </div>
-                          </td>
-                          <td className="py-3 pr-4 font-medium text-stone-900 dark:text-stone-100">
-                            {appUser.email ?? "—"}
-                          </td>
-                          <td className="py-3 pr-4 font-mono text-xs text-stone-500 dark:text-stone-400">
-                            {appUser.id}
-                          </td>
-                          <td className="py-3 pr-4">
-                            {formatDateTime(appUser.createdAt)}
-                          </td>
-                          <td className="py-3">
-                            {appUser.lastSignInAt
-                              ? formatDateTime(appUser.lastSignInAt)
-                              : "Never"}
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
+                <UserCategoryAccessPanel
+                  users={users}
+                  globalTopLevelCategories={(globalMains ?? []) as Category[]}
+                  grants={(grants ?? []) as { user_id: string; category_id: string }[]}
+                  adminUserId={user.id}
+                />
               )}
             </section>
           </>

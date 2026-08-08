@@ -1,11 +1,11 @@
 import type { ReactNode } from "react";
 import { TaskListItem } from "@/components/tasks/task-list-item";
 import { DashboardHeader } from "@/components/dashboard/header";
+import { loadAccessibleCategories } from "@/lib/categories/access";
 import {
   buildCategoryLookup,
   getCategoryDisplay,
 } from "@/lib/categories/tree";
-import type { Category } from "@/lib/categories/types";
 import {
   buildLabelLookup,
   resolveTaskLabelDisplay,
@@ -135,9 +135,10 @@ export default async function FocusPage() {
     data: { user },
   } = await supabase.auth.getUser();
 
+  const categoriesResult = await loadAccessibleCategories(supabase);
+
   const [
     { data: tasks, error },
-    { data: categories, error: categoriesError },
     { data: labels, error: labelsError },
     { data: labelCategoryLinks, error: labelCategoryLinksError },
   ] = await Promise.all([
@@ -149,14 +150,6 @@ export default async function FocusPage() {
       .eq("completed", false)
       .order("created_at", { ascending: false }),
     supabase
-      .from("categories")
-      .select(
-        "id, parent_id, name, colour, icon_name, sort_order, active, created_at, updated_at",
-      )
-      .eq("active", true)
-      .order("sort_order", { ascending: true })
-      .order("name", { ascending: true }),
-    supabase
       .from("labels")
       .select(LABEL_SELECT_FIELDS)
       .eq("active", true)
@@ -166,8 +159,9 @@ export default async function FocusPage() {
     supabase.from("label_categories").select(LABEL_CATEGORY_LINK_FIELDS),
   ]);
 
+  const categoriesError = categoriesResult.error;
   const openTasks = (tasks ?? []) as FocusTask[];
-  const activeCategories = (categories ?? []) as Category[];
+  const activeCategories = categoriesResult.categories;
   const activeLabels = (labels ?? []) as Label[];
   const categoryIdsByLabelId = groupCategoryIdsByLabel(
     (labelCategoryLinks ?? []) as LabelCategoryLink[],

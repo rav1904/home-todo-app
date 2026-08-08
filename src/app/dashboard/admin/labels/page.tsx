@@ -1,6 +1,7 @@
 import { LabelAdminPanel } from "@/components/admin/label-admin-panel";
 import { DashboardHeader } from "@/components/dashboard/header";
 import { isAdminUser } from "@/lib/admin";
+import { CATEGORY_SELECT_FIELDS } from "@/lib/categories/access";
 import type { Category } from "@/lib/categories/types";
 import {
   groupCategoryIdsByLabel,
@@ -37,9 +38,8 @@ export default async function AdminLabelsPage() {
       .order("name", { ascending: true }),
     supabase
       .from("categories")
-      .select(
-        "id, parent_id, name, colour, icon_name, sort_order, active, created_at, updated_at",
-      )
+      .select(CATEGORY_SELECT_FIELDS)
+      .eq("scope", "global")
       .eq("active", true)
       .order("sort_order", { ascending: true })
       .order("name", { ascending: true }),
