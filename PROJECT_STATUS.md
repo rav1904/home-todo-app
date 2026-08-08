@@ -8,7 +8,7 @@ Last updated: 2026-08-08
 
 ## Current milestone
 
-**v1.1 — Reminders v1 (custom + relative presets)**
+**v1.2 — Task Priority v1**
 
 ## What is working
 
@@ -30,6 +30,7 @@ Last updated: 2026-08-08
 - Filters on tasks page: `?category=`, `?label=`, `?q=`, `?status=`, `?sort=`
 - Pipeline: category → label → status → search → sort; `?edit=` still injects filtered-out task
 - **Reminders** — `reminder_at` + `reminder_mode` + `reminder_offset_minutes`; presets: none / custom / 1h / 1d / 1w before due; relative recalculates with due; overview sections; no email/push
+- **Priority** — `low` / `medium` / `high` / `urgent` (default medium); forms + card badge; sort `priority_desc`; calendar chips show high/urgent dot only
 
 ### Subtasks / checklist
 - **`task_subtasks` table** — per-task checklist owned by task user; RLS by `user_id`
@@ -96,6 +97,7 @@ Last updated: 2026-08-08
 
 ## What is not built yet
 
+- Priority filter on Tasks page
 - Email / browser push reminders
 - Reminder snooze / dismiss state
 - Recurring tasks
@@ -126,12 +128,13 @@ Last updated: 2026-08-08
 | `task_due_date_changes` | Done (SQL editor) |
 | `task_subtasks` | Done (`sql/task_subtasks.sql`) |
 | `tasks.reminder_at` (+ mode/offset) | Done (`sql/tasks_reminder_at.sql`; no new RLS) |
+| `tasks.priority` | Done (`sql/tasks_priority.sql`; no new RLS) |
 | Admin env vars | Done (server-side only) |
 | CLI / full migrations in repo | Not set up |
 
 ## Database tables created so far
 
-Mostly created in Supabase SQL editor. Repo scripts: `sql/task_subtasks.sql`, `sql/labels_personal_select_archived.sql`, `sql/label_categories.sql`. Reference snapshot: `docs/database-schema.sql`.
+Mostly created in Supabase SQL editor. Repo scripts: `sql/task_subtasks.sql`, `sql/labels_personal_select_archived.sql`, `sql/label_categories.sql`, `sql/tasks_reminder_at.sql`, `sql/tasks_priority.sql`. Reference snapshot: `docs/database-schema.sql`.
 
 ### `tasks`
 
@@ -145,6 +148,7 @@ Mostly created in Supabase SQL editor. Repo scripts: `sql/task_subtasks.sql`, `s
 | `reminder_at` | timestamptz | Resolved reminder time; null = none |
 | `reminder_mode` | text | null / `custom` / `relative_due` |
 | `reminder_offset_minutes` | int | Relative only: 60 / 1440 / 10080 |
+| `priority` | text | `low` / `medium` / `high` / `urgent`; default `medium` (`sql/tasks_priority.sql`) |
 | `completed` | boolean | Default false |
 | `category_id` | uuid | Nullable FK → `categories`, ON DELETE SET NULL |
 | `created_at` | timestamptz | Default now |
@@ -223,6 +227,7 @@ Mostly created in Supabase SQL editor. Repo scripts: `sql/task_subtasks.sql`, `s
 | Label ↔ category | `src/lib/labels/category-links.ts`, `src/components/admin/label-category-link-fields.tsx` |
 | Due datetime UI | `src/components/tasks/due-datetime-fields.tsx`, `src/lib/tasks/due-datetime.ts` |
 | Reminders | `src/lib/tasks/reminder.ts`, `src/components/tasks/reminder-fields.tsx`, `sql/tasks_reminder_at.sql` |
+| Priority | `src/lib/tasks/priority.ts`, `src/components/tasks/priority-select.tsx`, `sql/tasks_priority.sql` |
 | Labels lib | `src/lib/labels/*` |
 | Settings | `src/app/dashboard/settings/page.tsx`, `src/components/settings/*` |
 | Calendar | `src/app/dashboard/calendar/page.tsx`, `src/components/calendar/*`, `src/lib/tasks/calendar*.ts` |
@@ -230,7 +235,7 @@ Mostly created in Supabase SQL editor. Repo scripts: `sql/task_subtasks.sql`, `s
 | Theme | `src/components/theme/*` |
 | Categories | `src/lib/categories/*` |
 | Admin | `src/app/dashboard/admin/*`, `src/components/admin/*` |
-| SQL scripts | `sql/task_subtasks.sql`, `sql/labels_personal_select_archived.sql`, `sql/label_categories.sql`, `sql/tasks_reminder_at.sql` |
+| SQL scripts | `sql/task_subtasks.sql`, `sql/labels_personal_select_archived.sql`, `sql/label_categories.sql`, `sql/tasks_reminder_at.sql`, `sql/tasks_priority.sql` |
 | Docs | `docs/database-schema.sql`, `docs/rls-policies.md`, `docs/test-checklist.md` |
 
 ## Latest important commits
@@ -255,4 +260,4 @@ Mostly created in Supabase SQL editor. Repo scripts: `sql/task_subtasks.sql`, `s
 
 ## Next recommended step
 
-Manual-test reminder presets (relative + custom), then deployment prep or polish.
+Manual-test priority (forms, badge, sort, calendar dots), then deployment prep or polish.

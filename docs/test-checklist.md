@@ -6,6 +6,21 @@ Manual checks for current product behaviour. Prefer a fresh browser session (or 
 
 ---
 
+## Priority v1 (SQL)
+
+- [x] `tasks.priority` NOT NULL DEFAULT `'medium'` + CHECK (`sql/tasks_priority.sql`)
+- [x] No new RLS
+
+## Priority v1 (app)
+
+- [ ] Default Medium on create
+- [ ] Add/edit/quick-add/calendar modal can set Low–Urgent
+- [ ] Card badge readable in light/dark
+- [ ] Sort Priority: Urgent → High → Medium → Low; ties by created newest
+- [ ] Works with category/label/status/search filters
+- [ ] Calendar placement still by `due_at`; high/urgent show small dot
+- [ ] No priority filter in v1
+
 ## Reminders v1 (SQL)
 
 - [x] `reminder_at`, `reminder_mode`, `reminder_offset_minutes` + CHECKs (`sql/tasks_reminder_at.sql`)

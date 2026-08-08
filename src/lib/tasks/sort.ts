@@ -1,8 +1,14 @@
+import {
+  comparePriorityDesc,
+  parseTaskPriority,
+} from "@/lib/tasks/priority";
+
 export type TaskSortOption =
   | "due_asc"
   | "created_desc"
   | "created_asc"
-  | "title_asc";
+  | "title_asc"
+  | "priority_desc";
 
 export const DEFAULT_TASK_SORT: TaskSortOption = "created_desc";
 
@@ -11,7 +17,8 @@ export function parseSortParam(param: string | undefined): TaskSortOption {
     param === "due_asc" ||
     param === "created_desc" ||
     param === "created_asc" ||
-    param === "title_asc"
+    param === "title_asc" ||
+    param === "priority_desc"
   ) {
     return param;
   }
@@ -37,6 +44,8 @@ export function getSortOptionLabel(sort: TaskSortOption): string | null {
       return "Created oldest";
     case "title_asc":
       return "Title A–Z";
+    case "priority_desc":
+      return "Priority";
   }
 }
 
@@ -45,6 +54,7 @@ export function sortTasks<
     title: string;
     due_at: string | null;
     created_at: string;
+    priority?: string | null;
   },
 >(tasks: T[], sort: TaskSortOption): T[] {
   const copy = [...tasks];
@@ -96,6 +106,23 @@ export function sortTasks<
           new Date(right.created_at).getTime() -
             new Date(left.created_at).getTime(),
       );
+
+    case "priority_desc":
+      return copy.sort((left, right) => {
+        const priorityDiff = comparePriorityDesc(
+          parseTaskPriority(left.priority),
+          parseTaskPriority(right.priority),
+        );
+
+        if (priorityDiff !== 0) {
+          return priorityDiff;
+        }
+
+        return (
+          new Date(right.created_at).getTime() -
+          new Date(left.created_at).getTime()
+        );
+      });
 
     case "created_desc":
     default:

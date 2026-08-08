@@ -4,10 +4,15 @@ import { CategorySelect } from "@/components/tasks/category-select";
 import { DueDatetimeFields } from "@/components/tasks/due-datetime-fields";
 import { LabelSelect } from "@/components/tasks/label-select";
 import { ReminderFields } from "@/components/tasks/reminder-fields";
+import {
+  DEFAULT_TASK_PRIORITY,
+  PrioritySelect,
+} from "@/components/tasks/priority-select";
 import type { Category } from "@/lib/categories/types";
 import type { Label } from "@/lib/labels/types";
 import { syncTaskLabels } from "@/lib/labels/sync-task-labels";
 import { datetimeLocalValueToIso } from "@/lib/tasks/due-datetime";
+import type { TaskPriority } from "@/lib/tasks/priority";
 import {
   emptyReminderFormState,
   syncReminderFormWithDueLocal,
@@ -43,6 +48,7 @@ export function AddTaskForm({
   const [reminder, setReminder] = useState<ReminderFormState>(
     emptyReminderFormState,
   );
+  const [priority, setPriority] = useState<TaskPriority>(DEFAULT_TASK_PRIORITY);
   const [categoryId, setCategoryId] = useState<string | null>(null);
   const [labelIds, setLabelIds] = useState<string[]>([]);
   const [extraLabels, setExtraLabels] = useState<Label[]>([]);
@@ -98,6 +104,7 @@ export function AddTaskForm({
         description: description.trim() || null,
         due_at: dueAtIso,
         ...reminderColumns,
+        priority,
         category_id: categoryId,
       })
       .select("id")
@@ -132,6 +139,7 @@ export function AddTaskForm({
     setDescription("");
     setDueAt("");
     setReminder(emptyReminderFormState());
+    setPriority(DEFAULT_TASK_PRIORITY);
     setCategoryId(null);
     setLabelIds([]);
     setExtraLabels([]);
@@ -201,6 +209,12 @@ export function AddTaskForm({
           dueLocal={dueAt}
           value={reminder}
           onChange={setReminder}
+        />
+
+        <PrioritySelect
+          id="task-priority"
+          value={priority}
+          onChange={setPriority}
         />
 
         <CategorySelect

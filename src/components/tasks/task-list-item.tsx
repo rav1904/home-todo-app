@@ -12,6 +12,10 @@ import { LabelBadges } from "@/components/tasks/label-badges";
 import { LabelSelect } from "@/components/tasks/label-select";
 import { DueDatetimeFields } from "@/components/tasks/due-datetime-fields";
 import { ReminderFields } from "@/components/tasks/reminder-fields";
+import {
+  PriorityBadge,
+  PrioritySelect,
+} from "@/components/tasks/priority-select";
 import type { CategoryDisplay } from "@/lib/categories/tree";
 import type { Category } from "@/lib/categories/types";
 import type { TaskLabelDisplay } from "@/lib/labels/display";
@@ -21,6 +25,11 @@ import {
   datetimeLocalValueToIso,
   isoToDatetimeLocalValue,
 } from "@/lib/tasks/due-datetime";
+import {
+  DEFAULT_TASK_PRIORITY,
+  parseTaskPriority,
+  type TaskPriority,
+} from "@/lib/tasks/priority";
 import {
   getReminderCardLabel,
   reminderFormFromDb,
@@ -50,6 +59,7 @@ type TaskListItemProps = {
   reminderAt?: string | null;
   reminderMode?: string | null;
   reminderOffsetMinutes?: number | null;
+  priority?: TaskPriority | string | null;
   completed: boolean;
   createdAt: string;
   categoryId: string | null;
@@ -113,6 +123,7 @@ export function TaskListItem({
   reminderAt = null,
   reminderMode = null,
   reminderOffsetMinutes = null,
+  priority = DEFAULT_TASK_PRIORITY,
   completed,
   createdAt,
   categoryId,
@@ -142,6 +153,9 @@ export function TaskListItem({
       reminderMode,
       reminderOffsetMinutes,
     }),
+  );
+  const [editPriority, setEditPriority] = useState<TaskPriority>(() =>
+    parseTaskPriority(priority),
   );
   const [editCategoryId, setEditCategoryId] = useState<string | null>(categoryId);
   const [editLabelIds, setEditLabelIds] = useState<string[]>(labelIds);
@@ -176,6 +190,7 @@ export function TaskListItem({
         reminderOffsetMinutes,
       }),
     );
+    setEditPriority(parseTaskPriority(priority));
     setEditCategoryId(categoryId);
     setEditLabelIds(labelIds);
     setExtraLabels([]);
@@ -226,6 +241,7 @@ export function TaskListItem({
         description: editDescription.trim() || null,
         due_at: newDueAt,
         ...reminderColumns,
+        priority: editPriority,
         completed: editCompleted,
         category_id: editCategoryId,
       })
@@ -341,6 +357,13 @@ export function TaskListItem({
             labelClassName="mb-1.5 block text-sm font-medium text-stone-700"
           />
 
+          <PrioritySelect
+            id={`edit-priority-${id}`}
+            value={editPriority}
+            onChange={setEditPriority}
+            labelClassName="mb-1.5 block text-sm font-medium text-stone-700"
+          />
+
           <CategorySelect
             id={`edit-category-${id}`}
             categories={categories}
@@ -420,6 +443,7 @@ export function TaskListItem({
     reminderMode,
     reminderOffsetMinutes,
   });
+  const taskPriority = parseTaskPriority(priority);
 
   const readContent = (
     <>
@@ -469,15 +493,18 @@ export function TaskListItem({
               <TaskSubtaskProgress progress={subtaskProgress} compact />
             ) : null}
           </div>
-          <span
-            className={`shrink-0 rounded-full px-2.5 py-1 text-xs font-medium ${
-              completed
-                ? "bg-stone-100 text-stone-600 dark:bg-stone-800 dark:text-stone-400"
-                : "bg-emerald-50 text-emerald-700 dark:bg-emerald-950/50 dark:text-emerald-300"
-            }`}
-          >
-            {completed ? "Completed" : "Open"}
-          </span>
+          <div className="flex shrink-0 flex-col items-end gap-2">
+            <span
+              className={`rounded-full px-2.5 py-1 text-xs font-medium ${
+                completed
+                  ? "bg-stone-100 text-stone-600 dark:bg-stone-800 dark:text-stone-400"
+                  : "bg-emerald-50 text-emerald-700 dark:bg-emerald-950/50 dark:text-emerald-300"
+              }`}
+            >
+              {completed ? "Completed" : "Open"}
+            </span>
+            <PriorityBadge priority={taskPriority} />
+          </div>
         </div>
       </div>
       <TaskSubtaskList taskId={id} subtasks={subtasks} />

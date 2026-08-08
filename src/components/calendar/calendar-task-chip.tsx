@@ -4,6 +4,7 @@ import { CategoryBadge } from "@/components/tasks/category-select";
 import { LabelBadges } from "@/components/tasks/label-badges";
 import type { CalendarTask } from "@/lib/tasks/calendar";
 import { formatTaskTime } from "@/lib/tasks/local-dates";
+import { getPriorityChipDotClassName } from "@/lib/tasks/priority";
 
 type CalendarTaskChipProps = {
   task: CalendarTask;
@@ -21,6 +22,7 @@ export function CalendarTaskChip({
     task.labels.length -
     visibleLabels.length +
     task.unavailableLabelCount;
+  const priorityDotClass = getPriorityChipDotClassName(task.priority);
 
   return (
     <button
@@ -31,11 +33,17 @@ export function CalendarTaskChip({
       }`}
     >
       <p
-        className={`truncate text-[11px] font-medium leading-tight text-stone-900 dark:text-stone-100 sm:text-xs ${
+        className={`flex items-center gap-1 truncate text-[11px] font-medium leading-tight text-stone-900 dark:text-stone-100 sm:text-xs ${
           task.completed ? "line-through text-stone-400 dark:text-stone-500" : ""
         }`}
       >
-        {task.title}
+        {priorityDotClass ? (
+          <span
+            className={`inline-block h-1.5 w-1.5 shrink-0 rounded-full ${priorityDotClass}`}
+            aria-hidden="true"
+          />
+        ) : null}
+        <span className="truncate">{task.title}</span>
       </p>
       <p className="mt-0.5 truncate text-[10px] text-stone-500 dark:text-stone-400 sm:text-[11px]">
         {formatTaskTime(task.dueAt)}

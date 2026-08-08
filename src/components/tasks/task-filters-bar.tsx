@@ -310,6 +310,7 @@ export function TaskFiltersBar({ categories, labels }: TaskFiltersBarProps) {
             <option value="created_desc">Created newest</option>
             <option value="created_asc">Created oldest</option>
             <option value="title_asc">Title A–Z</option>
+            <option value="priority_desc">Priority</option>
           </select>
         </div>
 

@@ -2,6 +2,7 @@ import type { CategoryDisplay } from "@/lib/categories/tree";
 import type { TaskLabelDisplay } from "@/lib/labels/display";
 import type { Label } from "@/lib/labels/types";
 import type { DueDateHistoryCounts } from "@/lib/tasks/due-date-change";
+import type { TaskPriority } from "@/lib/tasks/priority";
 import type { SubtaskProgress } from "@/lib/tasks/subtasks/progress";
 import type { TaskSubtask } from "@/lib/tasks/subtasks/types";
 import {
@@ -18,6 +19,7 @@ export type CalendarTask = {
   title: string;
   dueAt: string;
   completed: boolean;
+  priority: TaskPriority;
   category: CategoryDisplay | null;
   categoryUnavailable: boolean;
   labels: Label[];
@@ -33,6 +35,7 @@ export type CalendarModalTask = {
   reminderAt: string | null;
   reminderMode: string | null;
   reminderOffsetMinutes: number | null;
+  priority: TaskPriority;
   completed: boolean;
   createdAt: string;
   categoryId: string | null;

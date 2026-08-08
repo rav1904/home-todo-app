@@ -35,6 +35,8 @@ Admin does **not** use these policies to read other users’ task rows in the UI
 
 No new RLS policies — existing task owner policies cover all three. Reminder data is never exposed to admin for other users.
 
+**Priority v1:** `priority` text NOT NULL DEFAULT `'medium'` (`sql/tasks_priority.sql`), values `low` | `medium` | `high` | `urgent`. No new RLS — covered by task owner policies. Admin does not see other users’ priorities via task content.
+
 ---
 
 ## `categories`

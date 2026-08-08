@@ -7,6 +7,7 @@
 --         task_due_date_changes, task_subtasks
 -- Reminders v1: tasks.reminder_at + reminder_mode + reminder_offset_minutes
 --   (sql/tasks_reminder_at.sql)
+-- Priority v1: tasks.priority (sql/tasks_priority.sql)
 
 -- =============================================================================
 -- categories (admin-managed tree)
@@ -40,6 +41,7 @@ create table if not exists public.tasks (
   reminder_at timestamptz, -- resolved reminder datetime; null = none
   reminder_mode text, -- null | custom | relative_due
   reminder_offset_minutes integer, -- relative_due only: 60 | 1440 | 10080
+  priority text not null default 'medium', -- low | medium | high | urgent
   completed boolean not null default false,
   category_id uuid references public.categories (id) on delete set null,
   created_at timestamptz not null default now()
@@ -55,6 +57,9 @@ create table if not exists public.tasks (
 
 -- App: custom reminder is independent of due_at.
 -- App: relative_due recalculates reminder_at when due_at changes; clears if due_at cleared.
+
+-- Priority check (see sql/tasks_priority.sql):
+--   tasks_priority_check CHECK (priority IN ('low', 'medium', 'high', 'urgent'))
 
 -- =============================================================================
 -- labels (hybrid: global + personal)
