@@ -91,11 +91,11 @@ export function Sidebar({ showAdminLink = false }: SidebarProps) {
         aria-label="Main navigation"
         aria-hidden={mobileDrawerClosed}
         inert={mobileDrawerClosed ? true : undefined}
-        className={`fixed inset-y-0 left-0 z-50 flex w-60 shrink-0 flex-col border-r border-stone-200/80 bg-white transition-transform duration-200 ease-out dark:border-stone-800 dark:bg-stone-900 md:static md:z-auto md:translate-x-0 ${
+        className={`fixed inset-y-0 left-0 z-50 flex h-dvh w-60 shrink-0 flex-col overflow-y-auto border-r border-stone-200/80 bg-white transition-transform duration-200 ease-out dark:border-stone-800 dark:bg-stone-900 md:z-30 md:translate-x-0 ${
           mobileNavOpen ? "translate-x-0" : "-translate-x-full"
         } ${mobileDrawerClosed ? "pointer-events-none" : ""}`}
       >
-        <div className="flex h-14 items-center justify-between gap-3 border-b border-stone-200/80 px-4 dark:border-stone-800">
+        <div className="flex h-14 shrink-0 items-center justify-between gap-3 border-b border-stone-200/80 px-4 dark:border-stone-800">
           <div className="flex min-w-0 items-center gap-2.5">
             <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-emerald-600 text-xs font-semibold tracking-tight text-white">
               H
@@ -119,7 +119,7 @@ export function Sidebar({ showAdminLink = false }: SidebarProps) {
           </button>
         </div>
 
-        <nav className="flex flex-1 flex-col gap-0.5 p-3">
+        <nav className="flex flex-1 flex-col gap-0.5 overflow-y-auto p-3">
           {navItems.map((item) => {
             const isActive =
               item.href === "/dashboard"
