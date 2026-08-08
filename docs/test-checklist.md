@@ -6,6 +6,17 @@ Manual checks for current product behaviour. Prefer a fresh browser session (or 
 
 ---
 
+## Focus View v1
+
+- [ ] Sidebar Focus between Overview and Tasks → `/dashboard/focus`
+- [ ] Open tasks only; completed disappear after refresh
+- [ ] Exclusive sections: overdue → due today → reminders → high/urgent → up next (max 5)
+- [ ] No duplicate task across sections
+- [ ] Sort within sections matches priority/due/reminder rules
+- [ ] Full TaskListItem edit/complete/subtasks/labels work
+- [ ] All caught up empty state when nothing to show
+- [ ] Light/dark + mobile; no schema/RLS changes
+
 ## Priority v1 (SQL)
 
 - [x] `tasks.priority` NOT NULL DEFAULT `'medium'` + CHECK (`sql/tasks_priority.sql`)

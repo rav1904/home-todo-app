@@ -8,7 +8,7 @@ Last updated: 2026-08-08
 
 ## Current milestone
 
-**v1.2 — Task Priority v1**
+**v1.3 — Focus View v1**
 
 ## What is working
 
@@ -16,7 +16,7 @@ Last updated: 2026-08-08
 - Google-only login
 - Supabase connection
 - Protected dashboard routes
-- Sidebar: Overview, Tasks, Calendar, Settings; Admin link for admin only
+- Sidebar: Overview, Focus, Tasks, Calendar, Settings; Admin link for admin only
 - Light / dark / system theme via `next-themes` (browser-local; header `ThemeMenu`)
 - Floating quick-add task button (FAB) on dashboard pages (`fixed`, clear of sidebar)
 
@@ -31,6 +31,7 @@ Last updated: 2026-08-08
 - Pipeline: category → label → status → search → sort; `?edit=` still injects filtered-out task
 - **Reminders** — `reminder_at` + `reminder_mode` + `reminder_offset_minutes`; presets: none / custom / 1h / 1d / 1w before due; relative recalculates with due; overview sections; no email/push
 - **Priority** — `low` / `medium` / `high` / `urgent` (default medium); forms + card badge; sort `priority_desc`; calendar chips show high/urgent dot only
+- **Focus** — `/dashboard/focus`; open tasks only; exclusive sections (overdue → due today → reminders → high/urgent → up next); full `TaskListItem`
 
 ### Subtasks / checklist
 - **`task_subtasks` table** — per-task checklist owned by task user; RLS by `user_id`
@@ -222,6 +223,7 @@ Mostly created in Supabase SQL editor. Repo scripts: `sql/task_subtasks.sql`, `s
 | Area | Paths |
 |------|--------|
 | Tasks page | `src/app/dashboard/tasks/page.tsx` |
+| Focus page | `src/app/dashboard/focus/page.tsx`, `src/lib/tasks/focus.ts` |
 | Task components | `src/components/tasks/*` |
 | Label picker | `src/components/tasks/label-select.tsx` |
 | Label ↔ category | `src/lib/labels/category-links.ts`, `src/components/admin/label-category-link-fields.tsx` |
@@ -260,4 +262,4 @@ Mostly created in Supabase SQL editor. Repo scripts: `sql/task_subtasks.sql`, `s
 
 ## Next recommended step
 
-Manual-test priority (forms, badge, sort, calendar dots), then deployment prep or polish.
+Manual-test Focus View sections and exclusive grouping, then deployment prep or polish.
