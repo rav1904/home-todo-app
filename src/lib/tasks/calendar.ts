@@ -30,6 +30,9 @@ export type CalendarModalTask = {
   title: string;
   description: string | null;
   dueAt: string;
+  reminderAt: string | null;
+  reminderMode: string | null;
+  reminderOffsetMinutes: number | null;
   completed: boolean;
   createdAt: string;
   categoryId: string | null;

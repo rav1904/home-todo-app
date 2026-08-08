@@ -3,10 +3,17 @@
 import { CategorySelect } from "@/components/tasks/category-select";
 import { DueDatetimeFields } from "@/components/tasks/due-datetime-fields";
 import { LabelSelect } from "@/components/tasks/label-select";
+import { ReminderFields } from "@/components/tasks/reminder-fields";
 import type { Category } from "@/lib/categories/types";
 import type { Label } from "@/lib/labels/types";
 import { syncTaskLabels } from "@/lib/labels/sync-task-labels";
 import { datetimeLocalValueToIso } from "@/lib/tasks/due-datetime";
+import {
+  emptyReminderFormState,
+  syncReminderFormWithDueLocal,
+  toReminderDbColumns,
+  type ReminderFormState,
+} from "@/lib/tasks/reminder";
 import { cardClassName, fieldClassName } from "@/lib/ui/field-classes";
 import { createClient } from "@/lib/supabase/client";
 import { useRouter } from "next/navigation";
@@ -33,6 +40,9 @@ export function AddTaskForm({
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [dueAt, setDueAt] = useState("");
+  const [reminder, setReminder] = useState<ReminderFormState>(
+    emptyReminderFormState,
+  );
   const [categoryId, setCategoryId] = useState<string | null>(null);
   const [labelIds, setLabelIds] = useState<string[]>([]);
   const [extraLabels, setExtraLabels] = useState<Label[]>([]);
@@ -48,6 +58,11 @@ export function AddTaskForm({
 
     return [...merged.values()];
   }, [extraLabels, labels]);
+
+  function handleDueChange(nextDue: string) {
+    setDueAt(nextDue);
+    setReminder((current) => syncReminderFormWithDueLocal(nextDue, current));
+  }
 
   async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -72,13 +87,17 @@ export function AddTaskForm({
       return;
     }
 
+    const dueAtIso = datetimeLocalValueToIso(dueAt);
+    const reminderColumns = toReminderDbColumns(dueAtIso, reminder);
+
     const { data: createdTask, error: insertError } = await supabase
       .from("tasks")
       .insert({
         user_id: user.id,
         title: trimmedTitle,
         description: description.trim() || null,
-        due_at: datetimeLocalValueToIso(dueAt),
+        due_at: dueAtIso,
+        ...reminderColumns,
         category_id: categoryId,
       })
       .select("id")
@@ -112,6 +131,7 @@ export function AddTaskForm({
     setTitle("");
     setDescription("");
     setDueAt("");
+    setReminder(emptyReminderFormState());
     setCategoryId(null);
     setLabelIds([]);
     setExtraLabels([]);
@@ -173,7 +193,14 @@ export function AddTaskForm({
         <DueDatetimeFields
           id="task-due-at"
           value={dueAt}
-          onChange={setDueAt}
+          onChange={handleDueChange}
+        />
+
+        <ReminderFields
+          id="task-reminder"
+          dueLocal={dueAt}
+          value={reminder}
+          onChange={setReminder}
         />
 
         <CategorySelect

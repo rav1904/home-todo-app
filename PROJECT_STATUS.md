@@ -1,6 +1,6 @@
 # Project Status
 
-Last updated: 2026-08-07
+Last updated: 2026-08-08
 
 ## Current branch
 
@@ -8,7 +8,7 @@ Last updated: 2026-08-07
 
 ## Current milestone
 
-**v1.0 — Label ↔ category linking (Phases A–C) + search/sort**
+**v1.1 — Reminders v1 (custom + relative presets)**
 
 ## What is working
 
@@ -29,6 +29,7 @@ Last updated: 2026-08-07
 - Deep-link edit: `/dashboard/tasks?edit=<taskId>`
 - Filters on tasks page: `?category=`, `?label=`, `?q=`, `?status=`, `?sort=`
 - Pipeline: category → label → status → search → sort; `?edit=` still injects filtered-out task
+- **Reminders** — `reminder_at` + `reminder_mode` + `reminder_offset_minutes`; presets: none / custom / 1h / 1d / 1w before due; relative recalculates with due; overview sections; no email/push
 
 ### Subtasks / checklist
 - **`task_subtasks` table** — per-task checklist owned by task user; RLS by `user_id`
@@ -95,7 +96,8 @@ Last updated: 2026-08-07
 
 ## What is not built yet
 
-- Reminders
+- Email / browser push reminders
+- Reminder snooze / dismiss state
 - Recurring tasks
 - Multi-user task assignment / sharing
 - Task-level permissions
@@ -123,6 +125,7 @@ Last updated: 2026-08-07
 | `label_categories` | `sql/label_categories.sql` (run in SQL editor) |
 | `task_due_date_changes` | Done (SQL editor) |
 | `task_subtasks` | Done (`sql/task_subtasks.sql`) |
+| `tasks.reminder_at` (+ mode/offset) | Done (`sql/tasks_reminder_at.sql`; no new RLS) |
 | Admin env vars | Done (server-side only) |
 | CLI / full migrations in repo | Not set up |
 
@@ -139,6 +142,9 @@ Mostly created in Supabase SQL editor. Repo scripts: `sql/task_subtasks.sql`, `s
 | `title` | text | Required |
 | `description` | text | Optional |
 | `due_at` | timestamptz | Optional |
+| `reminder_at` | timestamptz | Resolved reminder time; null = none |
+| `reminder_mode` | text | null / `custom` / `relative_due` |
+| `reminder_offset_minutes` | int | Relative only: 60 / 1440 / 10080 |
 | `completed` | boolean | Default false |
 | `category_id` | uuid | Nullable FK → `categories`, ON DELETE SET NULL |
 | `created_at` | timestamptz | Default now |
@@ -216,6 +222,7 @@ Mostly created in Supabase SQL editor. Repo scripts: `sql/task_subtasks.sql`, `s
 | Label picker | `src/components/tasks/label-select.tsx` |
 | Label ↔ category | `src/lib/labels/category-links.ts`, `src/components/admin/label-category-link-fields.tsx` |
 | Due datetime UI | `src/components/tasks/due-datetime-fields.tsx`, `src/lib/tasks/due-datetime.ts` |
+| Reminders | `src/lib/tasks/reminder.ts`, `src/components/tasks/reminder-fields.tsx`, `sql/tasks_reminder_at.sql` |
 | Labels lib | `src/lib/labels/*` |
 | Settings | `src/app/dashboard/settings/page.tsx`, `src/components/settings/*` |
 | Calendar | `src/app/dashboard/calendar/page.tsx`, `src/components/calendar/*`, `src/lib/tasks/calendar*.ts` |
@@ -223,7 +230,7 @@ Mostly created in Supabase SQL editor. Repo scripts: `sql/task_subtasks.sql`, `s
 | Theme | `src/components/theme/*` |
 | Categories | `src/lib/categories/*` |
 | Admin | `src/app/dashboard/admin/*`, `src/components/admin/*` |
-| SQL scripts | `sql/task_subtasks.sql`, `sql/labels_personal_select_archived.sql`, `sql/label_categories.sql` |
+| SQL scripts | `sql/task_subtasks.sql`, `sql/labels_personal_select_archived.sql`, `sql/label_categories.sql`, `sql/tasks_reminder_at.sql` |
 | Docs | `docs/database-schema.sql`, `docs/rls-policies.md`, `docs/test-checklist.md` |
 
 ## Latest important commits
@@ -248,6 +255,4 @@ Mostly created in Supabase SQL editor. Repo scripts: `sql/task_subtasks.sql`, `s
 
 ## Next recommended step
 
-**Confirm** `sql/label_categories.sql` (and earlier scripts) have been run in Supabase.
-
-Then either **deployment prep** (env, redirects, version more schema under `sql/` / CLI migrations) or polish (dashboard overview filters, archived-label read badges on tasks).
+Manual-test reminder presets (relative + custom), then deployment prep or polish.

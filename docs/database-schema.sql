@@ -1,10 +1,12 @@
 -- Documentation reference for the home-todo-app schema.
 -- NOT a full migration to run blindly against production.
 -- Authoritative apply scripts (when present) live under sql/.
--- Last updated: 2026-08-07
+-- Last updated: 2026-08-08
 --
 -- Tables: tasks, categories, labels, task_labels, label_categories,
 --         task_due_date_changes, task_subtasks
+-- Reminders v1: tasks.reminder_at + reminder_mode + reminder_offset_minutes
+--   (sql/tasks_reminder_at.sql)
 
 -- =============================================================================
 -- categories (admin-managed tree)
@@ -35,10 +37,24 @@ create table if not exists public.tasks (
   title text not null,
   description text,
   due_at timestamptz,
+  reminder_at timestamptz, -- resolved reminder datetime; null = none
+  reminder_mode text, -- null | custom | relative_due
+  reminder_offset_minutes integer, -- relative_due only: 60 | 1440 | 10080
   completed boolean not null default false,
   category_id uuid references public.categories (id) on delete set null,
   created_at timestamptz not null default now()
 );
+
+-- Reminder checks (see sql/tasks_reminder_at.sql):
+--   tasks_reminder_mode_check
+--   tasks_reminder_offset_minutes_check
+--   tasks_reminder_consistency_check
+-- Partial index for active reminders (open tasks with reminder_at set):
+--   tasks_user_id_reminder_at_active_idx ON (user_id, reminder_at)
+--   WHERE reminder_at IS NOT NULL AND completed = false
+
+-- App: custom reminder is independent of due_at.
+-- App: relative_due recalculates reminder_at when due_at changes; clears if due_at cleared.
 
 -- =============================================================================
 -- labels (hybrid: global + personal)

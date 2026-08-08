@@ -72,7 +72,7 @@ export default async function TasksPage({ searchParams }: TasksPageProps) {
   ] = await Promise.all([
     supabase
       .from("tasks")
-      .select("id, title, description, due_at, completed, created_at, category_id")
+      .select("id, title, description, due_at, reminder_at, reminder_mode, reminder_offset_minutes, completed, created_at, category_id")
       .order("created_at", { ascending: false }),
     supabase
       .from("categories")
@@ -292,6 +292,9 @@ export default async function TasksPage({ searchParams }: TasksPageProps) {
                   title={task.title}
                   description={task.description}
                   dueAt={task.due_at}
+                  reminderAt={task.reminder_at}
+                  reminderMode={task.reminder_mode}
+                  reminderOffsetMinutes={task.reminder_offset_minutes}
                   completed={task.completed}
                   createdAt={task.created_at}
                   categoryId={task.category_id}

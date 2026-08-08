@@ -11,6 +11,7 @@ import {
 import { LabelBadges } from "@/components/tasks/label-badges";
 import { LabelSelect } from "@/components/tasks/label-select";
 import { DueDatetimeFields } from "@/components/tasks/due-datetime-fields";
+import { ReminderFields } from "@/components/tasks/reminder-fields";
 import type { CategoryDisplay } from "@/lib/categories/tree";
 import type { Category } from "@/lib/categories/types";
 import type { TaskLabelDisplay } from "@/lib/labels/display";
@@ -20,6 +21,13 @@ import {
   datetimeLocalValueToIso,
   isoToDatetimeLocalValue,
 } from "@/lib/tasks/due-datetime";
+import {
+  getReminderCardLabel,
+  reminderFormFromDb,
+  syncReminderFormWithDueLocal,
+  toReminderDbColumns,
+  type ReminderFormState,
+} from "@/lib/tasks/reminder";
 import { cardClassName, fieldClassName } from "@/lib/ui/field-classes";
 import { createClient } from "@/lib/supabase/client";
 import {
@@ -39,6 +47,9 @@ type TaskListItemProps = {
   title: string;
   description: string | null;
   dueAt: string | null;
+  reminderAt?: string | null;
+  reminderMode?: string | null;
+  reminderOffsetMinutes?: number | null;
   completed: boolean;
   createdAt: string;
   categoryId: string | null;
@@ -99,6 +110,9 @@ export function TaskListItem({
   title,
   description,
   dueAt,
+  reminderAt = null,
+  reminderMode = null,
+  reminderOffsetMinutes = null,
   completed,
   createdAt,
   categoryId,
@@ -122,6 +136,13 @@ export function TaskListItem({
   const [editTitle, setEditTitle] = useState(title);
   const [editDescription, setEditDescription] = useState(description ?? "");
   const [editDueAt, setEditDueAt] = useState(isoToDatetimeLocalValue(dueAt));
+  const [editReminder, setEditReminder] = useState<ReminderFormState>(() =>
+    reminderFormFromDb({
+      reminderAt,
+      reminderMode,
+      reminderOffsetMinutes,
+    }),
+  );
   const [editCategoryId, setEditCategoryId] = useState<string | null>(categoryId);
   const [editLabelIds, setEditLabelIds] = useState<string[]>(labelIds);
   const [extraLabels, setExtraLabels] = useState<Label[]>([]);
@@ -148,12 +169,24 @@ export function TaskListItem({
     setEditTitle(title);
     setEditDescription(description ?? "");
     setEditDueAt(isoToDatetimeLocalValue(dueAt));
+    setEditReminder(
+      reminderFormFromDb({
+        reminderAt,
+        reminderMode,
+        reminderOffsetMinutes,
+      }),
+    );
     setEditCategoryId(categoryId);
     setEditLabelIds(labelIds);
     setExtraLabels([]);
     setEditCompleted(completed);
     setError(null);
     setIsEditing(true);
+  }
+
+  function handleEditDueChange(nextDue: string) {
+    setEditDueAt(nextDue);
+    setEditReminder((current) => syncReminderFormWithDueLocal(nextDue, current));
   }
 
   function cancelEditing() {
@@ -183,6 +216,7 @@ export function TaskListItem({
 
     const supabase = createClient();
     const newDueAt = datetimeLocalValueToIso(editDueAt);
+    const reminderColumns = toReminderDbColumns(newDueAt, editReminder);
     const dueAtChanged = !dueAtValuesEqual(dueAt, newDueAt);
 
     const { error: updateError } = await supabase
@@ -191,6 +225,7 @@ export function TaskListItem({
         title: trimmedTitle,
         description: editDescription.trim() || null,
         due_at: newDueAt,
+        ...reminderColumns,
         completed: editCompleted,
         category_id: editCategoryId,
       })
@@ -294,7 +329,15 @@ export function TaskListItem({
           <DueDatetimeFields
             id={`edit-due-at-${id}`}
             value={editDueAt}
-            onChange={setEditDueAt}
+            onChange={handleEditDueChange}
+            labelClassName="mb-1.5 block text-sm font-medium text-stone-700"
+          />
+
+          <ReminderFields
+            id={`edit-reminder-${id}`}
+            dueLocal={editDueAt}
+            value={editReminder}
+            onChange={setEditReminder}
             labelClassName="mb-1.5 block text-sm font-medium text-stone-700"
           />
 
@@ -373,6 +416,10 @@ export function TaskListItem({
   const historyLines = getDueDateHistoryLines(dueDateHistory);
   const showMovedLaterNudge = dueDateHistory.movedLaterCount >= 3;
   const subtaskProgress = getSubtaskProgress(subtasks);
+  const reminderLabel = getReminderCardLabel(reminderAt, completed, {
+    reminderMode,
+    reminderOffsetMinutes,
+  });
 
   const readContent = (
     <>
@@ -440,6 +487,20 @@ export function TaskListItem({
             <dt className="sr-only">Due</dt>
             <dd>Due: {dueAt ? formatDateTime(dueAt) : "No due date"}</dd>
           </div>
+          {reminderLabel ? (
+            <div>
+              <dt className="sr-only">Reminder</dt>
+              <dd
+                className={
+                  reminderLabel.overdue
+                    ? "font-medium text-rose-700 dark:text-rose-300"
+                    : undefined
+                }
+              >
+                {reminderLabel.text}
+              </dd>
+            </div>
+          ) : null}
           <div>
             <dt className="sr-only">Created</dt>
             <dd>Created: {formatDate(createdAt)}</dd>

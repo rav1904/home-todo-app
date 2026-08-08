@@ -1,11 +1,17 @@
 import { DashboardHeader } from "@/components/dashboard/header";
+import {
+  formatReminderDateTime,
+  partitionActiveReminders,
+} from "@/lib/tasks/reminder";
 import { createClient } from "@/lib/supabase/server";
+import Link from "next/link";
 
 type Task = {
   id: string;
   title: string;
   description: string | null;
   due_at: string | null;
+  reminder_at: string | null;
   completed: boolean;
   created_at: string;
 };
@@ -72,43 +78,69 @@ function TaskList({
   tasks,
   emptyMessage,
   showDueDate = false,
+  showReminder = false,
+  reminderOverdue = false,
 }: {
   tasks: Task[];
   emptyMessage: string;
   showDueDate?: boolean;
+  showReminder?: boolean;
+  reminderOverdue?: boolean;
 }) {
   if (tasks.length === 0) {
-    return <p className="text-sm text-stone-500 dark:text-stone-400">{emptyMessage}</p>;
+    return (
+      <p className="text-sm text-stone-500 dark:text-stone-400">{emptyMessage}</p>
+    );
   }
 
   return (
     <ul className="space-y-2">
-      {tasks.map((task) => (
-        <li
-          key={task.id}
-          className="flex items-start justify-between gap-4 rounded-xl bg-stone-50 px-4 py-3 dark:bg-stone-900/60"
-        >
-          <div className="min-w-0">
-            <p
-              className={`text-sm font-medium text-stone-900 dark:text-stone-100 ${
-                task.completed ? "line-through text-stone-400 dark:text-stone-500" : ""
-              }`}
+      {tasks.map((task) => {
+        const meta = showReminder
+          ? task.reminder_at
+            ? formatReminderDateTime(task.reminder_at)
+            : null
+          : showDueDate && task.due_at
+            ? formatDateTime(task.due_at)
+            : formatDate(task.created_at);
+
+        return (
+          <li key={task.id}>
+            <Link
+              href={`/dashboard/tasks?edit=${task.id}`}
+              className="flex items-start justify-between gap-4 rounded-xl bg-stone-50 px-4 py-3 transition hover:bg-stone-100 dark:bg-stone-900/60 dark:hover:bg-stone-800/80"
             >
-              {task.title}
-            </p>
-            {task.description ? (
-              <p className="mt-0.5 truncate text-xs text-stone-500 dark:text-stone-400">
-                {task.description}
-              </p>
-            ) : null}
-          </div>
-          <span className="shrink-0 text-xs text-stone-400 dark:text-stone-500">
-            {showDueDate && task.due_at
-              ? formatDateTime(task.due_at)
-              : formatDate(task.created_at)}
-          </span>
-        </li>
-      ))}
+              <div className="min-w-0">
+                <p
+                  className={`text-sm font-medium text-stone-900 dark:text-stone-100 ${
+                    task.completed
+                      ? "line-through text-stone-400 dark:text-stone-500"
+                      : ""
+                  }`}
+                >
+                  {task.title}
+                </p>
+                {task.description ? (
+                  <p className="mt-0.5 truncate text-xs text-stone-500 dark:text-stone-400">
+                    {task.description}
+                  </p>
+                ) : null}
+              </div>
+              {meta ? (
+                <span
+                  className={`shrink-0 text-xs ${
+                    showReminder && reminderOverdue
+                      ? "font-medium text-rose-700 dark:text-rose-300"
+                      : "text-stone-400 dark:text-stone-500"
+                  }`}
+                >
+                  {meta}
+                </span>
+              ) : null}
+            </Link>
+          </li>
+        );
+      })}
     </ul>
   );
 }
@@ -121,11 +153,12 @@ export default async function DashboardPage() {
 
   const { data: tasks, error } = await supabase
     .from("tasks")
-    .select("id, title, description, due_at, completed, created_at")
+    .select("id, title, description, due_at, reminder_at, completed, created_at")
     .order("created_at", { ascending: false });
 
   const allTasks = (tasks ?? []) as Task[];
   const today = new Date();
+  const now = new Date();
 
   const openTasks = allTasks.filter((task) => !task.completed);
   const dueTodayTasks = openTasks
@@ -149,6 +182,9 @@ export default async function DashboardPage() {
     )
     .slice(0, 5);
   const recentlyAddedTasks = allTasks.slice(0, 5);
+
+  const { dueOrOverdue: remindersDueOrOverdue, upcoming: upcomingReminders } =
+    partitionActiveReminders(allTasks, now);
 
   const stats = [
     {
@@ -201,14 +237,53 @@ export default async function DashboardPage() {
                 <p className="mt-2 text-3xl font-semibold text-stone-900 dark:text-stone-100">
                   {stat.value}
                 </p>
-                <p className="mt-1 text-sm text-stone-400 dark:text-stone-500">{stat.hint}</p>
+                <p className="mt-1 text-sm text-stone-400 dark:text-stone-500">
+                  {stat.hint}
+                </p>
               </article>
             ))}
           </section>
 
+          <section className="grid gap-6 lg:grid-cols-2">
+            <article className="rounded-2xl border border-stone-200 bg-white p-6 shadow-sm dark:border-stone-700 dark:bg-stone-900">
+              <h2 className="text-lg font-semibold text-stone-900 dark:text-stone-100">
+                Reminders due now / overdue
+              </h2>
+              <p className="mt-1 text-sm text-stone-500 dark:text-stone-400">
+                Open tasks whose reminder time has passed
+              </p>
+              <div className="mt-4">
+                <TaskList
+                  tasks={remindersDueOrOverdue}
+                  emptyMessage="No reminders due right now."
+                  showReminder
+                  reminderOverdue
+                />
+              </div>
+            </article>
+
+            <article className="rounded-2xl border border-stone-200 bg-white p-6 shadow-sm dark:border-stone-700 dark:bg-stone-900">
+              <h2 className="text-lg font-semibold text-stone-900 dark:text-stone-100">
+                Upcoming reminders
+              </h2>
+              <p className="mt-1 text-sm text-stone-500 dark:text-stone-400">
+                Open tasks with a reminder still ahead
+              </p>
+              <div className="mt-4">
+                <TaskList
+                  tasks={upcomingReminders}
+                  emptyMessage="No upcoming reminders."
+                  showReminder
+                />
+              </div>
+            </article>
+          </section>
+
           <section className="grid gap-6 lg:grid-cols-3">
             <article className="rounded-2xl border border-stone-200 bg-white p-6 shadow-sm dark:border-stone-700 dark:bg-stone-900">
-              <h2 className="text-lg font-semibold text-stone-900 dark:text-stone-100">Due today</h2>
+              <h2 className="text-lg font-semibold text-stone-900 dark:text-stone-100">
+                Due today
+              </h2>
               <p className="mt-1 text-sm text-stone-500 dark:text-stone-400">
                 Open tasks due by end of today
               </p>

@@ -26,13 +26,16 @@ type RawTaskRow = {
   title: string;
   description: string | null;
   due_at: string;
+  reminder_at: string | null;
+  reminder_mode: string | null;
+  reminder_offset_minutes: number | null;
   completed: boolean;
   created_at: string;
   category_id: string | null;
 };
 
 const TASK_SELECT =
-  "id, title, description, due_at, completed, created_at, category_id";
+  "id, title, description, due_at, reminder_at, reminder_mode, reminder_offset_minutes, completed, created_at, category_id";
 
 export type CalendarFetchResult = {
   calendarTasks: CalendarTask[];
@@ -189,6 +192,9 @@ export async function fetchCalendarPageData(
       title: task.title,
       description: task.description,
       dueAt: task.due_at,
+      reminderAt: task.reminder_at,
+      reminderMode: task.reminder_mode,
+      reminderOffsetMinutes: task.reminder_offset_minutes,
       completed: task.completed,
       createdAt: task.created_at,
       categoryId: task.category_id,

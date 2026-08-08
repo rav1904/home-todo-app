@@ -1,6 +1,6 @@
 # RLS policies
 
-Last updated: 2026-08-07
+Last updated: 2026-08-08
 
 Documentation of expected Row Level Security behaviour. Apply scripts live under `sql/` where noted. Some older policies were created in the Supabase SQL editor only.
 
@@ -11,7 +11,7 @@ Admin identity in policies uses JWT email `nirav@slbenfica.co.uk` (must match `A
 ## Principles
 
 - Users only see and mutate **their own** task content.
-- Admin may manage **global** taxonomy (categories, global labels, label–category links) and aggregate user stats via service role — **not** other users’ task bodies or personal labels.
+- Admin may manage **global** taxonomy (categories, global labels, label–category links) and aggregate user stats via service role — **not** other users’ task bodies, personal labels, or reminders.
 - Personal labels are private to `created_by`.
 - Soft-archive (`active = false`) hides items from pickers in the app; Settings can still load the owner’s archived personal labels after the personal SELECT fix.
 
@@ -24,6 +24,16 @@ Admin identity in policies uses JWT email `nirav@slbenfica.co.uk` (must match `A
 | SELECT / INSERT / UPDATE / DELETE | Owner | `user_id = auth.uid()` |
 
 Admin does **not** use these policies to read other users’ task rows in the UI.
+
+**Reminders v1:** Columns on `tasks` (`sql/tasks_reminder_at.sql`):
+
+| Column | Role |
+|--------|------|
+| `reminder_at` | Resolved datetime for lists/cards |
+| `reminder_mode` | `NULL` \| `custom` \| `relative_due` |
+| `reminder_offset_minutes` | For `relative_due`: 60 / 1440 / 10080 |
+
+No new RLS policies — existing task owner policies cover all three. Reminder data is never exposed to admin for other users.
 
 ---
 

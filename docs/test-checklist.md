@@ -1,8 +1,28 @@
 # Test checklist
 
-Last updated: 2026-08-07
+Last updated: 2026-08-08
 
 Manual checks for current product behaviour. Prefer a fresh browser session (or private window) when verifying privacy.
+
+---
+
+## Reminders v1 (SQL)
+
+- [x] `reminder_at`, `reminder_mode`, `reminder_offset_minutes` + CHECKs (`sql/tasks_reminder_at.sql`)
+- [x] Partial index; no new RLS
+
+## Reminders v1 (app)
+
+- [ ] No reminder / custom / 1h / 1d / 1w before due
+- [ ] Relative options disabled without due date + helper text
+- [ ] Changing due recalculates relative `reminder_at`
+- [ ] Clearing due while relative → no reminder
+- [ ] Custom independent of due; 5-minute step
+- [ ] Dashboard uses `reminder_at`; calendar uses `due_at` only
+- [ ] No `task_due_date_changes` for reminder edits
+- [ ] Completed tasks not active reminders
+- [ ] Light/dark + mobile
+- [ ] Quick-add + calendar modal
 
 ---
 
