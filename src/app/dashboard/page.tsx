@@ -1,5 +1,9 @@
 import { DashboardHeader } from "@/components/dashboard/header";
 import {
+  getUserAvatarUrl,
+  getUserDisplayName,
+} from "@/lib/auth/user-display";
+import {
   formatReminderDateTime,
   partitionActiveReminders,
 } from "@/lib/tasks/reminder";
@@ -278,6 +282,13 @@ export default async function DashboardPage() {
       remindersDueOrOverdue.length >
     0;
 
+  const displayName = getUserDisplayName(
+    user?.user_metadata,
+    user?.email,
+    "there",
+  );
+  const avatarUrl = getUserAvatarUrl(user?.user_metadata);
+
   const focusLink = (
     <Link
       href="/dashboard/focus"
@@ -299,13 +310,15 @@ export default async function DashboardPage() {
   return (
     <>
       <DashboardHeader
-        title="Overview"
+        title={`Hello ${displayName}, what would you like to do today?`}
         description={
           needsAttention
             ? "A few things need attention today"
             : "A calm look at your workspace"
         }
         email={user?.email}
+        avatarUrl={avatarUrl}
+        avatarName={displayName}
       />
       <div className="flex-1 overflow-auto p-4 sm:p-6 lg:p-8">
         <div className="mx-auto max-w-6xl space-y-6">

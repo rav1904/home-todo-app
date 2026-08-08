@@ -1,10 +1,16 @@
 import "server-only";
 
+import {
+  getUserAvatarUrl,
+  getUserDisplayName,
+} from "@/lib/auth/user-display";
 import { createAdminAuthClient } from "@/lib/supabase/admin";
 
 export type AppUserSummary = {
   id: string;
   email: string | null;
+  displayName: string;
+  avatarUrl: string | null;
   createdAt: string;
   lastSignInAt: string | null;
 };
@@ -28,9 +34,12 @@ export async function listAppUsers(): Promise<AppUserSummary[]> {
     }
 
     for (const user of data.users) {
+      const metadata = user.user_metadata;
       users.push({
         id: user.id,
         email: user.email ?? null,
+        displayName: getUserDisplayName(metadata, user.email, "Unknown user"),
+        avatarUrl: getUserAvatarUrl(metadata),
         createdAt: user.created_at,
         lastSignInAt: user.last_sign_in_at ?? null,
       });

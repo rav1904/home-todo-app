@@ -1,4 +1,5 @@
 import { DashboardHeader } from "@/components/dashboard/header";
+import { UserAvatar } from "@/components/ui/user-avatar";
 import { isAdminUser } from "@/lib/admin";
 import {
   countRecentlyJoinedUsers,
@@ -98,9 +99,10 @@ export default async function AdminPage() {
                 </p>
               ) : (
                 <div className="mt-4 overflow-x-auto">
-                  <table className="w-full min-w-[640px] text-left text-sm">
+                  <table className="w-full min-w-[720px] text-left text-sm">
                     <thead>
                       <tr className="border-b border-stone-200 text-stone-500 dark:border-stone-700 dark:text-stone-400">
+                        <th className="pb-3 pr-4 font-medium">Name</th>
                         <th className="pb-3 pr-4 font-medium">Email</th>
                         <th className="pb-3 pr-4 font-medium">User ID</th>
                         <th className="pb-3 pr-4 font-medium">Created</th>
@@ -113,6 +115,18 @@ export default async function AdminPage() {
                           key={appUser.id}
                           className="border-b border-stone-100 last:border-0 dark:border-stone-800"
                         >
+                          <td className="py-3 pr-4">
+                            <div className="flex min-w-0 items-center gap-2.5">
+                              <UserAvatar
+                                name={appUser.displayName}
+                                avatarUrl={appUser.avatarUrl}
+                                size="sm"
+                              />
+                              <span className="truncate font-medium text-stone-900 dark:text-stone-100">
+                                {appUser.displayName}
+                              </span>
+                            </div>
+                          </td>
                           <td className="py-3 pr-4 font-medium text-stone-900 dark:text-stone-100">
                             {appUser.email ?? "—"}
                           </td>
