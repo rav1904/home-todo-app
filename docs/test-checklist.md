@@ -1,0 +1,128 @@
+# Test checklist
+
+Last updated: 2026-08-07
+
+Manual checks for current product behaviour. Prefer a fresh browser session (or private window) when verifying privacy.
+
+---
+
+## Auth & shell
+
+- [ ] Google sign-in lands on dashboard
+- [ ] Unauthenticated visit to `/dashboard/*` redirects to login
+- [ ] Sign out works; session cleared
+- [ ] Theme: System / Light / Dark via header menu; survives refresh
+- [ ] Sidebar: Overview, Tasks, Calendar, Settings; Admin only for admin email
+- [ ] FAB quick-add stays fixed and usable on mobile and desktop
+
+---
+
+## Tasks CRUD
+
+- [ ] Create task (title only; with description; with due date/time)
+- [ ] Due time respects 5-minute steps / normalisation on save
+- [ ] Toggle complete / incomplete
+- [ ] Edit title, description, due, category, labels, completed
+- [ ] Delete with confirm
+- [ ] Deep link `/dashboard/tasks?edit=<id>` opens edit for that task
+- [ ] Another user’s tasks never appear (RLS)
+
+---
+
+## Search, filter, sort (tasks page)
+
+- [ ] Category filter (`?category=`)
+- [ ] Label filter (`?label=`)
+- [ ] Search `q` matches title/description as implemented
+- [ ] Status filter (open / completed / all as UI provides)
+- [ ] Sort options reorder the list
+- [ ] Combined filters compose; clearing params resets
+- [ ] `?edit=` still surfaces the task even if filters would hide it
+
+---
+
+## Categories
+
+- [ ] Admin: create main + subcategory; edit; archive / reactivate; reorder
+- [ ] User: assign main / sub on add and edit; badge on card
+- [ ] Archived category hidden from user pickers
+- [ ] Clearing category on a task works
+
+---
+
+## Labels — personal
+
+- [ ] Create personal label from task LabelSelect (“Create and select”)
+- [ ] Create / edit / archive / reactivate from Settings
+- [ ] Personal labels always appear in picker regardless of category
+- [ ] Creating personal label inside modal does **not** submit/close parent form
+- [ ] Cancel on create personal label clears draft only
+- [ ] Admin cannot see another user’s personal labels
+- [ ] User B cannot see user A’s personal labels
+
+---
+
+## Labels — global + category links (Phases A–B)
+
+Prerequisite: `sql/label_categories.sql` applied.
+
+- [ ] Admin Labels: create global label with category/sub links; save
+- [ ] Admin: edit links (add/remove mains and subs); row summary updates
+- [ ] Cannot link a personal label (trigger / admin UI only shows globals)
+- [ ] Non-admin cannot insert/delete `label_categories` rows
+
+---
+
+## Label picker scoping (Phase C)
+
+- [ ] **No category:** only personal labels; helper copy about selecting a category
+- [ ] **Main with links:** linked globals + personal appear
+- [ ] **Main with no links:** no globals (or empty shared section); personal still there
+- [ ] **Subcategory:** globals linked to sub **or** parent main + personal
+- [ ] Change category after selecting a global: selection **kept**; may leave shared list but still under “Selected”
+- [ ] Existing task with “orphaned” global label still shows that label on the card / selected list
+- [ ] Saving does not strip labels the user did not remove
+- [ ] Same behaviour in quick-add FAB and calendar task edit modal
+- [ ] Light and dark: label pills readable; usable on mobile
+
+---
+
+## Subtasks
+
+- [ ] Add / toggle / reorder / delete on task card
+- [ ] Progress indicator updates
+- [ ] Works in calendar task modal
+- [ ] Not available on create form (v1 expected)
+- [ ] Subtasks of other users’ tasks inaccessible
+
+---
+
+## Calendar
+
+- [ ] Month / week / day / list views switch via URL/UI
+- [ ] Chips open modal; edit/save/delete refreshes calendar
+- [ ] Tasks without due date handled as designed (not wrongly placed)
+
+---
+
+## Due date history
+
+- [ ] Changing due date inserts history row with correct `change_direction`
+- [ ] Card shows update / moved later / moved earlier counts
+- [ ] Moved-later nudge at ≥ 3 only
+- [ ] Unchanged due date on save does not insert a row
+
+---
+
+## Admin privacy
+
+- [ ] Users page: aggregates only; no other users’ titles/descriptions
+- [ ] Categories / Labels admin do not expose personal labels or task content
+
+---
+
+## Regression smoke
+
+- [ ] `npm run build` succeeds
+- [ ] Dark mode: forms, filters, label picker, admin panels
+- [ ] Settings theme + personal labels still work after Phase C

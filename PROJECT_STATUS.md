@@ -1,6 +1,6 @@
 # Project Status
 
-Last updated: 2026-07-29
+Last updated: 2026-08-07
 
 ## Current branch
 
@@ -8,7 +8,7 @@ Last updated: 2026-07-29
 
 ## Current milestone
 
-**v0.9 — Settings, labels, calendar, subtasks, theme**
+**v1.0 — Label ↔ category linking (Phases A–C) + search/sort**
 
 ## What is working
 
@@ -17,8 +17,8 @@ Last updated: 2026-07-29
 - Supabase connection
 - Protected dashboard routes
 - Sidebar: Overview, Tasks, Calendar, Settings; Admin link for admin only
-- Light / dark / system theme via `next-themes` (browser-local)
-- Floating quick-add task button (FAB) on dashboard pages
+- Light / dark / system theme via `next-themes` (browser-local; header `ThemeMenu`)
+- Floating quick-add task button (FAB) on dashboard pages (`fixed`, clear of sidebar)
 
 ### Tasks (user-facing)
 - Add, list, complete, delete tasks
@@ -27,7 +27,8 @@ Last updated: 2026-07-29
 - Due date change tracking (`task_due_date_changes`) with neutral counts and moved-later nudge (≥3)
 - Private user task lists using RLS
 - Deep-link edit: `/dashboard/tasks?edit=<taskId>`
-- Category + label filters on tasks page (`?category=`, `?label=`)
+- Filters on tasks page: `?category=`, `?label=`, `?q=`, `?status=`, `?sort=`
+- Pipeline: category → label → status → search → sort; `?edit=` still injects filtered-out task
 
 ### Subtasks / checklist
 - **`task_subtasks` table** — per-task checklist owned by task user; RLS by `user_id`
@@ -40,16 +41,26 @@ Last updated: 2026-07-29
 - Month / week / day / list views with URL params
 - Task chips open calendar task modal (read → edit via `TaskListItem`)
 - Day grouping by local `due_at`; save/delete refresh calendar
+- Category-scoped label picker in edit modal (same rules as tasks page)
 
 ### Labels (hybrid)
 - **`labels`** — `scope` global | personal; `created_by` for personal; archive via `active`
 - **`task_labels`** — junction; attach only active labels (global or own personal)
-- **Admin** — `/dashboard/admin/labels` manages **global** labels only
+- **`label_categories`** — links **global** labels to categories/subcategories (Phases A–B)
+- **Admin** — `/dashboard/admin/labels` manages **global** labels + category links only
 - **Users** — create personal labels from task form or Settings; own personal only
 - Task pickers / filters: `active = true` only
 - Settings: active + archived personal labels (after RLS fix SQL)
 - Soft-archive only (no hard delete in v1)
 - Admin and other users cannot see personal labels
+
+### Label picker scoping (Phase C)
+- **Personal labels** — always available; not restricted by category
+- **No category** — shared/global labels hidden; helper message shown
+- **Main category** — active globals linked to that main
+- **Subcategory** — active globals linked to the sub **or** its parent main
+- Changing category updates available globals; does **not** auto-remove selected labels
+- Existing task attachments still display even if no longer “relevant” for the category
 
 ### Settings
 - `/dashboard/settings` for every signed-in user
@@ -79,6 +90,7 @@ Last updated: 2026-07-29
 - Service role is used only for Auth Admin user listing and aggregate task counts — not for categories, labels, or task content
 - Task RLS: `user_id = auth.uid()`
 - Label RLS: active global readable by all; personal SELECT/UPDATE only for `created_by = auth.uid()` (active + archived); admin manages global only
+- `label_categories`: authenticated SELECT; admin INSERT/DELETE; trigger enforces global-only links
 - Admin does not see task titles, descriptions, due dates, or task lists for other users
 
 ## What is not built yet
@@ -89,7 +101,7 @@ Last updated: 2026-07-29
 - Task-level permissions
 - Category / label filters on dashboard overview (tasks page only)
 - Proper profiles table / role table
-- Full Supabase CLI migrations in repo (some SQL scripts under `sql/` only)
+- Full Supabase CLI migrations in repo (SQL scripts under `sql/` + docs reference)
 - Deployment
 
 ## Supabase setup status
@@ -102,11 +114,13 @@ Last updated: 2026-07-29
 | Email/password auth | Disabled in UI |
 | RLS on `tasks` | Verified locally |
 | RLS on `categories` | Active readable by users; admin manages all |
-| RLS on `labels` / `task_labels` | Hybrid global + personal; see SQL notes |
+| RLS on `labels` / `task_labels` | Hybrid global + personal; see `docs/rls-policies.md` |
+| RLS on `label_categories` | Auth SELECT; admin INSERT/DELETE (`sql/label_categories.sql`) |
 | RLS on `task_subtasks` | Owner-only (`sql/task_subtasks.sql`) |
 | `categories` + `tasks.category_id` | Done (SQL editor) |
 | `labels` + `task_labels` + scope/personal | Done (SQL editor) |
-| Personal label SELECT includes archived | `sql/labels_personal_select_archived.sql` (run in SQL editor) |
+| Personal label SELECT includes archived | `sql/labels_personal_select_archived.sql` |
+| `label_categories` | `sql/label_categories.sql` (run in SQL editor) |
 | `task_due_date_changes` | Done (SQL editor) |
 | `task_subtasks` | Done (`sql/task_subtasks.sql`) |
 | Admin env vars | Done (server-side only) |
@@ -114,7 +128,7 @@ Last updated: 2026-07-29
 
 ## Database tables created so far
 
-Mostly created in Supabase SQL editor. Repo scripts: `sql/task_subtasks.sql`, `sql/labels_personal_select_archived.sql`.
+Mostly created in Supabase SQL editor. Repo scripts: `sql/task_subtasks.sql`, `sql/labels_personal_select_archived.sql`, `sql/label_categories.sql`. Reference snapshot: `docs/database-schema.sql`.
 
 ### `tasks`
 
@@ -163,6 +177,15 @@ Mostly created in Supabase SQL editor. Repo scripts: `sql/task_subtasks.sql`, `s
 | `label_id` | uuid | FK → `labels` |
 | | | Attachability: active global or own active personal |
 
+### `label_categories`
+
+| Column | Type | Notes |
+|--------|------|--------|
+| `label_id` | uuid | FK → `labels` ON DELETE CASCADE; global only (trigger) |
+| `category_id` | uuid | FK → `categories` ON DELETE CASCADE |
+| `created_at` | timestamptz | Default now |
+| | PK | `(label_id, category_id)` |
+
 ### `task_due_date_changes`
 
 | Column | Type | Notes |
@@ -190,6 +213,8 @@ Mostly created in Supabase SQL editor. Repo scripts: `sql/task_subtasks.sql`, `s
 |------|--------|
 | Tasks page | `src/app/dashboard/tasks/page.tsx` |
 | Task components | `src/components/tasks/*` |
+| Label picker | `src/components/tasks/label-select.tsx` |
+| Label ↔ category | `src/lib/labels/category-links.ts`, `src/components/admin/label-category-link-fields.tsx` |
 | Due datetime UI | `src/components/tasks/due-datetime-fields.tsx`, `src/lib/tasks/due-datetime.ts` |
 | Labels lib | `src/lib/labels/*` |
 | Settings | `src/app/dashboard/settings/page.tsx`, `src/components/settings/*` |
@@ -198,13 +223,19 @@ Mostly created in Supabase SQL editor. Repo scripts: `sql/task_subtasks.sql`, `s
 | Theme | `src/components/theme/*` |
 | Categories | `src/lib/categories/*` |
 | Admin | `src/app/dashboard/admin/*`, `src/components/admin/*` |
-| SQL scripts | `sql/task_subtasks.sql`, `sql/labels_personal_select_archived.sql` |
+| SQL scripts | `sql/task_subtasks.sql`, `sql/labels_personal_select_archived.sql`, `sql/label_categories.sql` |
+| Docs | `docs/database-schema.sql`, `docs/rls-policies.md`, `docs/test-checklist.md` |
 
 ## Latest important commits
 
 | Commit | Summary |
 |--------|---------|
-| `36be06a` | Fix archived personal label visibility (RLS SQL + docs) |
+| `f01e545` | Scope global labels by category (Phase C picker) |
+| `a6cc5f8` | Add admin label category links (Phases A–B) |
+| `7c242e8` | Keep quick-add FAB fixed to viewport |
+| `bbd8231` | Restore calendar view switcher |
+| `f1f1ebc` | Add task search, status filter, and sorting |
+| `36be06a` | Fix archived personal label visibility (RLS SQL) |
 | `8410c63` | Add user settings page (theme + personal labels) |
 | `70f8b50` | Fix task time input 5-minute increments |
 | `d7e12fb` | Fix label creation inside task modal |
@@ -217,6 +248,6 @@ Mostly created in Supabase SQL editor. Repo scripts: `sql/task_subtasks.sql`, `s
 
 ## Next recommended step
 
-**Confirm** `sql/labels_personal_select_archived.sql` has been run in Supabase if archived personal labels must appear in Settings.
+**Confirm** `sql/label_categories.sql` (and earlier scripts) have been run in Supabase.
 
-Then either **deployment prep** (env, redirects, version more schema in `sql/`) or a small polish pass (dashboard filters, archived-label read badges on tasks).
+Then either **deployment prep** (env, redirects, version more schema under `sql/` / CLI migrations) or polish (dashboard overview filters, archived-label read badges on tasks).
