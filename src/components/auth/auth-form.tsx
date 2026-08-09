@@ -1,5 +1,6 @@
 "use client";
 
+import { GoogleGIcon } from "@/components/brand/google-g-icon";
 import { ThemeToggle } from "@/components/theme/theme-toggle";
 import { createClient } from "@/lib/supabase/client";
 import { useState } from "react";
@@ -36,7 +37,7 @@ export function AuthForm() {
           Work Hard / Play Hard
         </h1>
         <p className="mt-2 text-sm text-stone-500 dark:text-stone-400">
-          a lifestyle Task Management tool
+          a lifestyle Task Management application
         </p>
       </div>
 
@@ -45,9 +46,13 @@ export function AuthForm() {
           type="button"
           onClick={handleGoogleSignIn}
           disabled={loading}
-          className="w-full cursor-pointer rounded-xl border border-stone-200 bg-white px-4 py-2.5 text-sm font-medium text-stone-700 transition hover:bg-stone-50 disabled:cursor-not-allowed disabled:opacity-60 dark:border-stone-600 dark:bg-stone-800 dark:text-stone-200 dark:hover:bg-stone-700"
+          aria-label={
+            loading ? "Redirecting to Google sign-in" : "Continue with Google"
+          }
+          className="flex min-h-11 w-full cursor-pointer items-center justify-center gap-3 rounded-xl border border-stone-200 bg-white px-4 py-2.5 text-sm font-medium text-stone-700 shadow-sm transition hover:bg-stone-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-stone-400/40 focus-visible:ring-offset-2 focus-visible:ring-offset-white disabled:cursor-not-allowed disabled:opacity-60 dark:border-stone-600 dark:bg-stone-800 dark:text-stone-200 dark:hover:bg-stone-700 dark:focus-visible:ring-stone-500/40 dark:focus-visible:ring-offset-stone-900"
         >
-          {loading ? "Redirecting..." : "Continue with Google"}
+          <GoogleGIcon className="h-5 w-5 shrink-0" />
+          <span>{loading ? "Redirecting..." : "Continue with Google"}</span>
         </button>
 
         {error ? (
@@ -62,7 +67,7 @@ export function AuthForm() {
       </div>
 
       <p className="mt-4 text-center text-xs text-stone-400 dark:text-stone-500">
-        Only invited users should have access.
+        Access by invitation only.
       </p>
     </div>
   );
