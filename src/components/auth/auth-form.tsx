@@ -67,7 +67,7 @@ export function AuthForm() {
       </div>
 
       <p className="mt-4 text-center text-xs text-stone-400 dark:text-stone-500">
-        Access by invitation only.
+        Access by invitation only. Login to request access.
       </p>
     </div>
   );

@@ -1,19 +1,38 @@
 # RLS policies
 
-Last updated: 2026-08-08
+Last updated: 2026-08-10
 
 Documentation of expected Row Level Security behaviour. Apply scripts live under `sql/` where noted. Some older policies were created in the Supabase SQL editor only.
 
 Admin identity in policies uses JWT email `nirav@slbenfica.co.uk` (must match `ADMIN_EMAIL`).
+
+App membership uses `public.is_app_allowed()` (`sql/app_access_control.sql`): true when `is_app_admin()` **or** an `app_allowed_users` row exists with `status = 'approved'` for the JWT email. Admin is always allowed even if the allowlist row is missing or revoked.
 
 ---
 
 ## Principles
 
 - Users only see and mutate **their own** task content.
-- Admin may manage **global** taxonomy (categories, global labels, label–category links) and aggregate user stats via service role — **not** other users’ task bodies, personal labels, or reminders.
+- Unapproved authenticated users must not read/write core app tables (allowlist + RLS).
+- Admin may manage **global** taxonomy (categories, global labels, label–category links), access requests / allowlist, and Auth user metadata — **not** other users’ task bodies, personal labels, or reminders.
 - Personal labels are private to `created_by`.
 - Soft-archive (`active = false`) hides items from pickers in the app; Settings can still load the owner’s archived personal labels after the personal SELECT fix.
+
+---
+
+## `app_allowed_users` / `access_requests`
+
+Source: `sql/app_access_control.sql`
+
+| Table | Op | Who | Rule |
+|-------|----|-----|------|
+| `app_allowed_users` | SELECT | Owner or admin | Own email row, or all if admin |
+| `app_allowed_users` | INSERT / UPDATE | Admin | Admin email only (prefer admin RPCs) |
+| `access_requests` | SELECT | Owner or admin | Own rows, or all if admin |
+| `access_requests` | INSERT | Requester | Own uid + JWT email + pending + not allowed |
+| `access_requests` | UPDATE | Admin | Approve/reject (prefer admin RPCs) |
+
+Preferred mutations: `submit_access_request`, `admin_approve_access_request`, `admin_reject_access_request`, `admin_add_allowed_email`, `admin_revoke_allowed_email`, `admin_reapprove_allowed_email`.
 
 ---
 
@@ -21,7 +40,7 @@ Admin identity in policies uses JWT email `nirav@slbenfica.co.uk` (must match `A
 
 | Op | Who | Rule |
 |----|-----|------|
-| SELECT / INSERT / UPDATE / DELETE | Owner | `user_id = auth.uid()` |
+| SELECT / INSERT / UPDATE / DELETE | Owner | `user_id = auth.uid()` **and** `is_app_allowed()` |
 
 Admin does **not** use these policies to read other users’ task rows in the UI.
 
@@ -44,7 +63,7 @@ No new RLS policies — existing task owner policies cover all three. Reminder d
 | `recurrence` | `none` / interval values; recurring requires `due_at` |
 | `spawned_from_task_id` | Parent occurrence; unique when set (dedup) |
 
-RPC `complete_task_with_recurrence(uuid)` runs as **SECURITY DEFINER** with `auth.uid()` ownership checks (owner-only). Completes the task and optionally inserts the next occurrence (labels + subtask templates). No new table policies. If an older INVOKER revision is installed, re-run `sql/tasks_recurrence_rpc_fix.sql`.
+RPC `complete_task_with_recurrence(uuid)` runs as **SECURITY DEFINER** with `is_app_allowed()` then `auth.uid()` ownership checks (owner-only). Completes the task and optionally inserts the next occurrence (labels + subtask templates). No new table policies. If an older INVOKER revision is installed, re-run `sql/tasks_recurrence_rpc_fix.sql` then re-apply the gate in `sql/app_access_control.sql`.
 
 ---
 
@@ -54,12 +73,12 @@ Source: `sql/categories_personal_and_access.sql` (replaces earlier editor-only p
 
 | Op | Who | Rule |
 |----|-----|------|
-| SELECT | Owner | Own Personal (`scope = 'personal'` and `user_id = auth.uid()`) |
-| SELECT | Non-admin | Active global mains with a grant, or active global subs whose parent is granted |
+| SELECT | Owner | Own Personal (`scope = 'personal'` and `user_id = auth.uid()`) **and** `is_app_allowed()` |
+| SELECT | Non-admin | Active global mains with a grant, or active global subs whose parent is granted **and** `is_app_allowed()` |
 | SELECT | Admin | All global categories (any `active`); **not** other users’ Personal |
 | INSERT / UPDATE / DELETE | Admin | Global only (`scope = 'global'`) |
 
-Personal rows are provisioned by `ensure_personal_category_for_user` / `ensure_my_personal_category` / `auth.users` trigger — not by client INSERT policies.
+Personal rows are provisioned by `ensure_personal_category_for_user` / `ensure_my_personal_category` (allowed users only) — not by client INSERT policies. Auth signup no longer auto-creates Personal (`sql/app_access_control.sql`).
 
 Global categories cannot be named `Personal`. One Personal category per user.
 
@@ -93,9 +112,10 @@ Trigger `tasks_enforce_category_access` (not RLS WITH CHECK):
 
 | Op | Who | Rule (expected) |
 |----|-----|-----------------|
-| SELECT | Authenticated | Active **global** labels (`scope = 'global'`, typically `active = true` for picker queries) |
-| SELECT | Owner | Own **personal** labels (`scope = 'personal'` and `created_by = auth.uid()`), **including archived** after `sql/labels_personal_select_archived.sql` |
-| INSERT / UPDATE | Owner | Personal labels only (`created_by = auth.uid()`, `scope = 'personal'`) |
+| SELECT | Authenticated (allowed) | Active **global** labels (`scope = 'global'`, `active = true`) **and** `is_app_allowed()` |
+| SELECT | Admin | All **global** labels |
+| SELECT | Owner | Own **personal** labels (`scope = 'personal'` and `created_by = auth.uid()`), **including archived**, **and** `is_app_allowed()` |
+| INSERT / UPDATE | Owner | Personal labels only (`created_by = auth.uid()`, `scope = 'personal'`) **and** `is_app_allowed()` |
 | INSERT / UPDATE / DELETE (archive) | Admin | **Global** labels only |
 
 **Privacy checks**
@@ -112,7 +132,7 @@ Repo script: `sql/labels_personal_select_archived.sql` (replaces personal SELECT
 
 | Op | Who | Rule (expected) |
 |----|-----|-----------------|
-| ALL | Task owner | Rows only for tasks where `tasks.user_id = auth.uid()` |
+| ALL | Task owner | Rows only for tasks where `tasks.user_id = auth.uid()` **and** `is_app_allowed()` |
 | Attach | App | Only active global, or own active personal labels |
 
 Changing a task’s category does **not** require deleting `task_labels` rows (Phase C keeps existing attachments).
@@ -125,7 +145,7 @@ Source: `sql/label_categories.sql`
 
 | Policy | Op | Rule |
 |--------|----|------|
-| Users can view label links for usable categories | SELECT | Admin, or `user_can_use_category(category_id)` |
+| Users can view label links for usable categories | SELECT | Admin, or (`is_app_allowed()` and `user_can_use_category(category_id)`) |
 | Admin can insert label category links | INSERT | Admin email **and** linked label `scope = 'global'` |
 | Admin can delete label category links | DELETE | Admin email |
 
@@ -141,7 +161,7 @@ Personal labels must never appear in this table. Personal categories must never 
 
 | Op | Who | Rule (expected) |
 |----|-----|-----------------|
-| SELECT / INSERT | Owner | `user_id = auth.uid()` |
+| SELECT / INSERT | Owner | `user_id = auth.uid()` **and** `is_app_allowed()` |
 | INSERT | Owner | Also: `task_id` belongs to a task owned by `auth.uid()` |
 
 Admin must not read other users’ due-date history via the session client.
@@ -154,10 +174,10 @@ Source: `sql/task_subtasks.sql`
 
 | Policy | Op | Rule |
 |--------|----|------|
-| Users select own task subtasks | SELECT | `user_id = auth.uid()` |
-| Users insert own task subtasks | INSERT | `user_id = auth.uid()` **and** parent task owned by user |
-| Users update own task subtasks | UPDATE | Same ownership checks on `using` / `with check` |
-| Users delete own task subtasks | DELETE | `user_id = auth.uid()` **and** parent task owned by user |
+| Users select own task subtasks | SELECT | `user_id = auth.uid()` **and** `is_app_allowed()` |
+| Users insert own task subtasks | INSERT | `user_id = auth.uid()` **and** `is_app_allowed()` **and** parent task owned by user |
+| Users update own task subtasks | UPDATE | Same ownership checks on `using` / `with check` (+ allowed) |
+| Users delete own task subtasks | DELETE | `user_id = auth.uid()` **and** `is_app_allowed()` **and** parent task owned by user |
 
 ---
 

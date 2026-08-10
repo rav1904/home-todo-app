@@ -1,3 +1,7 @@
+import {
+  isCurrentUserAllowed,
+  syncAllowedUserId,
+} from "@/lib/access/allowed";
 import { createClient } from "@/lib/supabase/server";
 import { NextResponse } from "next/server";
 
@@ -11,7 +15,22 @@ export async function GET(request: Request) {
     const { error } = await supabase.auth.exchangeCodeForSession(code);
 
     if (!error) {
-      return NextResponse.redirect(`${origin}${next}`);
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+
+      // Use the same client that just received the session (JWT for is_app_allowed).
+      const allowed = await isCurrentUserAllowed(user, supabase);
+
+      if (!allowed) {
+        return NextResponse.redirect(`${origin}/access-request`);
+      }
+
+      await syncAllowedUserId(supabase);
+
+      const safeNext =
+        next.startsWith("/") && !next.startsWith("//") ? next : "/dashboard";
+      return NextResponse.redirect(`${origin}${safeNext}`);
     }
   }
 

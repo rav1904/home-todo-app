@@ -5,6 +5,7 @@ import { usePathname } from "next/navigation";
 
 const adminNavItems = [
   { href: "/dashboard/admin", label: "Users" },
+  { href: "/dashboard/admin/access", label: "Access" },
   { href: "/dashboard/admin/categories", label: "Categories" },
   { href: "/dashboard/admin/labels", label: "Labels" },
 ];
@@ -19,7 +20,7 @@ export function AdminSubnav() {
           const isActive =
             item.href === "/dashboard/admin"
               ? pathname === "/dashboard/admin"
-              : pathname.startsWith(item.href);
+              : pathname === item.href || pathname.startsWith(`${item.href}/`);
 
           return (
             <Link

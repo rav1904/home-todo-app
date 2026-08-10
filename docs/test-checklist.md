@@ -69,12 +69,26 @@ Manual checks for current product behaviour. Prefer a fresh browser session (or 
 
 ## Auth & shell
 
-- [ ] Google sign-in lands on dashboard
-- [ ] Unauthenticated visit to `/dashboard/*` redirects to login
+- [ ] Google sign-in: approved → dashboard; unapproved → `/access-request`
+- [ ] Unauthenticated visit to `/dashboard/*` or `/access-request` redirects to login
 - [ ] Sign out works; session cleared
 - [ ] Theme: System / Light / Dark via header menu; survives refresh
 - [ ] Sidebar: Overview, Tasks, Calendar, Settings; Admin only for admin email
 - [ ] FAB quick-add stays fixed and usable on mobile and desktop
+
+## Access control
+
+- [ ] Apply `sql/app_access_control.sql` then confirm admin still opens dashboard/admin **before** deploying app gate
+- [ ] Admin email always allowed (`is_app_admin` / `ADMIN_EMAIL`) even if allowlist revoked
+- [ ] Unapproved Google user reaches Access Request; cannot load tasks via client
+- [ ] Submit request → success copy; pending appears in Admin → Access
+- [ ] Approve → user can use app; Personal category created
+- [ ] Reject → still blocked; can submit again later
+- [ ] Manual add email → Google login works without a prior request
+- [ ] Revoke → redirected to Access Request; RLS blocks data
+- [ ] Re-approve restores access
+- [ ] Admin still cannot see other users’ task content
+- [ ] No Personal category for brand-new unapproved Auth users
 
 ---
 

@@ -1,15 +1,17 @@
 -- Documentation reference for the home-todo-app schema.
 -- NOT a full migration to run blindly against production.
 -- Authoritative apply scripts (when present) live under sql/.
--- Last updated: 2026-08-08
+-- Last updated: 2026-08-10
 --
 -- Tables: tasks, categories, labels, task_labels, label_categories,
---         user_category_access, task_due_date_changes, task_subtasks
+--         user_category_access, task_due_date_changes, task_subtasks,
+--         app_allowed_users, access_requests
 -- Reminders v1: tasks.reminder_at + reminder_mode + reminder_offset_minutes
 --   (sql/tasks_reminder_at.sql)
 -- Priority v1: tasks.priority (sql/tasks_priority.sql)
 -- Recurrence v1: tasks.recurrence + spawned_from_task_id (sql/tasks_recurrence.sql)
 -- Category access: Personal per user + global grants (sql/categories_personal_and_access.sql)
+-- App access: allowlist + requests (sql/app_access_control.sql)
 
 -- =============================================================================
 -- categories (global admin tree + per-user Personal)
@@ -39,8 +41,43 @@ create table if not exists public.categories (
 
 -- Provisioning:
 --   ensure_personal_category_for_user(uuid) — internal SECURITY DEFINER
---   ensure_my_personal_category() — authenticated; uses auth.uid() only
---   auth.users AFTER INSERT trigger creates Personal
+--   ensure_my_personal_category() — authenticated + is_app_allowed() only
+--   auth.users AFTER INSERT trigger removed by sql/app_access_control.sql
+--   Personal is created on approval / first allowed dashboard use
+
+-- =============================================================================
+-- app_allowed_users + access_requests (app membership)
+-- Source of truth for apply: sql/app_access_control.sql
+-- =============================================================================
+
+create table if not exists public.app_allowed_users (
+  id uuid primary key default gen_random_uuid(),
+  email text not null, -- always lowercased; unique
+  user_id uuid references auth.users (id) on delete set null,
+  status text not null check (status in ('approved', 'revoked')),
+  source text not null check (source in ('manual', 'request', 'bootstrap')),
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now(),
+  created_by uuid references auth.users (id) on delete set null,
+  revoked_at timestamptz,
+  revoked_by uuid references auth.users (id) on delete set null
+);
+
+create table if not exists public.access_requests (
+  id uuid primary key default gen_random_uuid(),
+  email text not null, -- always lowercased
+  user_id uuid not null references auth.users (id) on delete cascade,
+  display_name text,
+  message text, -- optional; max 1000 chars
+  status text not null default 'pending'
+    check (status in ('pending', 'approved', 'rejected')),
+  created_at timestamptz not null default now(),
+  reviewed_at timestamptz,
+  reviewed_by uuid references auth.users (id) on delete set null
+);
+
+-- Helpers: is_app_allowed(), submit_access_request, admin_approve/reject/add/revoke/reapprove
+-- Admin email is always allowed via is_app_admin() even if allowlist row missing/revoked.
 
 -- =============================================================================
 -- user_category_access (admin grants of global top-level categories)
