@@ -12,6 +12,7 @@ type CalendarTaskModalProps = {
   categories: Category[];
   labels: Label[];
   categoryIdsByLabelId?: Record<string, string[]>;
+  currentUserId: string;
   onClose: () => void;
 };
 
@@ -20,6 +21,7 @@ export function CalendarTaskModal({
   categories,
   labels,
   categoryIdsByLabelId = {},
+  currentUserId,
   onClose,
 }: CalendarTaskModalProps) {
   const closeButtonRef = useRef<HTMLButtonElement>(null);
@@ -94,6 +96,10 @@ export function CalendarTaskModal({
             taskLabels={task.taskLabels}
             dueDateHistory={task.dueDateHistory}
             subtasks={task.subtasks}
+            taskUserId={task.taskUserId}
+            currentUserId={currentUserId}
+            creator={task.creator}
+            canDelete={task.canDelete}
             embedded
             onSuccess={onClose}
             onDeleted={onClose}

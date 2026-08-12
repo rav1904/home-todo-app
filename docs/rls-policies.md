@@ -1,6 +1,6 @@
 # RLS policies
 
-Last updated: 2026-08-10
+Last updated: 2026-08-12
 
 Documentation of expected Row Level Security behaviour. Apply scripts live under `sql/` where noted. Some older policies were created in the Supabase SQL editor only.
 
@@ -12,11 +12,14 @@ App membership uses `public.is_app_allowed()` (`sql/app_access_control.sql`): tr
 
 ## Principles
 
-- Users only see and mutate **their own** task content.
-- Unapproved authenticated users must not read/write core app tables (allowlist + RLS).
-- Admin may manage **global** taxonomy (categories, global labels, label–category links), access requests / allowlist, and Auth user metadata — **not** other users’ task bodies, personal labels, or reminders.
+- Approved users only (`is_app_allowed()`).
+- Personal and null-category tasks are **owner-only**.
+- Global top-level categories are **shared workspaces**; members see/edit tasks via grants (`user_category_access`).
+- Admin sees/edits all shared/global tasks but **not** others’ Personal or null-category tasks.
+- Delete: creator, or admin on shared tasks only.
+- Unapproved users must not read/write core app tables.
+- Admin may manage global taxonomy, access requests / allowlist, and Auth user metadata — **not** other users’ Personal task bodies.
 - Personal labels are private to `created_by`.
-- Soft-archive (`active = false`) hides items from pickers in the app; Settings can still load the owner’s archived personal labels after the personal SELECT fix.
 
 ---
 
@@ -36,13 +39,30 @@ Preferred mutations: `submit_access_request`, `admin_approve_access_request`, `a
 
 ---
 
+## Shared workspaces (`sql/shared_workspace_tasks.sql`)
+
+| Helper | Rule |
+|--------|------|
+| `user_can_access_task` | Own task, or non-personal category with `user_can_use_category` (admin ⇒ all globals) |
+| `user_can_mutate_task` | Same as access (v1) |
+| `user_can_delete_task` | Creator, or admin when category is shared/global |
+
+Policies: `"Users select accessible tasks"`, `"Users insert own tasks"`, `"Users update accessible tasks"`, `"Users delete deletable tasks"`. Related `task_labels` / `task_subtasks` / `task_due_date_changes` follow parent task access/mutate.
+
+Recurrence RPC: mutate access; spawned row keeps **parent `user_id`**.
+
+---
+
 ## `tasks`
 
 | Op | Who | Rule |
 |----|-----|------|
-| SELECT / INSERT / UPDATE / DELETE | Owner | `user_id = auth.uid()` **and** `is_app_allowed()` |
+| SELECT | Owner or workspace member | `user_can_access_task(id)` |
+| INSERT | Creator | `user_id = auth.uid()` + allowed + usable category (or null) |
+| UPDATE | Owner or workspace member | `user_can_mutate_task(id)`; creator immutable |
+| DELETE | Creator or admin (shared only) | `user_can_delete_task(id)` |
 
-Admin does **not** use these policies to read other users’ task rows in the UI.
+Admin does **not** get blanket SELECT on all tasks.
 
 **Reminders v1:** Columns on `tasks` (`sql/tasks_reminder_at.sql`):
 
@@ -63,7 +83,7 @@ No new RLS policies — existing task owner policies cover all three. Reminder d
 | `recurrence` | `none` / interval values; recurring requires `due_at` |
 | `spawned_from_task_id` | Parent occurrence; unique when set (dedup) |
 
-RPC `complete_task_with_recurrence(uuid)` runs as **SECURITY DEFINER** with `is_app_allowed()` then `auth.uid()` ownership checks (owner-only). Completes the task and optionally inserts the next occurrence (labels + subtask templates). No new table policies. If an older INVOKER revision is installed, re-run `sql/tasks_recurrence_rpc_fix.sql` then re-apply the gate in `sql/app_access_control.sql`.
+RPC `complete_task_with_recurrence(uuid)` runs as **SECURITY DEFINER** with `is_app_allowed()`, `user_can_mutate_task`, and spawn **`user_id = parent.user_id`** (creator preserved). Idempotent via unique `spawned_from_task_id`. Apply `sql/shared_workspace_tasks.sql` after earlier recurrence scripts.
 
 ---
 

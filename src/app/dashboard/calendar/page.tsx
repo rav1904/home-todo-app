@@ -79,6 +79,7 @@ export default async function CalendarPage({ searchParams }: CalendarPageProps) 
     categories,
     labels,
     categoryIdsByLabelId,
+    currentUserId,
   } = await fetchCalendarPageData(supabase, fetchOptions);
 
   const tasksByDay = groupCalendarTasksByDay(calendarTasks);
@@ -150,6 +151,7 @@ export default async function CalendarPage({ searchParams }: CalendarPageProps) 
               categories={categories}
               labels={labels}
               categoryIdsByLabelId={categoryIdsByLabelId}
+              currentUserId={currentUserId ?? user?.id ?? ""}
             />
 
             {monthEmpty ? (

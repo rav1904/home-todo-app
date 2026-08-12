@@ -81,6 +81,32 @@ export function CategoryFormFields({
         />
       </div>
 
+      {!values.parent_id ? (
+        <div>
+          <label
+            htmlFor={`${idPrefix}-admin-note`}
+            className="mb-1.5 block text-sm font-medium text-stone-700 dark:text-stone-300"
+          >
+            Admin note (optional)
+          </label>
+          <input
+            id={`${idPrefix}-admin-note`}
+            type="text"
+            value={values.admin_note}
+            onChange={(event) =>
+              onChange({ ...values, admin_note: event.target.value })
+            }
+            className={fieldClassName}
+            placeholder="e.g. Shopping workspace for User X only"
+            maxLength={200}
+          />
+          <p className="mt-1.5 text-xs text-stone-500 dark:text-stone-400">
+            Helps distinguish shared workspaces with similar names. Not shown to
+            non-admin users.
+          </p>
+        </div>
+      ) : null}
+
       <div>
         <p className="mb-2 text-sm font-medium text-stone-700 dark:text-stone-300">Icon</p>
         <div className="grid grid-cols-5 gap-2 sm:grid-cols-10">
@@ -143,5 +169,6 @@ export function createEmptyCategoryFormValues(
     colour: DEFAULT_CATEGORY_COLOUR,
     icon_name: CATEGORY_ICON_NAMES[0],
     parent_id: parentId,
+    admin_note: "",
   };
 }

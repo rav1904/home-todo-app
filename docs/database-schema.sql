@@ -12,6 +12,7 @@
 -- Recurrence v1: tasks.recurrence + spawned_from_task_id (sql/tasks_recurrence.sql)
 -- Category access: Personal per user + global grants (sql/categories_personal_and_access.sql)
 -- App access: allowlist + requests (sql/app_access_control.sql)
+-- Shared workspaces: global categories share tasks with members (sql/shared_workspace_tasks.sql)
 
 -- =============================================================================
 -- categories (global admin tree + per-user Personal)
@@ -28,9 +29,10 @@ create table if not exists public.categories (
   scope text not null default 'global'
     check (scope in ('global', 'personal')),
   user_id uuid references auth.users (id) on delete cascade,
+  admin_note text, -- optional admin clarity for shared workspaces
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now()
-  -- global: user_id is null; name may not be 'Personal'
+  -- global: user_id is null; name may not be 'Personal'; top-level = shared workspace
   -- personal: user_id = owner; parent_id null; name = 'Personal'; one per user
 );
 
@@ -93,6 +95,12 @@ create table if not exists public.user_category_access (
 
 -- Trigger: category_id must be scope=global and parent_id is null.
 -- Personal access is NOT stored here.
+-- Grants = shared workspace membership for that top-level category.
+
+-- Helpers (sql/shared_workspace_tasks.sql):
+--   user_can_access_task / user_can_mutate_task / user_can_delete_task
+--   task_category_is_personal, get_task_creator_profiles
+--   complete_task_with_recurrence keeps parent.user_id on spawn
 
 -- =============================================================================
 -- tasks

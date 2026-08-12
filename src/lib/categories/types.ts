@@ -10,6 +10,7 @@ export type Category = {
   active: boolean;
   scope: CategoryScope;
   user_id: string | null;
+  admin_note: string | null;
   created_at: string;
   updated_at: string;
 };
@@ -19,4 +20,5 @@ export type CategoryFormValues = {
   colour: string;
   icon_name: string;
   parent_id: string | null;
+  admin_note: string;
 };

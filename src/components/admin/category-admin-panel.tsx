@@ -31,6 +31,11 @@ import { useMemo, useState } from "react";
 
 type CategoryAdminPanelProps = {
   categories: Category[];
+  /** Members of each top-level shared workspace (category id → users). */
+  workspaceMembersByCategoryId?: Record<
+    string,
+    { id: string; displayName: string; email: string | null }[]
+  >;
 };
 
 function toFormValues(category: Category): CategoryFormValues {
@@ -39,10 +44,14 @@ function toFormValues(category: Category): CategoryFormValues {
     colour: category.colour,
     icon_name: category.icon_name,
     parent_id: category.parent_id,
+    admin_note: category.admin_note ?? "",
   };
 }
 
-export function CategoryAdminPanel({ categories }: CategoryAdminPanelProps) {
+export function CategoryAdminPanel({
+  categories,
+  workspaceMembersByCategoryId = {},
+}: CategoryAdminPanelProps) {
   const router = useRouter();
   const [createValues, setCreateValues] = useState(createEmptyCategoryFormValues());
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -149,6 +158,9 @@ export function CategoryAdminPanel({ categories }: CategoryAdminPanelProps) {
       active: true,
       scope: "global",
       user_id: null,
+      admin_note: createValues.parent_id
+        ? null
+        : createValues.admin_note.trim() || null,
       updated_at: new Date().toISOString(),
     });
 
@@ -239,6 +251,7 @@ export function CategoryAdminPanel({ categories }: CategoryAdminPanelProps) {
       colour: string;
       icon_name: string;
       parent_id: string | null;
+      admin_note: string | null;
       updated_at: string;
       sort_order?: number;
     } = {
@@ -246,6 +259,7 @@ export function CategoryAdminPanel({ categories }: CategoryAdminPanelProps) {
       colour: editValues.colour,
       icon_name: editValues.icon_name,
       parent_id: nextParentId,
+      admin_note: nextParentId ? null : editValues.admin_note.trim() || null,
       updated_at: new Date().toISOString(),
     };
 
@@ -457,7 +471,33 @@ export function CategoryAdminPanel({ categories }: CategoryAdminPanelProps) {
                 <CategoryIcon iconName={category.icon_name} className="h-4 w-4" />
               </span>
               <div className="min-w-0">
-                <p className="font-medium text-stone-900 dark:text-stone-100">{category.name}</p>
+                <p className="font-medium text-stone-900 dark:text-stone-100">
+                  {category.name}
+                  {!isSubcategory ? (
+                    <span className="ml-2 text-xs font-normal text-emerald-700 dark:text-emerald-400">
+                      shared workspace
+                    </span>
+                  ) : null}
+                </p>
+                {!isSubcategory && category.admin_note ? (
+                  <p className="mt-1 text-xs text-stone-500 dark:text-stone-400">
+                    {category.admin_note}
+                  </p>
+                ) : null}
+                {!isSubcategory ? (
+                  <p className="mt-1 text-xs text-stone-500 dark:text-stone-400">
+                    {(() => {
+                      const members =
+                        workspaceMembersByCategoryId[category.id] ?? [];
+                      if (members.length === 0) {
+                        return "0 members — grant access from Admin → Users";
+                      }
+                      return `${members.length} member${members.length === 1 ? "" : "s"}: ${members
+                        .map((member) => member.displayName)
+                        .join(", ")}`;
+                    })()}
+                  </p>
+                ) : null}
                 {!category.active ? (
                   <p className="mt-1 text-xs text-stone-500 dark:text-stone-400">Archived</p>
                 ) : null}
@@ -501,10 +541,14 @@ export function CategoryAdminPanel({ categories }: CategoryAdminPanelProps) {
   return (
     <div className="space-y-8">
       <section className={adminSectionClassName}>
-        <h2 className="text-lg font-semibold text-stone-900 dark:text-stone-100">Create category</h2>
+        <h2 className="text-lg font-semibold text-stone-900 dark:text-stone-100">
+          Create shared workspace / category
+        </h2>
         <p className="mt-1 text-sm text-stone-500 dark:text-stone-400">
-          Add a top-level category or subcategory. New categories are appended to
-          the custom order automatically.
+          Top-level global categories are shared workspaces. Grant membership
+          under Admin → Users. Personal categories are per-user and are not
+          managed here. Use distinct names (and an admin note) for user-specific
+          workspaces such as Shopping - User X.
         </p>
 
         <form onSubmit={handleCreate} className="mt-4 space-y-4">

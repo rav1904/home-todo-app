@@ -167,7 +167,7 @@ export function UserCategoryAccessPanel({
               <th className="pb-3 pr-4 font-medium">Email</th>
               <th className="pb-3 pr-4 font-medium">Created</th>
               <th className="pb-3 pr-4 font-medium">Last sign-in</th>
-              <th className="pb-3 font-medium">Global access</th>
+              <th className="pb-3 font-medium">Workspace access</th>
             </tr>
           </thead>
           <tbody className="text-stone-700 dark:text-stone-300">
@@ -195,37 +195,46 @@ export function UserCategoryAccessPanel({
                     {isExpanded ? (
                       <div className="mt-3 max-w-sm space-y-2 rounded-xl border border-stone-200 bg-stone-50 p-3 dark:border-stone-700 dark:bg-stone-800/60">
                         <p className="text-xs text-stone-500 dark:text-stone-400">
-                          Personal is always available. Grant global top-level
-                          categories below (subcategories inherit).
+                          Personal stays private. Grant shared workspace
+                          membership for global top-level categories
+                          (subcategories inherit). Members can see each
+                          other&apos;s tasks in that workspace.
                         </p>
                         {sortedCategories.length === 0 ? (
                           <p className="text-xs text-stone-500 dark:text-stone-400">
-                            No global top-level categories yet.
+                            No shared workspaces yet.
                           </p>
                         ) : (
                           <ul className="space-y-1.5">
                             {sortedCategories.map((category) => (
                               <li key={category.id}>
-                                <label className="flex cursor-pointer items-center gap-2 text-sm text-stone-800 dark:text-stone-200">
+                                <label className="flex cursor-pointer items-start gap-2 text-sm text-stone-800 dark:text-stone-200">
                                   <input
                                     type="checkbox"
                                     checked={selectedIds.has(category.id)}
                                     onChange={() =>
                                       toggleCategory(appUser.id, category.id)
                                     }
-                                    className="rounded border-stone-300 text-emerald-600 focus:ring-emerald-500"
+                                    className="mt-0.5 rounded border-stone-300 text-emerald-600 focus:ring-emerald-500"
                                   />
                                   <span
-                                    className="inline-block h-2.5 w-2.5 shrink-0 rounded-full"
+                                    className="mt-1 inline-block h-2.5 w-2.5 shrink-0 rounded-full"
                                     style={{ backgroundColor: category.colour }}
                                     aria-hidden
                                   />
-                                  {category.name}
-                                  {!category.active ? (
-                                    <span className="text-xs text-stone-400">
-                                      (inactive)
-                                    </span>
-                                  ) : null}
+                                  <span className="min-w-0">
+                                    <span className="block">{category.name}</span>
+                                    {category.admin_note ? (
+                                      <span className="block text-xs text-stone-500 dark:text-stone-400">
+                                        {category.admin_note}
+                                      </span>
+                                    ) : null}
+                                    {!category.active ? (
+                                      <span className="text-xs text-stone-400">
+                                        (inactive)
+                                      </span>
+                                    ) : null}
+                                  </span>
                                 </label>
                               </li>
                             ))}
@@ -240,7 +249,7 @@ export function UserCategoryAccessPanel({
                           >
                             {savingUserId === appUser.id
                               ? "Saving..."
-                              : "Save access"}
+                              : "Save membership"}
                           </button>
                           <button
                             type="button"
@@ -273,7 +282,7 @@ export function UserCategoryAccessPanel({
                     >
                       {selectedCount === 0
                         ? "Personal only · Edit"
-                        : `${selectedCount} global · Edit`}
+                        : `${selectedCount} workspace${selectedCount === 1 ? "" : "s"} · Edit`}
                     </button>
                   </td>
                 </tr>

@@ -1,3 +1,4 @@
+import { isAdminUser } from "@/lib/admin";
 import { loadAccessibleCategories } from "@/lib/categories/access";
 import {
   buildCategoryLookup,
@@ -15,6 +16,11 @@ import {
 } from "@/lib/labels/category-links";
 import { LABEL_SELECT_FIELDS, type Label } from "@/lib/labels/types";
 import type { CalendarModalTask, CalendarTask } from "@/lib/tasks/calendar";
+import {
+  canDeleteSharedTask,
+  loadTaskCreatorProfiles,
+  type TaskCreatorProfile,
+} from "@/lib/tasks/creators";
 import { aggregateDueDateHistoryCounts } from "@/lib/tasks/due-date-change";
 import { getListFetchBounds } from "@/lib/tasks/local-dates";
 import { parseTaskPriority } from "@/lib/tasks/priority";
@@ -37,10 +43,11 @@ type RawTaskRow = {
   completed: boolean;
   created_at: string;
   category_id: string | null;
+  user_id: string;
 };
 
 const TASK_SELECT =
-  "id, title, description, due_at, reminder_at, reminder_mode, reminder_offset_minutes, priority, recurrence, completed, created_at, category_id";
+  "id, title, description, due_at, reminder_at, reminder_mode, reminder_offset_minutes, priority, recurrence, completed, created_at, category_id, user_id";
 
 export type CalendarFetchResult = {
   calendarTasks: CalendarTask[];
@@ -55,6 +62,8 @@ export type CalendarFetchResult = {
   categories: Category[];
   labels: Label[];
   categoryIdsByLabelId: Record<string, string[]>;
+  currentUserId: string | null;
+  creatorsByUserId: Record<string, TaskCreatorProfile>;
 };
 
 type FetchCalendarPageDataOptions =
@@ -65,6 +74,12 @@ export async function fetchCalendarPageData(
   supabase: SupabaseClient,
   options: FetchCalendarPageDataOptions,
 ): Promise<CalendarFetchResult> {
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  const currentUserId = user?.id ?? null;
+  const isAdmin = isAdminUser(user?.email);
+
   let tasksQuery = supabase
     .from("tasks")
     .select(TASK_SELECT)
@@ -114,8 +129,10 @@ export async function fetchCalendarPageData(
   let historyByTaskId = aggregateDueDateHistoryCounts([]);
   let subtasksByTaskId: Record<string, TaskSubtask[]> = {};
 
-  if (tasks && tasks.length > 0) {
-    const taskIds = tasks.map((task) => task.id);
+  const rawTasks = (tasks ?? []) as RawTaskRow[];
+
+  if (rawTasks.length > 0) {
+    const taskIds = rawTasks.map((task) => task.id);
     const [
       { data: taskLabelRows, error: taskLabelsFetchError },
       { data: changes, error: changesError },
@@ -158,12 +175,23 @@ export async function fetchCalendarPageData(
     subtasksByTaskId = subtasksResult.subtasksByTaskId;
   }
 
+  const otherCreatorIds = rawTasks
+    .map((task) => task.user_id)
+    .filter((id) => id && id !== currentUserId);
+  const creatorsByUserId = await loadTaskCreatorProfiles(
+    supabase,
+    otherCreatorIds,
+  );
+
   const calendarTasks: CalendarTask[] = [];
   const modalTasksById: Record<string, CalendarModalTask> = {};
 
-  for (const task of (tasks ?? []) as RawTaskRow[]) {
+  for (const task of rawTasks) {
     const category = getCategoryDisplay(task.category_id, categoryLookup);
     const categoryUnavailable = task.category_id !== null && category === null;
+    const categoryRow = task.category_id
+      ? categoryLookup.get(task.category_id)
+      : undefined;
     const taskLabelIds = labelIdsByTaskId[task.id] ?? [];
     const taskLabelDisplay = resolveTaskLabelDisplay(taskLabelIds, labelLookup);
     const dueDateHistory = historyByTaskId[task.id] ?? {
@@ -173,6 +201,15 @@ export async function fetchCalendarPageData(
     };
 
     const taskSubtasks = subtasksByTaskId[task.id] ?? [];
+    const canDelete = currentUserId
+      ? canDeleteSharedTask({
+          currentUserId,
+          isAdmin,
+          taskUserId: task.user_id,
+          categoryId: task.category_id,
+          categoryScope: categoryRow?.scope ?? null,
+        })
+      : false;
 
     calendarTasks.push({
       id: task.id,
@@ -208,6 +245,12 @@ export async function fetchCalendarPageData(
       taskLabels: taskLabelDisplay,
       dueDateHistory,
       subtasks: taskSubtasks,
+      taskUserId: task.user_id,
+      canDelete,
+      creator:
+        task.user_id !== currentUserId
+          ? (creatorsByUserId[task.user_id] ?? null)
+          : null,
     };
   }
 
@@ -224,5 +267,7 @@ export async function fetchCalendarPageData(
     categories: activeCategories,
     labels: activeLabels,
     categoryIdsByLabelId,
+    currentUserId,
+    creatorsByUserId,
   };
 }

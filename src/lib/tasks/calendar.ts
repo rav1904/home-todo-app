@@ -2,6 +2,7 @@ import type { CategoryDisplay } from "@/lib/categories/tree";
 import type { TaskLabelDisplay } from "@/lib/labels/display";
 import type { Label } from "@/lib/labels/types";
 import type { DueDateHistoryCounts } from "@/lib/tasks/due-date-change";
+import type { TaskCreatorProfile } from "@/lib/tasks/creators";
 import type { TaskPriority } from "@/lib/tasks/priority";
 import type { TaskRecurrence } from "@/lib/tasks/recurrence";
 import type { SubtaskProgress } from "@/lib/tasks/subtasks/progress";
@@ -49,6 +50,9 @@ export type CalendarModalTask = {
   taskLabels: TaskLabelDisplay;
   dueDateHistory: DueDateHistoryCounts;
   subtasks: TaskSubtask[];
+  taskUserId: string;
+  canDelete: boolean;
+  creator: TaskCreatorProfile | null;
 };
 
 export type CalendarDayCell = {

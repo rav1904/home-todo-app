@@ -2,7 +2,8 @@ import type { Category } from "@/lib/categories/types";
 import type { SupabaseClient } from "@supabase/supabase-js";
 
 export const CATEGORY_SELECT_FIELDS =
-  "id, parent_id, name, colour, icon_name, sort_order, active, scope, user_id, created_at, updated_at";
+  "id, parent_id, name, colour, icon_name, sort_order, active, scope, user_id, admin_note, created_at, updated_at";
+
 
 export function findPersonalCategory(categories: Category[]) {
   return (

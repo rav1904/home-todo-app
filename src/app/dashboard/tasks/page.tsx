@@ -2,6 +2,7 @@ import { AddTaskForm } from "@/components/tasks/add-task-form";
 import { TaskFiltersBar } from "@/components/tasks/task-filters-bar";
 import { TaskListItem } from "@/components/tasks/task-list-item";
 import { DashboardHeader } from "@/components/dashboard/header";
+import { isAdminUser } from "@/lib/admin";
 import { loadAccessibleCategories } from "@/lib/categories/access";
 import {
   filterTasksByCategory,
@@ -23,6 +24,10 @@ import {
 } from "@/lib/labels/category-links";
 import { filterTasksByLabel, parseLabelFilterParam } from "@/lib/labels/filter";
 import { LABEL_SELECT_FIELDS, type Label } from "@/lib/labels/types";
+import {
+  canDeleteSharedTask,
+  loadTaskCreatorProfiles,
+} from "@/lib/tasks/creators";
 import {
   getTaskFilterDescription,
   isAnyTaskFilterActive,
@@ -73,7 +78,7 @@ export default async function TasksPage({ searchParams }: TasksPageProps) {
   ] = await Promise.all([
     supabase
       .from("tasks")
-      .select("id, title, description, due_at, reminder_at, reminder_mode, reminder_offset_minutes, priority, recurrence, completed, created_at, category_id")
+      .select("id, title, description, due_at, reminder_at, reminder_mode, reminder_offset_minutes, priority, recurrence, completed, created_at, category_id, user_id")
       .order("created_at", { ascending: false }),
     supabase
       .from("labels")
@@ -159,7 +164,31 @@ export default async function TasksPage({ searchParams }: TasksPageProps) {
     subtasksByTaskId = subtasksResult.subtasksByTaskId;
   }
 
-  const allTasks = tasks ?? [];
+  const allTasks = (tasks ?? []) as Array<{
+    id: string;
+    title: string;
+    description: string | null;
+    due_at: string | null;
+    reminder_at: string | null;
+    reminder_mode: string | null;
+    reminder_offset_minutes: number | null;
+    priority: string | null;
+    recurrence: string | null;
+    completed: boolean;
+    created_at: string;
+    category_id: string | null;
+    user_id: string;
+  }>;
+
+  const currentUserId = user?.id ?? "";
+  const isAdmin = isAdminUser(user?.email);
+  const creatorsByUserId = await loadTaskCreatorProfiles(
+    supabase,
+    allTasks
+      .map((task) => task.user_id)
+      .filter((id) => id && id !== currentUserId),
+  );
+
   const filteredByCategory = filterTasksByCategory(
     allTasks,
     categoryFilter,
@@ -306,6 +335,21 @@ export default async function TasksPage({ searchParams }: TasksPageProps) {
                   dueDateHistory={dueDateHistory}
                   subtasks={subtasksByTaskId[task.id] ?? []}
                   initialEditing={editParam === task.id}
+                  taskUserId={task.user_id}
+                  currentUserId={currentUserId}
+                  creator={
+                    task.user_id !== currentUserId
+                      ? (creatorsByUserId[task.user_id] ?? null)
+                      : null
+                  }
+                  canDelete={canDeleteSharedTask({
+                    currentUserId,
+                    isAdmin,
+                    taskUserId: task.user_id,
+                    categoryId: task.category_id,
+                    categoryScope:
+                      categoryLookup.get(task.category_id ?? "")?.scope ?? null,
+                  })}
                 />
               );
             })}

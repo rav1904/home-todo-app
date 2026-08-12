@@ -1,6 +1,7 @@
 import type { ReactNode } from "react";
 import { TaskListItem } from "@/components/tasks/task-list-item";
 import { DashboardHeader } from "@/components/dashboard/header";
+import { isAdminUser } from "@/lib/admin";
 import { loadAccessibleCategories } from "@/lib/categories/access";
 import {
   buildCategoryLookup,
@@ -16,6 +17,10 @@ import {
   type LabelCategoryLink,
 } from "@/lib/labels/category-links";
 import { LABEL_SELECT_FIELDS, type Label } from "@/lib/labels/types";
+import {
+  canDeleteSharedTask,
+  loadTaskCreatorProfiles,
+} from "@/lib/tasks/creators";
 import { aggregateDueDateHistoryCounts } from "@/lib/tasks/due-date-change";
 import {
   buildFocusSections,
@@ -36,6 +41,8 @@ type FocusTask = FocusTaskLike & {
   priority: string | null;
   recurrence: string | null;
   category_id: string | null;
+  user_id: string;
+  created_at: string;
 };
 
 type FocusSectionTone = "default" | "danger" | "warning";
@@ -145,7 +152,7 @@ export default async function FocusPage() {
     supabase
       .from("tasks")
       .select(
-        "id, title, description, due_at, reminder_at, reminder_mode, reminder_offset_minutes, priority, recurrence, completed, created_at, category_id",
+        "id, title, description, due_at, reminder_at, reminder_mode, reminder_offset_minutes, priority, recurrence, completed, created_at, category_id, user_id",
       )
       .eq("completed", false)
       .order("created_at", { ascending: false }),
@@ -168,6 +175,14 @@ export default async function FocusPage() {
   );
   const labelLookup = buildLabelLookup(activeLabels);
   const categoryLookup = buildCategoryLookup(activeCategories);
+  const currentUserId = user?.id ?? "";
+  const isAdmin = isAdminUser(user?.email);
+  const creatorsByUserId = await loadTaskCreatorProfiles(
+    supabase,
+    openTasks
+      .map((task) => task.user_id)
+      .filter((id) => id && id !== currentUserId),
+  );
 
   let historyError: string | null = null;
   let historyByTaskId: ReturnType<typeof aggregateDueDateHistoryCounts> = {};
@@ -280,6 +295,21 @@ export default async function FocusPage() {
         taskLabels={taskLabelDisplay}
         dueDateHistory={dueDateHistory}
         subtasks={subtasksByTaskId[task.id] ?? []}
+        taskUserId={task.user_id}
+        currentUserId={currentUserId}
+        creator={
+          task.user_id !== currentUserId
+            ? (creatorsByUserId[task.user_id] ?? null)
+            : null
+        }
+        canDelete={canDeleteSharedTask({
+          currentUserId,
+          isAdmin,
+          taskUserId: task.user_id,
+          categoryId: task.category_id,
+          categoryScope:
+            categoryLookup.get(task.category_id ?? "")?.scope ?? null,
+        })}
       />
     );
   }

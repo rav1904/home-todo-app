@@ -21,6 +21,7 @@ import {
   TaskFormMoreDetails,
   TaskFormNotesToggle,
 } from "@/components/tasks/task-form-shared";
+import { UserAvatar } from "@/components/ui/user-avatar";
 import type { CategoryDisplay } from "@/lib/categories/tree";
 import type { Category } from "@/lib/categories/types";
 import type { TaskLabelDisplay } from "@/lib/labels/display";
@@ -29,6 +30,7 @@ import { syncTaskLabels } from "@/lib/labels/sync-task-labels";
 import {
   completeTaskWithRecurrence,
 } from "@/lib/tasks/complete-with-recurrence";
+import type { TaskCreatorProfile } from "@/lib/tasks/creators";
 import {
   datetimeLocalValueToIso,
   isoToDatetimeLocalValue,
@@ -101,6 +103,11 @@ type TaskListItemProps = {
   embedded?: boolean;
   onSuccess?: () => void;
   onDeleted?: () => void;
+  /** Task creator (tasks.user_id). */
+  taskUserId: string;
+  currentUserId: string;
+  creator?: TaskCreatorProfile | null;
+  canDelete?: boolean;
 };
 
 function formatDate(value: string) {
@@ -175,6 +182,10 @@ export function TaskListItem({
   embedded = false,
   onSuccess,
   onDeleted,
+  taskUserId,
+  currentUserId,
+  creator = null,
+  canDelete = true,
 }: TaskListItemProps) {
   const router = useRouter();
   const itemRef = useRef<HTMLLIElement>(null);
@@ -206,6 +217,16 @@ export function TaskListItem({
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [checklistOpen, setChecklistOpen] = useState(false);
+
+  const isOwnTask = taskUserId === currentUserId;
+  const showCreator = !isOwnTask;
+  const editableCategories = useMemo(() => {
+    if (isOwnTask) {
+      return categories;
+    }
+    // Members cannot move someone else's shared task into Personal
+    return categories.filter((entry) => entry.scope !== "personal");
+  }, [categories, isOwnTask]);
 
   const availableLabels = useMemo(() => {
     const merged = new Map<string, Label>();
@@ -469,7 +490,7 @@ export function TaskListItem({
         >
           <CategorySelect
             id={`edit-category-${id}`}
-            categories={categories}
+            categories={editableCategories}
             value={editCategoryId}
             onChange={(next) => {
               setEditCategoryId(next);
@@ -483,7 +504,7 @@ export function TaskListItem({
           <LabelSelect
             id={`edit-labels-${id}`}
             labels={availableLabels}
-            categories={categories}
+            categories={editableCategories}
             categoryId={editCategoryId}
             categoryIdsByLabelId={categoryIdsByLabelId}
             value={editLabelIds}
@@ -585,14 +606,38 @@ export function TaskListItem({
               >
                 <PencilIcon />
               </button>
-              <TaskDeleteButton
-                id={id}
-                title={title}
-                onDeleted={onDeleted}
-                variant="ghost"
-              />
+              {canDelete ? (
+                <TaskDeleteButton
+                  id={id}
+                  title={title}
+                  onDeleted={onDeleted}
+                  variant="ghost"
+                />
+              ) : null}
             </div>
           </div>
+
+          {showCreator ? (
+            <div className="mt-1.5 flex min-w-0 items-center gap-2 text-xs text-stone-500 dark:text-stone-400">
+              <UserAvatar
+                name={creator?.displayName ?? "Member"}
+                avatarUrl={creator?.avatarUrl}
+                size="sm"
+              />
+              <span className="min-w-0 truncate">
+                Created by{" "}
+                <span className="font-medium text-stone-700 dark:text-stone-300">
+                  {creator?.displayName ?? "workspace member"}
+                </span>
+                {creator?.email ? (
+                  <span className="text-stone-400 dark:text-stone-500">
+                    {" "}
+                    · {creator.email}
+                  </span>
+                ) : null}
+              </span>
+            </div>
+          ) : null}
 
           {description ? (
             <p className="mt-1 line-clamp-2 text-sm text-stone-600 dark:text-stone-400">

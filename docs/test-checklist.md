@@ -87,8 +87,24 @@ Manual checks for current product behaviour. Prefer a fresh browser session (or 
 - [ ] Manual add email → Google login works without a prior request
 - [ ] Revoke → redirected to Access Request; RLS blocks data
 - [ ] Re-approve restores access
-- [ ] Admin still cannot see other users’ task content
+- [ ] Admin still cannot see other users’ Personal task content
 - [ ] No Personal category for brand-new unapproved Auth users
+
+## Shared workspaces
+
+- [ ] Apply `sql/shared_workspace_tasks.sql` (after app access + category access SQL)
+- [ ] Admin creates Primon task; granted member sees it; without grant does not
+- [ ] Subcategory inherits top-level membership
+- [ ] Member creates shared task; other members/admin see it
+- [ ] Personal tasks stay private both ways (incl. admin)
+- [ ] Null-category tasks stay owner-only
+- [ ] Member can edit/complete shared task but cannot delete unless creator
+- [ ] Admin can delete shared task but not others’ Personal/null tasks
+- [ ] Cannot move others’ shared task into Personal
+- [ ] Recurring shared complete keeps original creator on next occurrence
+- [ ] Calendar / Focus / Dashboard / Search include only visible shared + Personal
+- [ ] Admin Workspaces UI shows member count/list + admin note
+- [ ] `npm run build` passes
 
 ---
 
