@@ -221,10 +221,9 @@ export default async function TasksPage({ searchParams }: TasksPageProps) {
     <>
       <DashboardHeader
         title="Tasks"
-        description="View and manage tasks"
         email={user?.email}
       />
-      <div className="flex-1 space-y-6 overflow-auto p-4 sm:p-6 lg:p-8">
+      <div className="flex-1 space-y-3 overflow-auto p-3 sm:p-5 lg:p-6">
         <AddTaskForm
           categories={activeCategories}
           labels={activeLabels}
@@ -233,13 +232,13 @@ export default async function TasksPage({ searchParams }: TasksPageProps) {
         />
 
         {labelsError ? (
-          <div className="rounded-2xl border border-amber-200 bg-amber-50 p-6 text-sm text-amber-800">
+          <div className="rounded-xl border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-800">
             Could not load labels: {labelsError.message}
           </div>
         ) : null}
 
         {labelCategoryLinksError ? (
-          <div className="rounded-2xl border border-amber-200 bg-amber-50 p-6 text-sm text-amber-800">
+          <div className="rounded-xl border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-800">
             Could not load label category links:{" "}
             {labelCategoryLinksError.message}
           </div>
@@ -247,7 +246,7 @@ export default async function TasksPage({ searchParams }: TasksPageProps) {
 
         <Suspense
           fallback={
-            <div className="rounded-2xl border border-stone-200 bg-white p-5 shadow-sm dark:border-stone-700 dark:bg-stone-900">
+            <div className="rounded-xl border border-stone-200 bg-white p-3 dark:border-stone-700 dark:bg-stone-900">
               <p className="text-sm text-stone-500 dark:text-stone-400">
                 Loading filters...
               </p>
@@ -261,37 +260,37 @@ export default async function TasksPage({ searchParams }: TasksPageProps) {
         </Suspense>
 
         {categoriesError ? (
-          <div className="rounded-2xl border border-amber-200 bg-amber-50 p-6 text-sm text-amber-800">
+          <div className="rounded-xl border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-800">
             Could not load categories: {categoriesError.message}
           </div>
         ) : null}
 
         {error ? (
-          <div className="rounded-2xl border border-red-200 bg-red-50 p-6 text-sm text-red-700">
+          <div className="rounded-xl border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
             Could not load tasks: {error.message}
           </div>
         ) : null}
 
         {taskLabelsError ? (
-          <div className="rounded-2xl border border-amber-200 bg-amber-50 p-6 text-sm text-amber-800">
+          <div className="rounded-xl border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-800">
             Could not load task labels: {taskLabelsError}
           </div>
         ) : null}
 
         {historyError ? (
-          <div className="rounded-2xl border border-amber-200 bg-amber-50 p-6 text-sm text-amber-800">
+          <div className="rounded-xl border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-800">
             Could not load due date history: {historyError}
           </div>
         ) : null}
 
         {subtasksError ? (
-          <div className="rounded-2xl border border-amber-200 bg-amber-50 p-6 text-sm text-amber-800 dark:border-amber-900/50 dark:bg-amber-950/40 dark:text-amber-300">
+          <div className="rounded-xl border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-800 dark:border-amber-900/50 dark:bg-amber-950/40 dark:text-amber-300">
             Could not load subtasks: {subtasksError}
           </div>
         ) : null}
 
         {allTasks.length > 0 && tasksToRender.length > 0 ? (
-          <ul className="space-y-3">
+          <ul className="space-y-1.5">
             {tasksToRender.map((task) => {
               const dueDateHistory = historyByTaskId[task.id] ?? {
                 dueDateUpdateCount: 0,
@@ -355,29 +354,23 @@ export default async function TasksPage({ searchParams }: TasksPageProps) {
             })}
           </ul>
         ) : allTasks.length > 0 && filterActive ? (
-          <div className="rounded-2xl border border-dashed border-stone-300 bg-white p-10 text-center shadow-sm dark:border-stone-600 dark:bg-stone-900">
-            <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-2xl bg-stone-100 text-xl text-stone-500 dark:bg-stone-800 dark:text-stone-400">
-              ☑
-            </div>
-            <h2 className="mt-4 text-lg font-semibold text-stone-900 dark:text-stone-100">
+          <div className="rounded-xl border border-dashed border-stone-300 bg-white p-8 text-center dark:border-stone-600 dark:bg-stone-900">
+            <h2 className="text-base font-semibold text-stone-900 dark:text-stone-100">
               No matching tasks
             </h2>
-            <p className="mx-auto mt-2 max-w-md text-sm text-stone-500 dark:text-stone-400">
+            <p className="mx-auto mt-1.5 max-w-md text-sm text-stone-500 dark:text-stone-400">
               {filterDescription
                 ? `No tasks match “${filterDescription}”. Try adjusting or clearing your filters.`
                 : "No tasks match these filters. Try adjusting or clearing your filters."}
             </p>
           </div>
         ) : !error ? (
-          <div className="rounded-2xl border border-dashed border-stone-300 bg-white p-10 text-center shadow-sm dark:border-stone-600 dark:bg-stone-900">
-            <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-2xl bg-stone-100 text-xl text-stone-500 dark:bg-stone-800 dark:text-stone-400">
-              ☑
-            </div>
-            <h2 className="mt-4 text-lg font-semibold text-stone-900 dark:text-stone-100">
+          <div className="rounded-xl border border-dashed border-stone-300 bg-white p-8 text-center dark:border-stone-600 dark:bg-stone-900">
+            <h2 className="text-base font-semibold text-stone-900 dark:text-stone-100">
               No tasks yet
             </h2>
-            <p className="mx-auto mt-2 max-w-md text-sm text-stone-500 dark:text-stone-400">
-              Use the form above to add your first task.
+            <p className="mx-auto mt-1.5 max-w-md text-sm text-stone-500 dark:text-stone-400">
+              Use quick add above to create your first task.
             </p>
           </div>
         ) : null}

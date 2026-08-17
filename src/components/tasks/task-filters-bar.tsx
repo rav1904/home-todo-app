@@ -34,9 +34,15 @@ import {
   parseStatusFilterParam,
   type TaskStatusFilter,
 } from "@/lib/tasks/status";
-import { fieldClassName } from "@/lib/ui/field-classes";
+import {
+  compactFieldClassName,
+  densePanelClassName,
+  fieldClassName,
+} from "@/lib/ui/field-classes";
+import { ChevronDown, ChevronUp, Search } from "lucide-react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useMemo, useRef, useState } from "react";
+import { WorkspaceFilterChips } from "@/components/tasks/workspace-filter-chips";
 
 type TaskFiltersBarProps = {
   categories: Category[];
@@ -77,6 +83,7 @@ export function TaskFiltersBar({ categories, labels }: TaskFiltersBarProps) {
   const searchQuery = parseSearchQueryParam(qParam);
 
   const [searchDraft, setSearchDraft] = useState(searchQuery);
+  const [advancedOpen, setAdvancedOpen] = useState(false);
   const searchParamsRef = useRef(searchParams);
   searchParamsRef.current = searchParams;
 
@@ -101,7 +108,6 @@ export function TaskFiltersBar({ categories, labels }: TaskFiltersBarProps) {
         params.delete("q");
       }
 
-      // Search/filter URL state should not keep a deep-link edit target.
       params.delete("edit");
 
       const query = params.toString();
@@ -119,6 +125,13 @@ export function TaskFiltersBar({ categories, labels }: TaskFiltersBarProps) {
         : categoryFilter.type === "main"
           ? categoryFilter.mainCategoryId
           : (categoryLookup.get(categoryFilter.subCategoryId)?.parent_id ?? "all");
+
+  const workspaceChipId =
+    categoryFilter.type === "all" || categoryFilter.type === "uncategorized"
+      ? "all"
+      : categoryFilter.type === "main"
+        ? categoryFilter.mainCategoryId
+        : (categoryLookup.get(categoryFilter.subCategoryId)?.parent_id ?? "all");
 
   const subCategoryId =
     categoryFilter.type === "sub" ? categoryFilter.subCategoryId : null;
@@ -157,6 +170,12 @@ export function TaskFiltersBar({ categories, labels }: TaskFiltersBarProps) {
     statusFilterActive ||
     searchActive ||
     sortActive;
+  const advancedActive =
+    labelFilterActive ||
+    statusFilterActive ||
+    sortActive ||
+    categoryFilter.type === "uncategorized" ||
+    categoryFilter.type === "sub";
 
   function navigate(next: TasksListQueryState) {
     router.push(buildTasksFilterUrl(pathname, next));
@@ -170,6 +189,16 @@ export function TaskFiltersBar({ categories, labels }: TaskFiltersBarProps) {
       searchQuery,
       sort,
       ...overrides,
+    });
+  }
+
+  function handleWorkspaceSelect(id: string) {
+    if (id === "all") {
+      withCurrent({ categoryFilter: { type: "all" } });
+      return;
+    }
+    withCurrent({
+      categoryFilter: { type: "main", mainCategoryId: id },
     });
   }
 
@@ -233,35 +262,22 @@ export function TaskFiltersBar({ categories, labels }: TaskFiltersBarProps) {
   }
 
   return (
-    <section className="rounded-2xl border border-stone-200 bg-white p-5 shadow-sm dark:border-stone-700 dark:bg-stone-900">
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
-        <div>
-          <h2 className="text-sm font-semibold text-stone-900 dark:text-stone-100">
-            Search & filters
-          </h2>
-          <p className="mt-1 text-sm text-stone-500 dark:text-stone-400">
-            Search, status, category, and label use AND logic. Sort changes list
-            order.
-          </p>
-        </div>
+    <section className={`${densePanelClassName} space-y-2.5 p-3`}>
+      {categories.length > 0 ? (
+        <WorkspaceFilterChips
+          categories={categories}
+          activeId={workspaceChipId}
+          onSelect={handleWorkspaceSelect}
+        />
+      ) : null}
 
-        {anyFilterActive ? (
-          <button
-            type="button"
-            onClick={clearFilters}
-            className="shrink-0 cursor-pointer self-start rounded-lg border border-stone-200 bg-white px-3 py-1.5 text-sm font-medium text-stone-600 transition hover:bg-stone-50 dark:border-stone-600 dark:bg-stone-800 dark:text-stone-300 dark:hover:bg-stone-700"
-          >
-            Clear filters
-          </button>
-        ) : null}
-      </div>
-
-      <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-        <div className="sm:col-span-2 lg:col-span-3">
-          <label
-            htmlFor="task-filter-search"
-            className="mb-1.5 block text-sm font-medium text-stone-700 dark:text-stone-300"
-          >
+      <div className="flex flex-wrap items-center gap-2">
+        <div className="relative min-w-0 flex-1 basis-[12rem]">
+          <Search
+            className="pointer-events-none absolute top-1/2 left-2.5 h-3.5 w-3.5 -translate-y-1/2 text-stone-400"
+            aria-hidden
+          />
+          <label htmlFor="task-filter-search" className="sr-only">
             Search
           </label>
           <input
@@ -269,190 +285,206 @@ export function TaskFiltersBar({ categories, labels }: TaskFiltersBarProps) {
             type="search"
             value={searchDraft}
             onChange={(event) => setSearchDraft(event.target.value)}
-            placeholder="Search title or description"
-            className={fieldClassName}
+            placeholder="Search tasks"
+            className={`${compactFieldClassName} pl-8`}
           />
         </div>
 
-        <div>
-          <label
-            htmlFor="task-filter-status"
-            className="mb-1.5 block text-sm font-medium text-stone-700 dark:text-stone-300"
-          >
-            Status
-          </label>
-          <select
-            id="task-filter-status"
-            value={statusFilter}
-            onChange={(event) => handleStatusChange(event.target.value)}
-            className={fieldClassName}
-          >
-            <option value="all">All</option>
-            <option value="open">Open</option>
-            <option value="completed">Completed</option>
-          </select>
-        </div>
+        <button
+          type="button"
+          onClick={() => setAdvancedOpen((open) => !open)}
+          aria-expanded={advancedOpen}
+          className="inline-flex shrink-0 cursor-pointer items-center gap-1 rounded-lg border border-stone-200 bg-white px-2.5 py-1.5 text-xs font-medium text-stone-600 transition hover:bg-stone-50 dark:border-stone-600 dark:bg-stone-800 dark:text-stone-300 dark:hover:bg-stone-700"
+        >
+          More filters
+          {advancedActive ? (
+            <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" aria-hidden />
+          ) : null}
+          {advancedOpen ? (
+            <ChevronUp className="h-3.5 w-3.5 opacity-70" aria-hidden />
+          ) : (
+            <ChevronDown className="h-3.5 w-3.5 opacity-70" aria-hidden />
+          )}
+        </button>
 
-        <div>
-          <label
-            htmlFor="task-filter-sort"
-            className="mb-1.5 block text-sm font-medium text-stone-700 dark:text-stone-300"
+        {anyFilterActive ? (
+          <button
+            type="button"
+            onClick={clearFilters}
+            className="shrink-0 cursor-pointer rounded-lg px-2 py-1.5 text-xs font-medium text-stone-500 transition hover:text-stone-800 dark:hover:text-stone-200"
           >
-            Sort
-          </label>
-          <select
-            id="task-filter-sort"
-            value={sort}
-            onChange={(event) => handleSortChange(event.target.value)}
-            className={fieldClassName}
-          >
-            <option value="due_asc">Due date soonest</option>
-            <option value="created_desc">Created newest</option>
-            <option value="created_asc">Created oldest</option>
-            <option value="title_asc">Title A–Z</option>
-            <option value="priority_desc">Priority</option>
-          </select>
-        </div>
+            Clear
+          </button>
+        ) : null}
+      </div>
 
-        {categories.length > 0 ? (
-          <>
-            <div>
-              <label
-                htmlFor="task-filter-main"
-                className="mb-1.5 block text-sm font-medium text-stone-700 dark:text-stone-300"
-              >
-                Category
-              </label>
-              <select
-                id="task-filter-main"
-                value={mainSelectValue}
-                onChange={(event) => handleMainChange(event.target.value)}
-                className={fieldClassName}
-              >
-                <option value="all">All categories</option>
-                <option value={UNCategorized_FILTER_VALUE}>Uncategorized</option>
-                {mains.map((main) => (
-                  <option key={main.id} value={main.id}>
-                    {main.name}
-                  </option>
-                ))}
-              </select>
-            </div>
+      {advancedOpen ? (
+        <div className="grid gap-2.5 border-t border-stone-100 pt-2.5 sm:grid-cols-2 lg:grid-cols-3 dark:border-stone-800">
+          <div>
+            <label
+              htmlFor="task-filter-status"
+              className="mb-1 block text-xs font-medium text-stone-500 dark:text-stone-400"
+            >
+              Status
+            </label>
+            <select
+              id="task-filter-status"
+              value={statusFilter}
+              onChange={(event) => handleStatusChange(event.target.value)}
+              className={fieldClassName}
+            >
+              <option value="all">All</option>
+              <option value="open">Open</option>
+              <option value="completed">Completed</option>
+            </select>
+          </div>
 
-            {showSubSelect ? (
+          <div>
+            <label
+              htmlFor="task-filter-sort"
+              className="mb-1 block text-xs font-medium text-stone-500 dark:text-stone-400"
+            >
+              Sort
+            </label>
+            <select
+              id="task-filter-sort"
+              value={sort}
+              onChange={(event) => handleSortChange(event.target.value)}
+              className={fieldClassName}
+            >
+              <option value="due_asc">Due date soonest</option>
+              <option value="created_desc">Created newest</option>
+              <option value="created_asc">Created oldest</option>
+              <option value="title_asc">Title A–Z</option>
+              <option value="priority_desc">Priority</option>
+            </select>
+          </div>
+
+          {categories.length > 0 ? (
+            <>
               <div>
                 <label
-                  htmlFor="task-filter-sub"
-                  className="mb-1.5 block text-sm font-medium text-stone-700 dark:text-stone-300"
+                  htmlFor="task-filter-main"
+                  className="mb-1 block text-xs font-medium text-stone-500 dark:text-stone-400"
                 >
-                  Subcategory
+                  Category
                 </label>
                 <select
-                  id="task-filter-sub"
-                  value={subCategoryId ?? ""}
-                  onChange={(event) => handleSubChange(event.target.value)}
+                  id="task-filter-main"
+                  value={mainSelectValue}
+                  onChange={(event) => handleMainChange(event.target.value)}
                   className={fieldClassName}
                 >
-                  <option value="">{subLabel}</option>
-                  {subcategories.map((subcategory) => (
-                    <option key={subcategory.id} value={subcategory.id}>
-                      {subcategory.name}
+                  <option value="all">All categories</option>
+                  <option value={UNCategorized_FILTER_VALUE}>Uncategorized</option>
+                  {mains.map((main) => (
+                    <option key={main.id} value={main.id}>
+                      {main.name}
                     </option>
                   ))}
                 </select>
               </div>
-            ) : null}
-          </>
-        ) : null}
 
-        {labels.length > 0 ? (
-          <div>
-            <label
-              htmlFor="task-filter-label"
-              className="mb-1.5 block text-sm font-medium text-stone-700 dark:text-stone-300"
-            >
-              Label
-            </label>
-            <select
-              id="task-filter-label"
-              value={labelSelectValue}
-              onChange={(event) => handleLabelChange(event.target.value)}
-              className={fieldClassName}
-            >
-              <option value="all">All labels</option>
-              <option value={NO_LABEL_FILTER_VALUE}>No labels</option>
-              {global.length > 0 ? (
-                <optgroup label="Shared labels">
-                  {global.map((label) => (
-                    <option key={label.id} value={label.id}>
-                      {label.name}
-                    </option>
-                  ))}
-                </optgroup>
+              {showSubSelect ? (
+                <div>
+                  <label
+                    htmlFor="task-filter-sub"
+                    className="mb-1 block text-xs font-medium text-stone-500 dark:text-stone-400"
+                  >
+                    Subcategory
+                  </label>
+                  <select
+                    id="task-filter-sub"
+                    value={subCategoryId ?? ""}
+                    onChange={(event) => handleSubChange(event.target.value)}
+                    className={fieldClassName}
+                  >
+                    <option value="">{subLabel}</option>
+                    {subcategories.map((subcategory) => (
+                      <option key={subcategory.id} value={subcategory.id}>
+                        {subcategory.name}
+                      </option>
+                    ))}
+                  </select>
+                </div>
               ) : null}
-              {personal.length > 0 ? (
-                <optgroup label="My labels">
-                  {personal.map((label) => (
-                    <option key={label.id} value={label.id}>
-                      {label.name}
-                    </option>
-                  ))}
-                </optgroup>
-              ) : null}
-            </select>
-          </div>
-        ) : null}
-      </div>
+            </>
+          ) : null}
 
-      {categoryFilter.type === "uncategorized" ? (
-        <p className="mt-3 text-sm text-stone-600 dark:text-stone-400">
-          Category filter: tasks with no category assigned.
-        </p>
+          {labels.length > 0 ? (
+            <div>
+              <label
+                htmlFor="task-filter-label"
+                className="mb-1 block text-xs font-medium text-stone-500 dark:text-stone-400"
+              >
+                Label
+              </label>
+              <select
+                id="task-filter-label"
+                value={labelSelectValue}
+                onChange={(event) => handleLabelChange(event.target.value)}
+                className={fieldClassName}
+              >
+                <option value="all">All labels</option>
+                <option value={NO_LABEL_FILTER_VALUE}>No labels</option>
+                {global.length > 0 ? (
+                  <optgroup label="Shared labels">
+                    {global.map((label) => (
+                      <option key={label.id} value={label.id}>
+                        {label.name}
+                      </option>
+                    ))}
+                  </optgroup>
+                ) : null}
+                {personal.length > 0 ? (
+                  <optgroup label="My labels">
+                    {personal.map((label) => (
+                      <option key={label.id} value={label.id}>
+                        {label.name}
+                      </option>
+                    ))}
+                  </optgroup>
+                ) : null}
+              </select>
+            </div>
+          ) : null}
+        </div>
       ) : null}
 
-      {labelFilter.type === "none" ? (
-        <p className="mt-3 text-sm text-stone-600 dark:text-stone-400">
-          Label filter: tasks with no labels assigned.
-        </p>
-      ) : null}
-
-      {categoryFilterDisplay || labelFilterDisplay || searchActive || statusFilterActive ? (
-        <div className="mt-3 flex flex-wrap items-center gap-2 text-sm text-stone-600 dark:text-stone-400">
+      {categoryFilterDisplay ||
+      labelFilterDisplay ||
+      searchActive ||
+      statusFilterActive ? (
+        <div className="flex flex-wrap items-center gap-1.5 text-xs text-stone-500 dark:text-stone-400">
           {searchActive ? (
-            <span className="inline-flex rounded-full border border-stone-200 bg-stone-50 px-2.5 py-1 text-xs font-medium text-stone-700 dark:border-stone-600 dark:bg-stone-800 dark:text-stone-200">
+            <span className="inline-flex rounded-full border border-stone-200 bg-stone-50 px-2 py-0.5 font-medium text-stone-700 dark:border-stone-600 dark:bg-stone-800 dark:text-stone-200">
               Search: {searchQuery}
             </span>
           ) : null}
           {statusFilterActive ? (
-            <span className="inline-flex rounded-full border border-stone-200 bg-stone-50 px-2.5 py-1 text-xs font-medium text-stone-700 dark:border-stone-600 dark:bg-stone-800 dark:text-stone-200">
+            <span className="inline-flex rounded-full border border-stone-200 bg-stone-50 px-2 py-0.5 font-medium text-stone-700 dark:border-stone-600 dark:bg-stone-800 dark:text-stone-200">
               {statusFilter === "open" ? "Open" : "Completed"}
             </span>
           ) : null}
           {categoryFilterDisplay ? (
             <span
-              className="inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-medium text-white"
+              className="inline-flex items-center gap-1 rounded-full px-2 py-0.5 font-medium text-white"
               style={{ backgroundColor: categoryFilterDisplay.colour }}
             >
               <CategoryIcon
                 iconName={categoryFilterDisplay.icon_name}
-                className="h-3.5 w-3.5"
+                className="h-3 w-3"
               />
               {categoryFilterDisplay.label}
             </span>
           ) : null}
           {labelFilterDisplay ? (
             <span
-              className="inline-flex rounded-full px-2.5 py-1 text-xs font-medium text-white"
+              className="inline-flex rounded-full px-2 py-0.5 font-medium text-white"
               style={{ backgroundColor: labelFilterDisplay.colour }}
             >
               {labelFilterDisplay.name}
             </span>
-          ) : null}
-          {categoryFilterActive && labelFilterActive ? (
-            <span>matching both category and label</span>
-          ) : null}
-          {categoryFilter.type === "main" && subcategories.length > 0 ? (
-            <span>including all subcategories</span>
           ) : null}
         </div>
       ) : null}

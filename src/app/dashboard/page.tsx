@@ -4,11 +4,20 @@ import {
   getUserAvatarUrl,
   getUserDisplayName,
 } from "@/lib/auth/user-display";
+import { loadAccessibleCategories } from "@/lib/categories/access";
+import { CategoryIcon } from "@/lib/categories/icons";
+import { buildCategoryTree } from "@/lib/categories/tree";
 import {
   formatReminderDateTime,
   partitionActiveReminders,
 } from "@/lib/tasks/reminder";
 import { createClient } from "@/lib/supabase/server";
+import {
+  densePanelClassName,
+  filterChipActiveClassName,
+  filterChipClassName,
+  filterChipIdleClassName,
+} from "@/lib/ui/field-classes";
 import Link from "next/link";
 import type { ReactNode } from "react";
 
@@ -62,17 +71,8 @@ function isUpcoming(dueAt: string, today = new Date()) {
   return new Date(dueAt) > endOfWeekAhead(today);
 }
 
-function formatDate(value: string) {
-  return new Date(value).toLocaleDateString(undefined, {
-    year: "numeric",
-    month: "short",
-    day: "numeric",
-  });
-}
-
 function formatDateTime(value: string) {
   return new Date(value).toLocaleString(undefined, {
-    year: "numeric",
     month: "short",
     day: "numeric",
     hour: "numeric",
@@ -80,24 +80,66 @@ function formatDateTime(value: string) {
   });
 }
 
-function TaskList({
+function sortOpenTasksForHome(tasks: Task[], today: Date) {
+  return [...tasks].sort((a, b) => {
+    const aOverdue = a.due_at && isOverdue(a.due_at, today) ? 0 : 1;
+    const bOverdue = b.due_at && isOverdue(b.due_at, today) ? 0 : 1;
+    if (aOverdue !== bOverdue) return aOverdue - bOverdue;
+
+    const aToday = a.due_at && isDueToday(a.due_at, today) ? 0 : 1;
+    const bToday = b.due_at && isDueToday(b.due_at, today) ? 0 : 1;
+    if (aToday !== bToday) return aToday - bToday;
+
+    if (a.due_at && b.due_at) {
+      return new Date(a.due_at).getTime() - new Date(b.due_at).getTime();
+    }
+    if (a.due_at) return -1;
+    if (b.due_at) return 1;
+    return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
+  });
+}
+
+function SummaryChip({
+  label,
+  value,
+  href,
+  emphasize,
+}: {
+  label: string;
+  value: number;
+  href: string;
+  emphasize?: "danger" | "warning";
+}) {
+  const valueClass =
+    emphasize === "danger" && value > 0
+      ? "text-rose-700 dark:text-rose-300"
+      : emphasize === "warning" && value > 0
+        ? "text-amber-800 dark:text-amber-300"
+        : "text-stone-800 dark:text-stone-100";
+
+  return (
+    <Link
+      href={href}
+      className={`${filterChipClassName} ${filterChipIdleClassName} gap-1.5 !rounded-lg px-2.5 py-1.5`}
+    >
+      <span className="text-stone-500 dark:text-stone-400">{label}</span>
+      <span className={`tabular-nums font-semibold ${valueClass}`}>{value}</span>
+    </Link>
+  );
+}
+
+function CompactTaskList({
   tasks,
   emptyMessage,
   emptyAction,
-  showDueDate = false,
-  showReminder = false,
-  reminderOverdue = false,
 }: {
   tasks: Task[];
   emptyMessage: string;
   emptyAction?: ReactNode;
-  showDueDate?: boolean;
-  showReminder?: boolean;
-  reminderOverdue?: boolean;
 }) {
   if (tasks.length === 0) {
     return (
-      <div className="py-1">
+      <div className="py-2">
         <p className="text-sm text-stone-500 dark:text-stone-400">
           {emptyMessage}
         </p>
@@ -106,26 +148,27 @@ function TaskList({
     );
   }
 
+  const today = new Date();
+
   return (
     <ul className="divide-y divide-stone-100 dark:divide-stone-800">
       {tasks.map((task) => {
-        const meta = showReminder
-          ? task.reminder_at
-            ? formatReminderDateTime(task.reminder_at)
-            : null
-          : showDueDate && task.due_at
-            ? formatDateTime(task.due_at)
-            : formatDate(task.created_at);
+        const overdue = Boolean(
+          task.due_at && !task.completed && isOverdue(task.due_at, today),
+        );
+        const dueToday = Boolean(
+          task.due_at && !task.completed && isDueToday(task.due_at, today),
+        );
 
         return (
           <li key={task.id}>
             <Link
               href={`/dashboard/tasks?edit=${task.id}`}
-              className="flex items-start justify-between gap-3 py-2.5 transition hover:bg-stone-50/80 dark:hover:bg-stone-800/40"
+              className="flex items-start justify-between gap-3 py-2 transition hover:bg-stone-50/80 dark:hover:bg-stone-800/40"
             >
-              <div className="min-w-0 px-1">
+              <div className="min-w-0 px-0.5">
                 <p
-                  className={`text-sm font-medium text-stone-900 dark:text-stone-100 ${
+                  className={`text-sm font-medium leading-snug text-stone-900 dark:text-stone-100 ${
                     task.completed
                       ? "text-stone-400 line-through dark:text-stone-500"
                       : ""
@@ -133,21 +176,18 @@ function TaskList({
                 >
                   {task.title}
                 </p>
-                {task.description ? (
-                  <p className="mt-0.5 truncate text-xs text-stone-500 dark:text-stone-400">
-                    {task.description}
-                  </p>
-                ) : null}
               </div>
-              {meta ? (
+              {task.due_at ? (
                 <span
-                  className={`shrink-0 pt-0.5 text-xs tabular-nums ${
-                    showReminder && reminderOverdue
+                  className={`shrink-0 pt-0.5 text-[11px] tabular-nums ${
+                    overdue
                       ? "font-medium text-rose-700 dark:text-rose-300"
-                      : "text-stone-400 dark:text-stone-500"
+                      : dueToday
+                        ? "font-medium text-amber-800 dark:text-amber-300"
+                        : "text-stone-400 dark:text-stone-500"
                   }`}
                 >
-                  {meta}
+                  {formatDateTime(task.due_at)}
                 </span>
               ) : null}
             </Link>
@@ -158,81 +198,82 @@ function TaskList({
   );
 }
 
-function OverviewPanel({
+function MiniPanel({
   title,
-  description,
   count,
-  children,
   href,
+  children,
 }: {
   title: string;
-  description: string;
   count: number;
-  children: ReactNode;
   href?: string;
+  children: ReactNode;
 }) {
   return (
-    <article className="rounded-xl border border-stone-200/80 bg-white p-4 sm:p-5 dark:border-stone-700/80 dark:bg-stone-900">
-      <div className="flex items-start justify-between gap-3">
-        <div className="min-w-0">
-          {href ? (
-            <Link
-              href={href}
-              className="text-base font-semibold text-stone-900 transition hover:text-emerald-700 dark:text-stone-100 dark:hover:text-emerald-300"
-            >
-              {title}
-            </Link>
-          ) : (
-            <h2 className="text-base font-semibold text-stone-900 dark:text-stone-100">
-              {title}
-            </h2>
-          )}
-          <p className="mt-0.5 text-sm text-stone-500 dark:text-stone-400">
-            {description}
-          </p>
-        </div>
-        <span className="shrink-0 rounded-md bg-stone-100 px-2 py-0.5 text-xs font-medium tabular-nums text-stone-600 dark:bg-stone-800 dark:text-stone-300">
+    <article className={`${densePanelClassName} p-3`}>
+      <div className="mb-1.5 flex items-center justify-between gap-2">
+        {href ? (
+          <Link
+            href={href}
+            className="text-xs font-semibold tracking-wide text-stone-500 uppercase transition hover:text-emerald-700 dark:text-stone-400 dark:hover:text-emerald-300"
+          >
+            {title}
+          </Link>
+        ) : (
+          <h2 className="text-xs font-semibold tracking-wide text-stone-500 uppercase dark:text-stone-400">
+            {title}
+          </h2>
+        )}
+        <span className="text-[11px] tabular-nums text-stone-400 dark:text-stone-500">
           {count}
         </span>
       </div>
-      <div className="mt-3">{children}</div>
+      {children}
     </article>
   );
 }
 
-function StatCard({
-  label,
-  value,
-  hint,
-  href,
-  emphasize,
+function MiniLinkList({
+  tasks,
+  showReminder,
+  reminderOverdue,
 }: {
-  label: string;
-  value: number;
-  hint: string;
-  href: string;
-  emphasize?: "danger" | "warning";
+  tasks: Task[];
+  showReminder?: boolean;
+  reminderOverdue?: boolean;
 }) {
-  const valueClass =
-    emphasize === "danger" && value > 0
-      ? "text-rose-700 dark:text-rose-300"
-      : emphasize === "warning" && value > 0
-        ? "text-amber-800 dark:text-amber-300"
-        : "text-stone-900 dark:text-stone-100";
+  if (tasks.length === 0) {
+    return (
+      <p className="text-xs text-stone-400 dark:text-stone-500">None</p>
+    );
+  }
 
   return (
-    <Link
-      href={href}
-      className="rounded-xl border border-stone-200/80 bg-white p-4 transition hover:border-stone-300 hover:bg-stone-50/80 dark:border-stone-700/80 dark:bg-stone-900 dark:hover:border-stone-600 dark:hover:bg-stone-800/60"
-    >
-      <p className="text-xs font-medium uppercase tracking-wide text-stone-500 dark:text-stone-400">
-        {label}
-      </p>
-      <p className={`mt-2 text-3xl font-semibold tabular-nums ${valueClass}`}>
-        {value}
-      </p>
-      <p className="mt-1 text-sm text-stone-400 dark:text-stone-500">{hint}</p>
-    </Link>
+    <ul className="space-y-1">
+      {tasks.slice(0, 4).map((task) => (
+        <li key={task.id}>
+          <Link
+            href={`/dashboard/tasks?edit=${task.id}`}
+            className="flex items-center justify-between gap-2 text-xs transition hover:text-emerald-700 dark:hover:text-emerald-300"
+          >
+            <span className="min-w-0 truncate text-stone-700 dark:text-stone-300">
+              {task.title}
+            </span>
+            {showReminder && task.reminder_at ? (
+              <span
+                className={`shrink-0 tabular-nums ${
+                  reminderOverdue
+                    ? "text-rose-700 dark:text-rose-300"
+                    : "text-stone-400"
+                }`}
+              >
+                {formatReminderDateTime(task.reminder_at)}
+              </span>
+            ) : null}
+          </Link>
+        </li>
+      ))}
+    </ul>
   );
 }
 
@@ -242,16 +283,21 @@ export default async function DashboardPage() {
     data: { user },
   } = await supabase.auth.getUser();
 
-  const { data: tasks, error } = await supabase
-    .from("tasks")
-    .select("id, title, description, due_at, reminder_at, completed, created_at")
-    .order("created_at", { ascending: false });
+  const [{ data: tasks, error }, categoriesResult] = await Promise.all([
+    supabase
+      .from("tasks")
+      .select("id, title, description, due_at, reminder_at, completed, created_at")
+      .order("created_at", { ascending: false }),
+    loadAccessibleCategories(supabase),
+  ]);
 
   const allTasks = (tasks ?? []) as Task[];
   const today = new Date();
   const now = new Date();
+  const { mains } = buildCategoryTree(categoriesResult.categories);
 
   const openTasks = allTasks.filter((task) => !task.completed);
+  const homeTasks = sortOpenTasksForHome(openTasks, today).slice(0, 20);
   const dueTodayTasks = openTasks
     .filter((task) => task.due_at && isDueToday(task.due_at, today))
     .sort(
@@ -272,7 +318,6 @@ export default async function DashboardPage() {
       (a, b) => new Date(a.due_at!).getTime() - new Date(b.due_at!).getTime(),
     )
     .slice(0, 5);
-  const recentlyAddedTasks = allTasks.slice(0, 5);
 
   const { dueOrOverdue: remindersDueOrOverdue, upcoming: upcomingReminders } =
     partitionActiveReminders(allTasks, now);
@@ -290,15 +335,6 @@ export default async function DashboardPage() {
   );
   const avatarUrl = getUserAvatarUrl(user?.user_metadata);
 
-  const focusLink = (
-    <Link
-      href="/dashboard/focus"
-      className="text-sm font-medium text-emerald-700 transition hover:text-emerald-800 dark:text-emerald-400 dark:hover:text-emerald-300"
-    >
-      Open Focus
-    </Link>
-  );
-
   const tasksLink = (
     <Link
       href="/dashboard/tasks"
@@ -311,161 +347,152 @@ export default async function DashboardPage() {
   return (
     <>
       <DashboardHeader title="Overview" email={user?.email} />
-      <div className="flex-1 overflow-auto p-4 sm:p-6 lg:p-8">
-        <div className="mx-auto max-w-6xl space-y-6">
-          <div className="flex items-center gap-3 sm:gap-4">
-            <UserAvatar
-              name={displayName}
-              avatarUrl={avatarUrl}
-              size="lg"
-            />
+      <div className="flex-1 overflow-auto p-3 sm:p-5 lg:p-6">
+        <div className="mx-auto max-w-3xl space-y-4">
+          <div className="flex items-center gap-2.5">
+            <UserAvatar name={displayName} avatarUrl={avatarUrl} size="sm" />
             <div className="min-w-0">
-              <h2 className="text-xl font-semibold tracking-tight text-stone-900 dark:text-stone-100 sm:text-2xl">
-                Hello {displayName}, what would you like to do today?
+              <h2 className="text-base font-semibold tracking-tight text-stone-900 dark:text-stone-100">
+                Hi {displayName}
               </h2>
-              <p className="mt-1 text-sm text-stone-500 dark:text-stone-400">
+              <p className="text-xs text-stone-500 dark:text-stone-400">
                 {needsAttention
-                  ? "A few things need attention today"
-                  : "A calm look at your workspace"}
+                  ? "A few things need attention"
+                  : "Your open tasks"}
               </p>
             </div>
           </div>
 
           {error ? (
-            <div className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700 dark:border-red-900/50 dark:bg-red-950/40 dark:text-red-300">
+            <div className="rounded-xl border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700 dark:border-red-900/50 dark:bg-red-950/40 dark:text-red-300">
               Could not load dashboard data: {error.message}
             </div>
           ) : null}
 
-          <section className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-            <StatCard
+          <div className="-mx-1 flex gap-1.5 overflow-x-auto px-1 pb-0.5 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+            <SummaryChip
               label="Open"
               value={openTasks.length}
-              hint={
-                openTasks.length === 0 ? "All caught up" : "Still to do"
-              }
               href="/dashboard/tasks?status=open"
             />
-            <StatCard
-              label="Due today"
+            <SummaryChip
+              label="Today"
               value={dueTodayTasks.length}
-              hint={
-                dueTodayTasks.length === 0
-                  ? "Nothing due today"
-                  : "Due by end of day"
-              }
               href="/dashboard/focus"
               emphasize="warning"
             />
-            <StatCard
+            <SummaryChip
               label="Overdue"
               value={overdueTasks.length}
-              hint={
-                overdueTasks.length === 0 ? "None overdue" : "Needs attention"
-              }
               href="/dashboard/focus"
               emphasize="danger"
             />
-            <StatCard
-              label="Completed"
+            <SummaryChip
+              label="Done"
               value={completedTasks.length}
-              hint="Marked done"
               href="/dashboard/tasks?status=completed"
+            />
+          </div>
+
+          {mains.length > 0 ? (
+            <div className="-mx-1 flex gap-1.5 overflow-x-auto px-1 pb-0.5 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+              <Link
+                href="/dashboard/tasks"
+                className={`${filterChipClassName} ${filterChipActiveClassName}`}
+              >
+                All
+              </Link>
+              {mains.map((main) => (
+                <Link
+                  key={main.id}
+                  href={`/dashboard/tasks?category=${main.id}`}
+                  className={`${filterChipClassName} ${filterChipIdleClassName}`}
+                  title={main.admin_note ?? main.name}
+                >
+                  <span
+                    className="inline-flex h-4 w-4 items-center justify-center rounded-full"
+                    style={{
+                      backgroundColor: `${main.colour}22`,
+                      color: main.colour,
+                    }}
+                  >
+                    <CategoryIcon
+                      iconName={main.icon_name}
+                      className="h-2.5 w-2.5"
+                    />
+                  </span>
+                  {main.name}
+                </Link>
+              ))}
+            </div>
+          ) : null}
+
+          <section className={`${densePanelClassName} p-3`}>
+            <div className="mb-2 flex items-center justify-between gap-2">
+              <h2 className="text-sm font-semibold text-stone-900 dark:text-stone-100">
+                Tasks
+              </h2>
+              <Link
+                href="/dashboard/tasks"
+                className="text-xs font-medium text-emerald-700 transition hover:text-emerald-800 dark:text-emerald-400"
+              >
+                View all
+              </Link>
+            </div>
+            <CompactTaskList
+              tasks={homeTasks}
+              emptyMessage="No open tasks. Nice work."
+              emptyAction={tasksLink}
             />
           </section>
 
           {needsAttention ? (
-            <div className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-amber-200/80 bg-amber-50/70 px-4 py-3 dark:border-amber-900/40 dark:bg-amber-950/30">
-              <p className="text-sm text-amber-900 dark:text-amber-200">
-                Focus has items that need attention now.
+            <div className="flex flex-wrap items-center justify-between gap-2 rounded-lg border border-amber-200/80 bg-amber-50/70 px-3 py-2 dark:border-amber-900/40 dark:bg-amber-950/30">
+              <p className="text-xs text-amber-900 dark:text-amber-200">
+                Focus has items that need attention.
               </p>
-              {focusLink}
+              <Link
+                href="/dashboard/focus"
+                className="text-xs font-medium text-emerald-700 dark:text-emerald-400"
+              >
+                Open Focus
+              </Link>
             </div>
           ) : null}
 
-          <section className="grid gap-4 lg:grid-cols-2">
-            <OverviewPanel
+          <section className="grid gap-3 sm:grid-cols-2">
+            <MiniPanel
               title="Reminders due"
-              description="Reminder time has passed"
               count={remindersDueOrOverdue.length}
               href="/dashboard/focus"
             >
-              <TaskList
+              <MiniLinkList
                 tasks={remindersDueOrOverdue}
-                emptyMessage="No reminders due right now."
-                emptyAction={focusLink}
                 showReminder
                 reminderOverdue
               />
-            </OverviewPanel>
-
-            <OverviewPanel
+            </MiniPanel>
+            <MiniPanel
               title="Upcoming reminders"
-              description="Reminders still ahead"
               count={upcomingReminders.length}
             >
-              <TaskList
-                tasks={upcomingReminders}
-                emptyMessage="No upcoming reminders."
-                showReminder
-              />
-            </OverviewPanel>
-          </section>
-
-          <section className="grid gap-4 lg:grid-cols-3">
-            <OverviewPanel
-              title="Due today"
-              description="By end of today"
-              count={dueTodayTasks.length}
-              href="/dashboard/focus"
-            >
-              <TaskList
-                tasks={dueTodayTasks}
-                emptyMessage="Nothing due today."
-                emptyAction={focusLink}
-                showDueDate
-              />
-            </OverviewPanel>
-
-            <OverviewPanel
+              <MiniLinkList tasks={upcomingReminders} showReminder />
+            </MiniPanel>
+            <MiniPanel
               title="This week"
-              description="Next 7 days after today"
               count={dueWithinWeekTasks.length}
               href="/dashboard/calendar"
             >
-              <TaskList
-                tasks={dueWithinWeekTasks}
-                emptyMessage="Nothing else due this week."
-                showDueDate
-              />
-            </OverviewPanel>
-
-            <OverviewPanel
+              <MiniLinkList tasks={dueWithinWeekTasks} />
+            </MiniPanel>
+            <MiniPanel
               title="Later"
-              description="Due after the next week"
               count={upcomingTasks.length}
               href="/dashboard/calendar"
             >
-              <TaskList
-                tasks={upcomingTasks}
-                emptyMessage="No later tasks scheduled."
-                showDueDate
-              />
-            </OverviewPanel>
+              <MiniLinkList tasks={upcomingTasks} />
+            </MiniPanel>
           </section>
-
-          <OverviewPanel
-            title="Recently added"
-            description="Newest first"
-            count={recentlyAddedTasks.length}
-            href="/dashboard/tasks"
-          >
-            <TaskList
-              tasks={recentlyAddedTasks}
-              emptyMessage="No tasks yet."
-              emptyAction={tasksLink}
-            />
-          </OverviewPanel>
         </div>
       </div>
     </>

@@ -141,13 +141,13 @@ export function QuickAddTaskLauncher() {
             role="dialog"
             aria-modal="true"
             aria-labelledby="quick-add-task-title"
-            className="max-h-[min(90vh,720px)] w-full max-w-lg overflow-y-auto rounded-2xl border border-stone-200 bg-white p-5 shadow-xl dark:border-stone-700 dark:bg-stone-900"
+            className="max-h-[min(90vh,720px)] w-full max-w-lg overflow-y-auto rounded-2xl border border-stone-200 bg-white p-4 shadow-xl dark:border-stone-700 dark:bg-stone-900"
             onClick={(event) => event.stopPropagation()}
           >
-            <div className="mb-4 flex items-center justify-between gap-3">
+            <div className="mb-3 flex items-center justify-between gap-3">
               <h2
                 id="quick-add-task-title"
-                className="text-lg font-semibold text-stone-900 dark:text-stone-100"
+                className="text-base font-semibold text-stone-900 dark:text-stone-100"
               >
                 New task
               </h2>

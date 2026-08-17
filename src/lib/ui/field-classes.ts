@@ -23,6 +23,28 @@ export const formSecondaryButtonClassName =
 export const cardClassName =
   "rounded-2xl border border-stone-200 bg-white shadow-sm dark:border-stone-700 dark:bg-stone-900";
 
+/** Dense composer / filter strip — less chrome than cardClassName. */
+export const densePanelClassName =
+  "rounded-xl border border-stone-200/90 bg-white dark:border-stone-700/90 dark:bg-stone-900";
+
+/** Compact task row — list density over card stack. */
+export const taskRowClassName =
+  "rounded-lg border border-stone-200/70 bg-white px-2.5 py-2 transition hover:border-stone-300 dark:border-stone-700/70 dark:bg-stone-900 dark:hover:border-stone-600";
+
+export const filterChipClassName =
+  "inline-flex shrink-0 cursor-pointer items-center gap-1.5 rounded-full border px-2.5 py-1 text-xs font-medium transition";
+
+export const filterChipActiveClassName =
+  "border-emerald-600 bg-emerald-600 text-white dark:border-emerald-500 dark:bg-emerald-600";
+
+export const filterChipIdleClassName =
+  "border-stone-200 bg-white text-stone-600 hover:border-stone-300 hover:bg-stone-50 dark:border-stone-600 dark:bg-stone-800 dark:text-stone-300 dark:hover:bg-stone-700";
+
+export const toolbarIconButtonClassName =
+  "inline-flex h-8 w-8 cursor-pointer items-center justify-center rounded-lg text-stone-500 transition hover:bg-stone-100 hover:text-stone-800 disabled:cursor-not-allowed disabled:opacity-40 dark:text-stone-400 dark:hover:bg-stone-800 dark:hover:text-stone-100";
+
+export const toolbarIconButtonActiveClassName =
+  "bg-emerald-50 text-emerald-700 hover:bg-emerald-100 dark:bg-emerald-950/50 dark:text-emerald-300 dark:hover:bg-emerald-950/70";
 
 export const adminSecondaryButtonClassName =
   "cursor-pointer rounded-lg border border-stone-200 bg-white px-3 py-1.5 text-xs font-medium text-stone-600 transition hover:bg-stone-50 disabled:cursor-not-allowed disabled:opacity-60 dark:border-stone-600 dark:bg-stone-800 dark:text-stone-300 dark:hover:bg-stone-700";

@@ -56,12 +56,12 @@ import {
 } from "@/lib/tasks/reminder";
 import { isFocusDueOverdue } from "@/lib/tasks/focus";
 import {
-  cardClassName,
   compactFieldClassName,
   formErrorClassName,
   formLabelClassName,
   formPrimaryButtonClassName,
   formSecondaryButtonClassName,
+  taskRowClassName,
   titleFieldClassName,
 } from "@/lib/ui/field-classes";
 import { createClient } from "@/lib/supabase/client";
@@ -74,6 +74,7 @@ import {
 } from "@/lib/tasks/due-date-change";
 import { getSubtaskProgress } from "@/lib/tasks/subtasks/progress";
 import type { TaskSubtask } from "@/lib/tasks/subtasks/types";
+import { Bell, ListTodo, Repeat } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useRef, useState } from "react";
 
@@ -411,8 +412,8 @@ export function TaskListItem({
   const wrapperClassName = embedded
     ? ""
     : isEditing
-      ? "rounded-2xl border border-emerald-200 bg-white p-4 shadow-sm dark:border-emerald-900/50 dark:bg-stone-900"
-      : `${cardClassName} p-4`;
+      ? "rounded-xl border border-emerald-200 bg-white p-3 shadow-sm dark:border-emerald-900/50 dark:bg-stone-900"
+      : taskRowClassName;
 
   if (isEditing) {
     const editContent = (
@@ -583,12 +584,14 @@ export function TaskListItem({
 
   const readContent = (
     <>
-      <div className="flex items-start gap-3">
-        <TaskCompleteToggle id={id} completed={completed} title={title} />
+      <div className="flex items-start gap-2">
+        <div className="pt-0.5">
+          <TaskCompleteToggle id={id} completed={completed} title={title} />
+        </div>
         <div className="min-w-0 flex-1">
-          <div className="flex items-start gap-2">
+          <div className="flex items-start gap-1.5">
             <h2
-              className={`min-w-0 flex-1 text-[15px] font-semibold leading-snug text-stone-900 dark:text-stone-100 ${
+              className={`min-w-0 flex-1 text-sm font-medium leading-snug text-stone-900 dark:text-stone-100 ${
                 completed
                   ? "text-stone-400 line-through dark:text-stone-500"
                   : ""
@@ -596,13 +599,35 @@ export function TaskListItem({
             >
               {title}
             </h2>
-            <div className="flex shrink-0 items-center gap-1">
-              <PriorityBadge priority={taskPriority} hideDefault />
+            <div className="flex shrink-0 items-center gap-0.5">
+              {showCreator ? (
+                <span
+                  className="mr-0.5"
+                  title={`Created by ${creator?.displayName ?? "workspace member"}`}
+                >
+                  <UserAvatar
+                    name={creator?.displayName ?? "Member"}
+                    avatarUrl={creator?.avatarUrl}
+                    size="sm"
+                  />
+                </span>
+              ) : null}
+              {!hasChecklist ? (
+                <button
+                  type="button"
+                  onClick={() => setChecklistOpen(true)}
+                  aria-label={`Add checklist to "${title}"`}
+                  title="Checklist"
+                  className="cursor-pointer rounded-md p-1.5 text-stone-400 transition hover:bg-stone-100 hover:text-stone-800 dark:hover:bg-stone-800 dark:hover:text-stone-100"
+                >
+                  <ListTodo className="h-4 w-4" aria-hidden />
+                </button>
+              ) : null}
               <button
                 type="button"
                 onClick={startEditing}
                 aria-label={`Edit "${title}"`}
-                className="cursor-pointer rounded-lg p-1.5 text-stone-400 transition hover:bg-stone-100 hover:text-stone-800 dark:hover:bg-stone-800 dark:hover:text-stone-100"
+                className="cursor-pointer rounded-md p-1.5 text-stone-400 transition hover:bg-stone-100 hover:text-stone-800 dark:hover:bg-stone-800 dark:hover:text-stone-100"
               >
                 <PencilIcon />
               </button>
@@ -617,93 +642,65 @@ export function TaskListItem({
             </div>
           </div>
 
-          {showCreator ? (
-            <div className="mt-1.5 flex min-w-0 items-center gap-2 text-xs text-stone-500 dark:text-stone-400">
-              <UserAvatar
-                name={creator?.displayName ?? "Member"}
-                avatarUrl={creator?.avatarUrl}
-                size="sm"
-              />
-              <span className="min-w-0 truncate">
-                Created by{" "}
-                <span className="font-medium text-stone-700 dark:text-stone-300">
-                  {creator?.displayName ?? "workspace member"}
-                </span>
-                {creator?.email ? (
-                  <span className="text-stone-400 dark:text-stone-500">
-                    {" "}
-                    · {creator.email}
-                  </span>
-                ) : null}
+          <div className="mt-1 flex flex-wrap items-center gap-1">
+            <CategoryBadge
+              category={category}
+              unavailable={categoryUnavailable}
+            />
+            {dueAt ? (
+              <span
+                className={`inline-flex items-center rounded-md px-1.5 py-0.5 text-[11px] font-medium tabular-nums ${
+                  dueIsOverdue
+                    ? "bg-rose-50 text-rose-700 dark:bg-rose-950/40 dark:text-rose-300"
+                    : "bg-stone-100 text-stone-600 dark:bg-stone-800 dark:text-stone-300"
+                }`}
+              >
+                {dueIsOverdue ? "Overdue " : ""}
+                {formatDueMeta(dueAt)}
               </span>
-            </div>
-          ) : null}
+            ) : null}
+            <PriorityBadge
+              priority={taskPriority}
+              hideDefault
+              className="!px-1.5 !py-0.5 !text-[11px]"
+            />
+            {reminderLabel ? (
+              <span
+                className={`inline-flex items-center gap-0.5 rounded-md px-1.5 py-0.5 text-[11px] font-medium ${
+                  reminderLabel.overdue
+                    ? "bg-rose-50 text-rose-700 dark:bg-rose-950/40 dark:text-rose-300"
+                    : "bg-stone-100 text-stone-600 dark:bg-stone-800 dark:text-stone-300"
+                }`}
+                title={reminderLabel.text}
+              >
+                <Bell className="h-3 w-3" aria-hidden />
+                <span className="sr-only">{reminderLabel.text}</span>
+              </span>
+            ) : null}
+            {recurrenceBadgeText ? (
+              <span
+                className="inline-flex items-center gap-0.5 rounded-md bg-sky-50 px-1.5 py-0.5 text-[11px] font-medium text-sky-700 dark:bg-sky-950/40 dark:text-sky-300"
+                title={recurrenceBadgeText}
+              >
+                <Repeat className="h-3 w-3" aria-hidden />
+                <span className="sr-only">{recurrenceBadgeText}</span>
+              </span>
+            ) : null}
+            <LabelBadges
+              labels={taskLabels.labels}
+              unavailableCount={taskLabels.unavailableCount}
+              maxVisible={2}
+            />
+          </div>
 
           {description ? (
-            <p className="mt-1 line-clamp-2 text-sm text-stone-600 dark:text-stone-400">
+            <p className="mt-1 line-clamp-1 text-xs text-stone-500 dark:text-stone-400">
               {description}
             </p>
           ) : null}
 
-          <div className="mt-2 flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-stone-500 dark:text-stone-400">
-            <span
-              className={
-                dueIsOverdue
-                  ? "font-medium text-rose-700 dark:text-rose-300"
-                  : undefined
-              }
-            >
-              {dueAt
-                ? `${dueIsOverdue ? "Overdue" : "Due"} ${formatDueMeta(dueAt)}`
-                : "No due date"}
-            </span>
-            {reminderLabel ? (
-              <>
-                <span className="text-stone-300 dark:text-stone-600" aria-hidden>
-                  ·
-                </span>
-                <span
-                  className={
-                    reminderLabel.overdue
-                      ? "font-medium text-rose-700 dark:text-rose-300"
-                      : undefined
-                  }
-                >
-                  {reminderLabel.text}
-                </span>
-              </>
-            ) : null}
-            {recurrenceBadgeText ? (
-              <>
-                <span className="text-stone-300 dark:text-stone-600" aria-hidden>
-                  ·
-                </span>
-                <span className="text-sky-700 dark:text-sky-300">
-                  {recurrenceBadgeText}
-                </span>
-              </>
-            ) : null}
-          </div>
-
-          {(category ||
-            categoryUnavailable ||
-            taskLabels.labels.length > 0 ||
-            taskLabels.unavailableCount > 0) && (
-            <div className="mt-2.5 flex flex-wrap items-center gap-1.5">
-              <CategoryBadge
-                category={category}
-                unavailable={categoryUnavailable}
-              />
-              <LabelBadges
-                labels={taskLabels.labels}
-                unavailableCount={taskLabels.unavailableCount}
-                maxVisible={3}
-              />
-            </div>
-          )}
-
           {historyLines.length > 0 || showMovedLaterNudge ? (
-            <div className="mt-2 space-y-0.5 text-xs text-stone-400 dark:text-stone-500">
+            <div className="mt-1 space-y-0.5 text-[11px] text-stone-400 dark:text-stone-500">
               {historyLines.map((line) => (
                 <p key={line}>{line}</p>
               ))}
@@ -718,15 +715,7 @@ export function TaskListItem({
               expanded={checklistOpen}
               onToggle={() => setChecklistOpen((open) => !open)}
             />
-          ) : (
-            <button
-              type="button"
-              onClick={() => setChecklistOpen(true)}
-              className="mt-2 cursor-pointer text-xs font-medium text-stone-500 transition hover:text-stone-800 dark:text-stone-400 dark:hover:text-stone-200"
-            >
-              Add checklist
-            </button>
-          )}
+          ) : null}
 
           {checklistOpen ? (
             <TaskSubtaskList
