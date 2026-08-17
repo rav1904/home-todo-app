@@ -71,7 +71,7 @@ export default async function AdminCategoriesPage() {
         description="Admin-managed global categories (shared workspaces) and subcategories"
         email={user.email}
       />
-      <div className="flex-1 overflow-auto p-4 sm:p-6 lg:p-8">
+      <div className="flex-1 overflow-auto overflow-x-hidden p-4 sm:p-6 lg:p-8">
         {error ? (
           <div className={adminPageErrorClassName}>
             Could not load categories: {error.message}

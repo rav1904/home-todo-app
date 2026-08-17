@@ -1,6 +1,7 @@
 "use client";
 
 import { CategoryIcon } from "@/lib/categories/icons";
+import { formatCategoryNameForDisplay } from "@/lib/categories/display";
 import type { Category } from "@/lib/categories/types";
 import {
   buildCategoryLookup,
@@ -41,10 +42,10 @@ export function CategorySelect({
   const stackClass = compact ? "space-y-2" : "space-y-3";
 
   return (
-    <div className={stackClass}>
-      <div>
+    <div className={`min-w-0 ${stackClass}`}>
+      <div className="min-w-0">
         <label htmlFor={`${id}-main`} className={labelClass}>
-          Category
+          Workspace
           {optional ? (
             <span className="font-normal text-stone-400 dark:text-stone-500">
               {" "}
@@ -59,19 +60,19 @@ export function CategorySelect({
             const nextMainId = event.target.value ? event.target.value : null;
             onChange(nextMainId);
           }}
-          className={selectClassName}
+          className={`${selectClassName} min-w-0 max-w-full`}
         >
           <option value="">None</option>
           {mains.map((main) => (
             <option key={main.id} value={main.id}>
-              {main.name}
+              {formatCategoryNameForDisplay(main.name)}
             </option>
           ))}
         </select>
       </div>
 
       {showSubSelect ? (
-        <div>
+        <div className="min-w-0">
           <label htmlFor={`${id}-sub`} className={labelClass}>
             Subcategory
             <span className="font-normal text-stone-400 dark:text-stone-500">
@@ -86,12 +87,12 @@ export function CategorySelect({
               const nextSubId = event.target.value ? event.target.value : null;
               onChange(resolveCategoryIdForSave(mainCategoryId, nextSubId));
             }}
-            className={selectClassName}
+            className={`${selectClassName} min-w-0 max-w-full`}
           >
             <option value="">None</option>
             {subcategories.map((subcategory) => (
               <option key={subcategory.id} value={subcategory.id}>
-                {subcategory.name}
+                {formatCategoryNameForDisplay(subcategory.name)}
               </option>
             ))}
           </select>
@@ -108,13 +109,25 @@ type CategoryBadgeProps = {
     icon_name: string;
   } | null;
   unavailable?: boolean;
+  /** Compact chip for dense task rows. */
+  compact?: boolean;
 };
 
-export function CategoryBadge({ category, unavailable = false }: CategoryBadgeProps) {
+export function CategoryBadge({
+  category,
+  unavailable = false,
+  compact = false,
+}: CategoryBadgeProps) {
   if (unavailable) {
     return (
-      <span className="inline-flex shrink-0 items-center rounded-full bg-stone-100 px-2.5 py-0.5 text-xs font-medium leading-none text-stone-500 dark:bg-stone-800 dark:text-stone-400">
-        Category unavailable
+      <span
+        className={`inline-flex max-w-[9rem] shrink-0 items-center truncate rounded-md bg-stone-100 font-medium text-stone-500 dark:bg-stone-800 dark:text-stone-400 ${
+          compact
+            ? "gap-1 px-1.5 py-0.5 text-[11px] leading-none"
+            : "gap-1.5 rounded-full px-2.5 py-0.5 text-xs leading-none"
+        }`}
+      >
+        Unavailable
       </span>
     );
   }
@@ -125,11 +138,19 @@ export function CategoryBadge({ category, unavailable = false }: CategoryBadgePr
 
   return (
     <span
-      className="inline-flex shrink-0 items-center gap-1.5 rounded-full px-2.5 py-0.5 text-xs font-medium leading-none text-white"
+      className={`inline-flex max-w-[9rem] shrink-0 items-center font-medium text-white ${
+        compact
+          ? "gap-1 rounded-md px-1.5 py-0.5 text-[11px] leading-none"
+          : "gap-1.5 rounded-full px-2.5 py-0.5 text-xs leading-none"
+      }`}
       style={{ backgroundColor: category.colour }}
+      title={category.label}
     >
-      <CategoryIcon iconName={category.icon_name} className="h-3.5 w-3.5" />
-      {category.label}
+      <CategoryIcon
+        iconName={category.icon_name}
+        className={compact ? "h-3 w-3 shrink-0" : "h-3.5 w-3.5 shrink-0"}
+      />
+      <span className="truncate">{category.label}</span>
     </span>
   );
 }

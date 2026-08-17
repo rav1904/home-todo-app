@@ -37,15 +37,7 @@ import {
   toolbarIconButtonClassName,
 } from "@/lib/ui/field-classes";
 import { createClient } from "@/lib/supabase/client";
-import {
-  AlignLeft,
-  Bell,
-  Calendar,
-  Flag,
-  Folder,
-  Repeat,
-  Tags,
-} from "lucide-react";
+import { AlignLeft, Bell, Flag, Repeat, Tags } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useMemo, useState, type ReactNode } from "react";
 
@@ -59,14 +51,7 @@ type AddTaskFormProps = {
   onSuccess?: () => void;
 };
 
-type PanelKey =
-  | "category"
-  | "due"
-  | "priority"
-  | "reminder"
-  | "repeat"
-  | "labels"
-  | "notes";
+type PanelKey = "priority" | "reminder" | "repeat" | "labels" | "notes";
 
 function ToolbarButton({
   label,
@@ -99,7 +84,7 @@ function ToolbarButton({
 
 function PanelShell({ children }: { children: ReactNode }) {
   return (
-    <div className="rounded-lg border border-stone-200/80 p-2.5 dark:border-stone-700/80">
+    <div className="min-w-0 rounded-lg border border-stone-200/80 p-2.5 dark:border-stone-700/80">
       {children}
     </div>
   );
@@ -147,13 +132,11 @@ export function AddTaskForm({
     return [...merged.values()];
   }, [extraLabels, labels]);
 
-  const hasDue = Boolean(dueAt);
   const hasReminder = Boolean(reminder.mode);
   const hasPriority = priority !== DEFAULT_TASK_PRIORITY;
   const hasRepeat = recurrence !== DEFAULT_TASK_RECURRENCE;
   const hasLabels = labelIds.length > 0;
   const hasNotes = Boolean(description.trim());
-  const hasCategory = Boolean(categoryId);
 
   function togglePanel(panel: PanelKey) {
     setOpenPanel((current) => (current === panel ? null : panel));
@@ -256,7 +239,9 @@ export function AddTaskForm({
     <form
       onSubmit={handleSubmit}
       className={
-        embedded ? "space-y-2" : `${densePanelClassName} space-y-2 p-3`
+        embedded
+          ? "min-w-0 space-y-2"
+          : `${densePanelClassName} min-w-0 space-y-2 p-3`
       }
     >
       {showHeading ? (
@@ -265,7 +250,7 @@ export function AddTaskForm({
         </h2>
       ) : null}
 
-      <div className="flex items-center gap-2">
+      <div className="flex min-w-0 items-center gap-2">
         <div className="min-w-0 flex-1">
           <label htmlFor="task-title" className="sr-only">
             Title
@@ -290,23 +275,23 @@ export function AddTaskForm({
         </button>
       </div>
 
+      <div className="grid min-w-0 gap-2 sm:grid-cols-2">
+        <CategorySelect
+          id="task-category"
+          categories={categories}
+          value={categoryId}
+          onChange={setCategoryId}
+          className={compactFieldClassName}
+          compact
+        />
+        <DueDatetimeFields
+          id="task-due-at"
+          value={dueAt}
+          onChange={handleDueChange}
+        />
+      </div>
+
       <div className="flex flex-wrap items-center gap-0.5">
-        <ToolbarButton
-          label="Workspace / category"
-          active={openPanel === "category"}
-          populated={hasCategory}
-          onClick={() => togglePanel("category")}
-        >
-          <Folder className="h-4 w-4" aria-hidden />
-        </ToolbarButton>
-        <ToolbarButton
-          label="Due date"
-          active={openPanel === "due"}
-          populated={hasDue}
-          onClick={() => togglePanel("due")}
-        >
-          <Calendar className="h-4 w-4" aria-hidden />
-        </ToolbarButton>
         <ToolbarButton
           label="Priority"
           active={openPanel === "priority"}
@@ -348,29 +333,6 @@ export function AddTaskForm({
           <AlignLeft className="h-4 w-4" aria-hidden />
         </ToolbarButton>
       </div>
-
-      {openPanel === "category" ? (
-        <PanelShell>
-          <CategorySelect
-            id="task-category"
-            categories={categories}
-            value={categoryId}
-            onChange={setCategoryId}
-            className={compactFieldClassName}
-            compact
-          />
-        </PanelShell>
-      ) : null}
-
-      {openPanel === "due" || hasDue ? (
-        <PanelShell>
-          <DueDatetimeFields
-            id="task-due-at"
-            value={dueAt}
-            onChange={handleDueChange}
-          />
-        </PanelShell>
-      ) : null}
 
       {openPanel === "priority" || hasPriority ? (
         <PanelShell>

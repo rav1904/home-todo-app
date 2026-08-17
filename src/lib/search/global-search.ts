@@ -108,7 +108,7 @@ function emptyListState(
   return {
     categoryFilter: { type: "all" },
     labelFilter: { type: "all" },
-    statusFilter: "all",
+    statusFilter: "open",
     searchQuery: "",
     sort: DEFAULT_TASK_SORT,
     ...overrides,

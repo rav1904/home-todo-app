@@ -1,16 +1,23 @@
 import { DashboardHeader } from "@/components/dashboard/header";
+import { CategoryBadge } from "@/components/tasks/category-select";
 import { UserAvatar } from "@/components/ui/user-avatar";
 import {
   getUserAvatarUrl,
   getUserDisplayName,
 } from "@/lib/auth/user-display";
 import { loadAccessibleCategories } from "@/lib/categories/access";
+import { NULL_CATEGORY_DISPLAY, formatCategoryNameForDisplay } from "@/lib/categories/display";
 import { CategoryIcon } from "@/lib/categories/icons";
-import { buildCategoryTree } from "@/lib/categories/tree";
+import {
+  buildCategoryLookup,
+  buildCategoryTree,
+  getCategoryDisplay,
+} from "@/lib/categories/tree";
 import {
   formatReminderDateTime,
   partitionActiveReminders,
 } from "@/lib/tasks/reminder";
+import { isoHasExplicitTime } from "@/lib/tasks/due-datetime";
 import { createClient } from "@/lib/supabase/server";
 import {
   densePanelClassName,
@@ -29,6 +36,7 @@ type Task = {
   reminder_at: string | null;
   completed: boolean;
   created_at: string;
+  category_id: string | null;
 };
 
 function startOfLocalDay(date = new Date()) {
@@ -72,7 +80,15 @@ function isUpcoming(dueAt: string, today = new Date()) {
 }
 
 function formatDateTime(value: string) {
-  return new Date(value).toLocaleString(undefined, {
+  const date = new Date(value);
+  if (!isoHasExplicitTime(value)) {
+    return date.toLocaleDateString(undefined, {
+      month: "short",
+      day: "numeric",
+    });
+  }
+
+  return date.toLocaleString(undefined, {
     month: "short",
     day: "numeric",
     hour: "numeric",
@@ -130,10 +146,12 @@ function SummaryChip({
 
 function CompactTaskList({
   tasks,
+  categoryLookup,
   emptyMessage,
   emptyAction,
 }: {
   tasks: Task[];
+  categoryLookup: ReturnType<typeof buildCategoryLookup>;
   emptyMessage: string;
   emptyAction?: ReactNode;
 }) {
@@ -159,16 +177,26 @@ function CompactTaskList({
         const dueToday = Boolean(
           task.due_at && !task.completed && isDueToday(task.due_at, today),
         );
+        const category = getCategoryDisplay(task.category_id, categoryLookup);
+        const categoryUnavailable =
+          task.category_id !== null && category === null;
+        const workspaceDisplay =
+          category ?? (categoryUnavailable ? null : NULL_CATEGORY_DISPLAY);
 
         return (
-          <li key={task.id}>
+          <li key={task.id} className="min-w-0">
             <Link
               href={`/dashboard/tasks?edit=${task.id}`}
-              className="flex items-start justify-between gap-3 py-2 transition hover:bg-stone-50/80 dark:hover:bg-stone-800/40"
+              className="flex min-w-0 flex-wrap items-start gap-x-2 gap-y-1 py-2 transition hover:bg-stone-50/80 dark:hover:bg-stone-800/40"
             >
-              <div className="min-w-0 px-0.5">
+              <CategoryBadge
+                category={workspaceDisplay}
+                unavailable={categoryUnavailable}
+                compact
+              />
+              <div className="min-w-0 flex-1 basis-[8rem]">
                 <p
-                  className={`text-sm font-medium leading-snug text-stone-900 dark:text-stone-100 ${
+                  className={`text-sm font-medium leading-snug break-words text-stone-900 dark:text-stone-100 ${
                     task.completed
                       ? "text-stone-400 line-through dark:text-stone-500"
                       : ""
@@ -286,7 +314,9 @@ export default async function DashboardPage() {
   const [{ data: tasks, error }, categoriesResult] = await Promise.all([
     supabase
       .from("tasks")
-      .select("id, title, description, due_at, reminder_at, completed, created_at")
+      .select(
+        "id, title, description, due_at, reminder_at, completed, created_at, category_id",
+      )
       .order("created_at", { ascending: false }),
     loadAccessibleCategories(supabase),
   ]);
@@ -295,6 +325,7 @@ export default async function DashboardPage() {
   const today = new Date();
   const now = new Date();
   const { mains } = buildCategoryTree(categoriesResult.categories);
+  const categoryLookup = buildCategoryLookup(categoriesResult.categories);
 
   const openTasks = allTasks.filter((task) => !task.completed);
   const homeTasks = sortOpenTasksForHome(openTasks, today).slice(0, 20);
@@ -347,7 +378,7 @@ export default async function DashboardPage() {
   return (
     <>
       <DashboardHeader title="Overview" email={user?.email} />
-      <div className="flex-1 overflow-auto p-3 sm:p-5 lg:p-6">
+      <div className="flex-1 overflow-auto overflow-x-hidden p-3 sm:p-5 lg:p-6">
         <div className="mx-auto max-w-3xl space-y-4">
           <div className="flex items-center gap-2.5">
             <UserAvatar name={displayName} avatarUrl={avatarUrl} size="sm" />
@@ -407,7 +438,7 @@ export default async function DashboardPage() {
                   key={main.id}
                   href={`/dashboard/tasks?category=${main.id}`}
                   className={`${filterChipClassName} ${filterChipIdleClassName}`}
-                  title={main.admin_note ?? main.name}
+                  title={main.admin_note ?? formatCategoryNameForDisplay(main.name)}
                 >
                   <span
                     className="inline-flex h-4 w-4 items-center justify-center rounded-full"
@@ -421,7 +452,7 @@ export default async function DashboardPage() {
                       className="h-2.5 w-2.5"
                     />
                   </span>
-                  {main.name}
+                  {formatCategoryNameForDisplay(main.name)}
                 </Link>
               ))}
             </div>
@@ -441,6 +472,7 @@ export default async function DashboardPage() {
             </div>
             <CompactTaskList
               tasks={homeTasks}
+              categoryLookup={categoryLookup}
               emptyMessage="No open tasks. Nice work."
               emptyAction={tasksLink}
             />

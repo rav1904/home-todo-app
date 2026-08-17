@@ -1,9 +1,8 @@
-export const fieldClassName =
-  "w-full rounded-xl border border-stone-200 bg-stone-50 px-3 py-2.5 text-sm text-stone-900 outline-none transition focus:border-emerald-500 focus:bg-white focus:ring-2 focus:ring-emerald-500/20 dark:border-stone-600 dark:bg-stone-800 dark:text-stone-100 dark:focus:border-emerald-500 dark:focus:bg-stone-800";
-
-/** Slightly denser controls for task add/edit forms. */
 export const compactFieldClassName =
-  "w-full rounded-lg border border-stone-200 bg-stone-50 px-3 py-2 text-sm text-stone-900 outline-none transition focus:border-emerald-500 focus:bg-white focus:ring-2 focus:ring-emerald-500/20 dark:border-stone-600 dark:bg-stone-800 dark:text-stone-100 dark:focus:border-emerald-500 dark:focus:bg-stone-800";
+  "w-full max-w-full min-w-0 rounded-lg border border-stone-200 bg-stone-50 px-3 py-2 text-sm text-stone-900 outline-none transition focus:border-emerald-500 focus:bg-white focus:ring-2 focus:ring-emerald-500/20 dark:border-stone-600 dark:bg-stone-800 dark:text-stone-100 dark:focus:border-emerald-500 dark:focus:bg-stone-800";
+
+export const fieldClassName =
+  "w-full max-w-full min-w-0 rounded-xl border border-stone-200 bg-stone-50 px-3 py-2.5 text-sm text-stone-900 outline-none transition focus:border-emerald-500 focus:bg-white focus:ring-2 focus:ring-emerald-500/20 dark:border-stone-600 dark:bg-stone-800 dark:text-stone-100 dark:focus:border-emerald-500 dark:focus:bg-stone-800";
 
 export const titleFieldClassName =
   "w-full rounded-lg border border-transparent bg-transparent px-0 py-1.5 text-base font-medium text-stone-900 outline-none transition placeholder:font-normal placeholder:text-stone-400 focus:border-transparent focus:ring-0 dark:text-stone-100 dark:placeholder:text-stone-500";
@@ -29,7 +28,7 @@ export const densePanelClassName =
 
 /** Compact task row — list density over card stack. */
 export const taskRowClassName =
-  "rounded-lg border border-stone-200/70 bg-white px-2.5 py-2 transition hover:border-stone-300 dark:border-stone-700/70 dark:bg-stone-900 dark:hover:border-stone-600";
+  "min-w-0 rounded-lg border border-stone-200/70 bg-white px-2.5 py-2 transition hover:border-stone-300 dark:border-stone-700/70 dark:bg-stone-900 dark:hover:border-stone-600";
 
 export const filterChipClassName =
   "inline-flex shrink-0 cursor-pointer items-center gap-1.5 rounded-full border px-2.5 py-1 text-xs font-medium transition";

@@ -94,7 +94,7 @@ export function AccessControlPanel({
                     <p className="font-medium text-stone-900 dark:text-stone-100">
                       {request.display_name || "Google user"}
                     </p>
-                    <p className="truncate text-sm text-stone-500 dark:text-stone-400">
+                    <p className="break-all text-sm text-stone-500 dark:text-stone-400">
                       {request.email}
                     </p>
                     <p className="mt-1 text-xs text-stone-400 dark:text-stone-500">
@@ -205,7 +205,7 @@ export function AccessControlPanel({
                   className="flex flex-col gap-2 px-4 py-3 sm:flex-row sm:items-center sm:justify-between"
                 >
                   <div className="min-w-0">
-                    <p className="truncate text-sm font-medium text-stone-900 dark:text-stone-100">
+                    <p className="break-all text-sm font-medium text-stone-900 dark:text-stone-100">
                       {row.email}
                       {isAdminRow ? (
                         <span className="ml-2 text-xs font-normal text-emerald-700 dark:text-emerald-400">
@@ -259,7 +259,7 @@ export function AccessControlPanel({
                 className="flex flex-col gap-2 px-4 py-3 sm:flex-row sm:items-center sm:justify-between"
               >
                 <div className="min-w-0">
-                  <p className="truncate text-sm font-medium text-stone-900 dark:text-stone-100">
+                  <p className="break-all text-sm font-medium text-stone-900 dark:text-stone-100">
                     {row.email}
                   </p>
                   <p className="text-xs text-stone-400 dark:text-stone-500">

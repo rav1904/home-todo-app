@@ -56,7 +56,7 @@ export default async function AdminLabelsPage() {
         description="Global labels and category links"
         email={user.email}
       />
-      <div className="flex-1 overflow-auto p-4 sm:p-6 lg:p-8">
+      <div className="flex-1 overflow-auto overflow-x-hidden p-4 sm:p-6 lg:p-8">
         {pageError ? (
           <div className={adminPageErrorClassName}>
             Could not load label management data: {pageError}

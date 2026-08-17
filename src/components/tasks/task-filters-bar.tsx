@@ -7,6 +7,7 @@ import {
   type TaskCategoryFilter,
   UNCategorized_FILTER_VALUE,
 } from "@/lib/categories/filter";
+import { formatCategoryNameForDisplay } from "@/lib/categories/display";
 import type { Category } from "@/lib/categories/types";
 import {
   buildCategoryLookup,
@@ -38,6 +39,9 @@ import {
   compactFieldClassName,
   densePanelClassName,
   fieldClassName,
+  filterChipActiveClassName,
+  filterChipClassName,
+  filterChipIdleClassName,
 } from "@/lib/ui/field-classes";
 import { ChevronDown, ChevronUp, Search } from "lucide-react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
@@ -159,9 +163,9 @@ export function TaskFiltersBar({ categories, labels }: TaskFiltersBarProps) {
         ? NO_LABEL_FILTER_VALUE
         : labelFilter.labelId;
 
-  const categoryFilterActive = categoryFilter.type !== "all";
+  const statusFilterActive = statusFilter !== "open";
   const labelFilterActive = labelFilter.type !== "all";
-  const statusFilterActive = statusFilter !== "all";
+  const categoryFilterActive = categoryFilter.type !== "all";
   const searchActive = searchQuery.length > 0;
   const sortActive = sort !== DEFAULT_TASK_SORT;
   const anyFilterActive =
@@ -172,7 +176,6 @@ export function TaskFiltersBar({ categories, labels }: TaskFiltersBarProps) {
     sortActive;
   const advancedActive =
     labelFilterActive ||
-    statusFilterActive ||
     sortActive ||
     categoryFilter.type === "uncategorized" ||
     categoryFilter.type === "sub";
@@ -271,6 +274,36 @@ export function TaskFiltersBar({ categories, labels }: TaskFiltersBarProps) {
         />
       ) : null}
 
+      <div
+        className="-mx-1 flex max-w-full gap-1.5 overflow-x-auto overscroll-x-contain px-1 pb-0.5 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+        role="tablist"
+        aria-label="Status filter"
+      >
+        {(
+          [
+            { id: "open", label: "Open" },
+            { id: "completed", label: "Completed" },
+            { id: "all", label: "All" },
+          ] as const
+        ).map((option) => {
+          const selected = statusFilter === option.id;
+          return (
+            <button
+              key={option.id}
+              type="button"
+              role="tab"
+              aria-selected={selected}
+              onClick={() => handleStatusChange(option.id)}
+              className={`${filterChipClassName} ${
+                selected ? filterChipActiveClassName : filterChipIdleClassName
+              }`}
+            >
+              {option.label}
+            </button>
+          );
+        })}
+      </div>
+
       <div className="flex flex-wrap items-center gap-2">
         <div className="relative min-w-0 flex-1 basis-[12rem]">
           <Search
@@ -322,25 +355,6 @@ export function TaskFiltersBar({ categories, labels }: TaskFiltersBarProps) {
         <div className="grid gap-2.5 border-t border-stone-100 pt-2.5 sm:grid-cols-2 lg:grid-cols-3 dark:border-stone-800">
           <div>
             <label
-              htmlFor="task-filter-status"
-              className="mb-1 block text-xs font-medium text-stone-500 dark:text-stone-400"
-            >
-              Status
-            </label>
-            <select
-              id="task-filter-status"
-              value={statusFilter}
-              onChange={(event) => handleStatusChange(event.target.value)}
-              className={fieldClassName}
-            >
-              <option value="all">All</option>
-              <option value="open">Open</option>
-              <option value="completed">Completed</option>
-            </select>
-          </div>
-
-          <div>
-            <label
               htmlFor="task-filter-sort"
               className="mb-1 block text-xs font-medium text-stone-500 dark:text-stone-400"
             >
@@ -379,7 +393,7 @@ export function TaskFiltersBar({ categories, labels }: TaskFiltersBarProps) {
                   <option value={UNCategorized_FILTER_VALUE}>Uncategorized</option>
                   {mains.map((main) => (
                     <option key={main.id} value={main.id}>
-                      {main.name}
+                      {formatCategoryNameForDisplay(main.name)}
                     </option>
                   ))}
                 </select>
@@ -402,7 +416,7 @@ export function TaskFiltersBar({ categories, labels }: TaskFiltersBarProps) {
                     <option value="">{subLabel}</option>
                     {subcategories.map((subcategory) => (
                       <option key={subcategory.id} value={subcategory.id}>
-                        {subcategory.name}
+                        {formatCategoryNameForDisplay(subcategory.name)}
                       </option>
                     ))}
                   </select>
@@ -463,7 +477,7 @@ export function TaskFiltersBar({ categories, labels }: TaskFiltersBarProps) {
           ) : null}
           {statusFilterActive ? (
             <span className="inline-flex rounded-full border border-stone-200 bg-stone-50 px-2 py-0.5 font-medium text-stone-700 dark:border-stone-600 dark:bg-stone-800 dark:text-stone-200">
-              {statusFilter === "open" ? "Open" : "Completed"}
+              {statusFilter === "completed" ? "Completed" : "All"}
             </span>
           ) : null}
           {categoryFilterDisplay ? (

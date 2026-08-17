@@ -1,33 +1,37 @@
 export type TaskStatusFilter = "all" | "open" | "completed";
 
+/** Default list view: incomplete tasks only. */
+export const DEFAULT_TASK_STATUS_FILTER: TaskStatusFilter = "open";
+
 export function parseStatusFilterParam(
   param: string | undefined,
 ): TaskStatusFilter {
-  if (param === "open" || param === "completed") {
+  if (param === "all" || param === "completed" || param === "open") {
     return param;
   }
 
-  return "all";
+  return DEFAULT_TASK_STATUS_FILTER;
 }
 
+/** Omit the default (open) from the URL for clean task-list links. */
 export function statusFilterToParam(
   filter: TaskStatusFilter,
 ): string | null {
-  return filter === "all" ? null : filter;
+  return filter === DEFAULT_TASK_STATUS_FILTER ? null : filter;
 }
 
 export function isStatusFilterActive(filter: TaskStatusFilter) {
-  return filter !== "all";
+  return filter !== DEFAULT_TASK_STATUS_FILTER;
 }
 
 export function getStatusFilterLabel(
   filter: TaskStatusFilter,
 ): string | null {
   switch (filter) {
-    case "all":
-      return null;
     case "open":
-      return "Open";
+      return null;
+    case "all":
+      return "All";
     case "completed":
       return "Completed";
   }

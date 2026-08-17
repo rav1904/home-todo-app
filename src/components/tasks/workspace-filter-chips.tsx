@@ -1,6 +1,7 @@
 "use client";
 
 import { CategoryIcon } from "@/lib/categories/icons";
+import { formatCategoryNameForDisplay } from "@/lib/categories/display";
 import type { Category } from "@/lib/categories/types";
 import { buildCategoryTree } from "@/lib/categories/tree";
 import {
@@ -30,7 +31,7 @@ export function WorkspaceFilterChips({
 
   return (
     <div
-      className={`-mx-1 flex gap-1.5 overflow-x-auto px-1 pb-0.5 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden ${className}`}
+      className={`-mx-1 flex max-w-full gap-1.5 overflow-x-auto overscroll-x-contain px-1 pb-0.5 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden ${className}`}
       role="tablist"
       aria-label="Workspace filter"
     >
@@ -49,6 +50,7 @@ export function WorkspaceFilterChips({
       </button>
       {mains.map((main) => {
         const selected = activeId === main.id;
+        const name = formatCategoryNameForDisplay(main.name);
         return (
           <button
             key={main.id}
@@ -59,7 +61,7 @@ export function WorkspaceFilterChips({
             className={`${filterChipClassName} ${
               selected ? filterChipActiveClassName : filterChipIdleClassName
             }`}
-            title={main.admin_note ?? main.name}
+            title={main.admin_note ?? name}
           >
             <span
               className={`inline-flex h-4 w-4 items-center justify-center rounded-full ${
@@ -73,7 +75,7 @@ export function WorkspaceFilterChips({
             >
               <CategoryIcon iconName={main.icon_name} className="h-2.5 w-2.5" />
             </span>
-            {main.name}
+            {name}
           </button>
         );
       })}

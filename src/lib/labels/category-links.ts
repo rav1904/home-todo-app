@@ -1,4 +1,5 @@
 import type { Category } from "@/lib/categories/types";
+import { formatCategoryNameForDisplay } from "@/lib/categories/display";
 import type { SupabaseClient } from "@supabase/supabase-js";
 
 export type LabelCategoryLink = {
@@ -41,12 +42,15 @@ export function getLinkedCategorySummary(
     .map((categoryId) => categoryLookup.get(categoryId))
     .filter((category): category is Category => category !== undefined)
     .map((category) => {
+      const name = formatCategoryNameForDisplay(category.name);
       if (!category.parent_id) {
-        return category.name;
+        return name;
       }
 
       const parent = categoryLookup.get(category.parent_id);
-      return parent ? `${parent.name} > ${category.name}` : category.name;
+      return parent
+        ? `${formatCategoryNameForDisplay(parent.name)} > ${name}`
+        : name;
     })
     .sort((left, right) => left.localeCompare(right));
 

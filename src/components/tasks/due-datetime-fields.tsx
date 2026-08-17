@@ -1,10 +1,20 @@
 "use client";
 
-import { normalizeDatetimeLocalValue } from "@/lib/tasks/due-datetime";
+import {
+  DUE_TIME_OPTIONS,
+  datetimeLocalHasExplicitTime,
+  joinDatetimeLocalValue,
+  normalizeLocalTimeString,
+  splitDatetimeLocalValue,
+} from "@/lib/tasks/due-datetime";
 import {
   compactFieldClassName,
   formLabelClassName,
+  toolbarIconButtonActiveClassName,
+  toolbarIconButtonClassName,
 } from "@/lib/ui/field-classes";
+import { Clock } from "lucide-react";
+import { useEffect, useState } from "react";
 
 type DueDatetimeFieldsProps = {
   id: string;
@@ -20,15 +30,69 @@ export function DueDatetimeFields({
   id,
   value,
   onChange,
-  label = "Due",
+  label = "Due date",
   optional = true,
   labelClassName = formLabelClassName,
   className = compactFieldClassName,
 }: DueDatetimeFieldsProps) {
-  const inputValue = value ? normalizeDatetimeLocalValue(value) : "";
+  const parts = splitDatetimeLocalValue(value);
+  const dateValue = parts?.date ?? "";
+  const timeValue = parts?.time ?? "";
+  const hasExplicitTime = datetimeLocalHasExplicitTime(value);
+  const [timeOpen, setTimeOpen] = useState(hasExplicitTime);
+
+  useEffect(() => {
+    if (hasExplicitTime) {
+      setTimeOpen(true);
+    }
+  }, [hasExplicitTime]);
+
+  function emit(date: string, time: string | null) {
+    if (!date) {
+      onChange("");
+      return;
+    }
+
+    onChange(joinDatetimeLocalValue(date, time ?? "00:00"));
+  }
+
+  function handleDateChange(nextDate: string) {
+    if (!nextDate) {
+      onChange("");
+      setTimeOpen(false);
+      return;
+    }
+
+    emit(nextDate, timeOpen && hasExplicitTime ? timeValue : "00:00");
+  }
+
+  function handleTimeChange(nextTime: string) {
+    if (!dateValue) {
+      return;
+    }
+
+    if (!nextTime) {
+      emit(dateValue, "00:00");
+      return;
+    }
+
+    emit(dateValue, normalizeLocalTimeString(nextTime));
+  }
+
+  function toggleTime() {
+    if (timeOpen) {
+      if (dateValue) {
+        emit(dateValue, "00:00");
+      }
+      setTimeOpen(false);
+      return;
+    }
+
+    setTimeOpen(true);
+  }
 
   return (
-    <div>
+    <div className="min-w-0">
       <label htmlFor={id} className={labelClassName}>
         {label}
         {optional ? (
@@ -38,28 +102,53 @@ export function DueDatetimeFields({
           </span>
         ) : null}
       </label>
-      <input
-        id={id}
-        type="datetime-local"
-        step={300}
-        value={inputValue}
-        onChange={(event) => {
-          const next = event.target.value;
-          onChange(next ? normalizeDatetimeLocalValue(next) : "");
-        }}
-        onBlur={(event) => {
-          const next = event.target.value;
-          if (!next) {
-            return;
-          }
+      <div className="flex min-w-0 flex-wrap items-center gap-1.5">
+        <input
+          id={id}
+          type="date"
+          value={dateValue}
+          onChange={(event) => handleDateChange(event.target.value)}
+          className={`${className} min-w-0 flex-1 basis-[10rem]`}
+        />
+        <button
+          type="button"
+          onClick={toggleTime}
+          aria-label={timeOpen ? "Hide due time" : "Add due time"}
+          aria-pressed={timeOpen}
+          title={timeOpen ? "Hide time" : "Add time"}
+          className={`${toolbarIconButtonClassName} ${
+            timeOpen || hasExplicitTime ? toolbarIconButtonActiveClassName : ""
+          }`}
+        >
+          <Clock className="h-4 w-4" aria-hidden />
+        </button>
+      </div>
 
-          const normalized = normalizeDatetimeLocalValue(next);
-          if (normalized !== next) {
-            onChange(normalized);
-          }
-        }}
-        className={className}
-      />
+      {timeOpen ? (
+        <div className="mt-2 min-w-0">
+          <label htmlFor={`${id}-time`} className={labelClassName}>
+            Time
+            <span className="font-normal text-stone-400 dark:text-stone-500">
+              {" "}
+              · optional
+            </span>
+          </label>
+          <select
+            id={`${id}-time`}
+            value={hasExplicitTime ? timeValue : ""}
+            onChange={(event) => handleTimeChange(event.target.value)}
+            disabled={!dateValue}
+            className={`${className} min-w-0`}
+          >
+            <option value="">No specific time</option>
+            {DUE_TIME_OPTIONS.map((option) => (
+              <option key={option} value={option}>
+                {option}
+              </option>
+            ))}
+          </select>
+        </div>
+      ) : null}
     </div>
   );
 }

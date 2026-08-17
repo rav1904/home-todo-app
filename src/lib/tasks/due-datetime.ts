@@ -76,6 +76,28 @@ export function joinDatetimeLocalValue(date: string, time: string): string {
   return `${date}T${normalizeLocalTimeString(time || "00:00")}`;
 }
 
+/** True when local time is set to something other than midnight (date-only convention). */
+export function datetimeLocalHasExplicitTime(value: string): boolean {
+  const parts = splitDatetimeLocalValue(value);
+  if (!parts?.time) {
+    return false;
+  }
+
+  return parts.time !== "00:00";
+}
+
+/** True when the stored ISO timestamp has a non-midnight local time. */
+export function isoHasExplicitTime(iso: string | null | undefined): boolean {
+  if (!iso) {
+    return false;
+  }
+
+  const date = new Date(iso);
+  return (
+    date.getHours() !== 0 || date.getMinutes() !== 0 || date.getSeconds() !== 0
+  );
+}
+
 export function normalizeDatetimeLocalValue(value: string): string {
   const parts = splitDatetimeLocalValue(value);
   if (!parts) {

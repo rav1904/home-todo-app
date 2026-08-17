@@ -1,4 +1,5 @@
 import { sortMainsPersonalFirst } from "@/lib/categories/access";
+import { formatCategoryNameForDisplay } from "@/lib/categories/display";
 import { sortCategories } from "@/lib/categories/sort";
 import type { Category } from "@/lib/categories/types";
 
@@ -103,22 +104,27 @@ export function getCategoryDisplay(
     return null;
   }
 
+  const name = formatCategoryNameForDisplay(category.name);
+
   if (category.parent_id) {
     const parent = lookup.get(category.parent_id);
+    const parentName = parent
+      ? formatCategoryNameForDisplay(parent.name)
+      : null;
     return {
       id: category.id,
-      name: category.name,
+      name,
       colour: category.colour,
       icon_name: category.icon_name,
-      label: parent ? `${parent.name} > ${category.name}` : category.name,
+      label: parentName ? `${parentName} > ${name}` : name,
     };
   }
 
   return {
     id: category.id,
-    name: category.name,
+    name,
     colour: category.colour,
     icon_name: category.icon_name,
-    label: category.name,
+    label: name,
   };
 }
