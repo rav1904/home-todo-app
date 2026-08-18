@@ -119,7 +119,7 @@ export function DueDatetimeFields({
           type="date"
           value={dateValue}
           onChange={(event) => handleDateChange(event.target.value)}
-          className={`${className} min-w-0 flex-1 basis-[9rem]`}
+          className={`${className} min-h-11 min-w-0 flex-1 basis-[9rem]`}
         />
         <button
           type="button"

@@ -257,8 +257,8 @@ export function AddTaskForm({
       onSubmit={handleSubmit}
       className={
         embedded
-          ? "min-w-0 space-y-2"
-          : `${densePanelClassName} min-w-0 space-y-2 p-3`
+          ? "min-w-0 space-y-2.5"
+          : `${densePanelClassName} min-w-0 space-y-2.5 p-3`
       }
     >
       {showHeading ? (
@@ -267,7 +267,7 @@ export function AddTaskForm({
         </h2>
       ) : null}
 
-      <div className="flex min-w-0 items-center gap-2">
+      <div className="flex min-w-0 items-stretch gap-2">
         <div className="min-w-0 flex-1">
           <label htmlFor="task-title" className="sr-only">
             Title
@@ -279,26 +279,26 @@ export function AddTaskForm({
             autoFocus={embedded}
             value={title}
             onChange={(event) => setTitle(event.target.value)}
-            className={titleFieldClassName}
+            className={`${titleFieldClassName} min-h-11`}
             placeholder="What needs doing?"
           />
         </div>
         <button
           type="submit"
           disabled={loading}
-          className={`${formPrimaryButtonClassName} shrink-0`}
+          className={`${formPrimaryButtonClassName} min-h-11 shrink-0 self-center`}
         >
           {loading ? "…" : "Add"}
         </button>
       </div>
 
-      <div className="grid min-w-0 gap-2 sm:grid-cols-2">
+      <div className="grid min-w-0 gap-2.5 sm:grid-cols-2">
         <CategorySelect
           id="task-category"
           categories={categories}
           value={categoryId}
           onChange={setCategoryId}
-          className={compactFieldClassName}
+          className={`${compactFieldClassName} min-h-11`}
           compact
         />
         <DueDatetimeFields
@@ -308,7 +308,7 @@ export function AddTaskForm({
         />
       </div>
 
-      <div className="flex flex-wrap items-center gap-0.5">
+      <div className="flex flex-wrap items-center gap-1">
         <ToolbarButton
           label="Priority"
           active={openPanel === "priority"}
@@ -351,7 +351,7 @@ export function AddTaskForm({
         </ToolbarButton>
       </div>
 
-      {openPanel === "priority" || hasPriority ? (
+      {openPanel === "priority" ? (
         <PanelShell>
           <PrioritySelect
             id="task-priority"
@@ -361,7 +361,7 @@ export function AddTaskForm({
         </PanelShell>
       ) : null}
 
-      {openPanel === "reminder" || hasReminder ? (
+      {openPanel === "reminder" ? (
         <PanelShell>
           <ReminderFields
             id="task-reminder"
@@ -372,7 +372,7 @@ export function AddTaskForm({
         </PanelShell>
       ) : null}
 
-      {openPanel === "repeat" || hasRepeat ? (
+      {openPanel === "repeat" ? (
         <PanelShell>
           <RecurrenceSelect
             id="task-recurrence"
@@ -383,7 +383,7 @@ export function AddTaskForm({
         </PanelShell>
       ) : null}
 
-      {openPanel === "labels" || hasLabels ? (
+      {openPanel === "labels" ? (
         <PanelShell>
           <LabelSelect
             id="task-labels"
@@ -400,7 +400,7 @@ export function AddTaskForm({
         </PanelShell>
       ) : null}
 
-      {openPanel === "notes" || hasNotes ? (
+      {openPanel === "notes" ? (
         <PanelShell>
           <label htmlFor="task-description" className={formLabelClassName}>
             Notes

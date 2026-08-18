@@ -31,7 +31,7 @@ export function WorkspaceFilterChips({
 
   return (
     <div
-      className={`-mx-1 flex max-w-full gap-1.5 overflow-x-auto overscroll-x-contain px-1 pb-0.5 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden ${className}`}
+      className={`flex max-w-full gap-2 overflow-x-auto overscroll-x-contain pb-0.5 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden ${className}`}
       role="tablist"
       aria-label="Workspace filter"
     >
@@ -58,13 +58,13 @@ export function WorkspaceFilterChips({
             role="tab"
             aria-selected={selected}
             onClick={() => onSelect(main.id)}
-            className={`${filterChipClassName} ${
+            className={`${filterChipClassName} max-w-[11rem] ${
               selected ? filterChipActiveClassName : filterChipIdleClassName
             }`}
             title={main.admin_note ?? name}
           >
             <span
-              className={`inline-flex h-4 w-4 items-center justify-center rounded-full ${
+              className={`inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-full ${
                 selected ? "bg-white/20" : ""
               }`}
               style={
@@ -73,9 +73,9 @@ export function WorkspaceFilterChips({
                   : { backgroundColor: `${main.colour}22`, color: main.colour }
               }
             >
-              <CategoryIcon iconName={main.icon_name} className="h-2.5 w-2.5" />
+              <CategoryIcon iconName={main.icon_name} className="h-3 w-3" />
             </span>
-            {name}
+            <span className="truncate">{name}</span>
           </button>
         );
       })}

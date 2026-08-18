@@ -223,33 +223,11 @@ export default async function TasksPage({ searchParams }: TasksPageProps) {
         title="Tasks"
         email={user?.email}
       />
-      <div className="flex-1 space-y-3 overflow-auto overflow-x-hidden p-3 sm:p-5 lg:p-6">
-        <AddTaskForm
-          categories={activeCategories}
-          labels={activeLabels}
-          categoryIdsByLabelId={categoryIdsByLabelId}
-          defaultCategoryId={personalCategoryId}
-        />
-
-        {labelsError ? (
-          <div className="rounded-xl border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-800">
-            Could not load labels: {labelsError.message}
-          </div>
-        ) : null}
-
-        {labelCategoryLinksError ? (
-          <div className="rounded-xl border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-800">
-            Could not load label category links:{" "}
-            {labelCategoryLinksError.message}
-          </div>
-        ) : null}
-
+      <div className="mx-auto flex w-full max-w-3xl flex-1 flex-col space-y-3 overflow-auto overflow-x-hidden p-3 sm:p-4 lg:p-5">
         <Suspense
           fallback={
-            <div className="rounded-xl border border-stone-200 bg-white p-3 dark:border-stone-700 dark:bg-stone-900">
-              <p className="text-sm text-stone-500 dark:text-stone-400">
-                Loading filters...
-              </p>
+            <div className="min-h-10 text-sm text-stone-500 dark:text-stone-400">
+              Loading filters...
             </div>
           }
         >
@@ -259,38 +237,58 @@ export default async function TasksPage({ searchParams }: TasksPageProps) {
           />
         </Suspense>
 
+        <AddTaskForm
+          categories={activeCategories}
+          labels={activeLabels}
+          categoryIdsByLabelId={categoryIdsByLabelId}
+          defaultCategoryId={personalCategoryId}
+        />
+
+        {labelsError ? (
+          <div className="rounded-xl border border-amber-200 bg-amber-50 px-3 py-2 text-sm break-words text-amber-800">
+            Could not load labels: {labelsError.message}
+          </div>
+        ) : null}
+
+        {labelCategoryLinksError ? (
+          <div className="rounded-xl border border-amber-200 bg-amber-50 px-3 py-2 text-sm break-words text-amber-800">
+            Could not load label category links:{" "}
+            {labelCategoryLinksError.message}
+          </div>
+        ) : null}
+
         {categoriesError ? (
-          <div className="rounded-xl border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-800">
+          <div className="rounded-xl border border-amber-200 bg-amber-50 px-3 py-2 text-sm break-words text-amber-800">
             Could not load categories: {categoriesError.message}
           </div>
         ) : null}
 
         {error ? (
-          <div className="rounded-xl border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
+          <div className="rounded-xl border border-red-200 bg-red-50 px-3 py-2 text-sm break-words text-red-700">
             Could not load tasks: {error.message}
           </div>
         ) : null}
 
         {taskLabelsError ? (
-          <div className="rounded-xl border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-800">
+          <div className="rounded-xl border border-amber-200 bg-amber-50 px-3 py-2 text-sm break-words text-amber-800">
             Could not load task labels: {taskLabelsError}
           </div>
         ) : null}
 
         {historyError ? (
-          <div className="rounded-xl border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-800">
+          <div className="rounded-xl border border-amber-200 bg-amber-50 px-3 py-2 text-sm break-words text-amber-800">
             Could not load due date history: {historyError}
           </div>
         ) : null}
 
         {subtasksError ? (
-          <div className="rounded-xl border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-800 dark:border-amber-900/50 dark:bg-amber-950/40 dark:text-amber-300">
+          <div className="rounded-xl border border-amber-200 bg-amber-50 px-3 py-2 text-sm break-words text-amber-800 dark:border-amber-900/50 dark:bg-amber-950/40 dark:text-amber-300">
             Could not load subtasks: {subtasksError}
           </div>
         ) : null}
 
         {allTasks.length > 0 && tasksToRender.length > 0 ? (
-          <ul className="space-y-1.5">
+          <ul className="min-w-0 overflow-hidden rounded-xl border border-stone-200/80 bg-white px-2 dark:border-stone-700/80 dark:bg-stone-900">
             {tasksToRender.map((task) => {
               const dueDateHistory = historyByTaskId[task.id] ?? {
                 dueDateUpdateCount: 0,

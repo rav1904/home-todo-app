@@ -105,6 +105,7 @@ export function CategorySelect({
 type CategoryBadgeProps = {
   category: {
     label: string;
+    name?: string;
     colour: string;
     icon_name: string;
   } | null;
@@ -121,9 +122,9 @@ export function CategoryBadge({
   if (unavailable) {
     return (
       <span
-        className={`inline-flex max-w-[9rem] shrink-0 items-center truncate rounded-md bg-stone-100 font-medium text-stone-500 dark:bg-stone-800 dark:text-stone-400 ${
+        className={`inline-flex max-w-[7.5rem] shrink-0 items-center truncate rounded-md bg-stone-100 font-medium text-stone-500 dark:bg-stone-800 dark:text-stone-400 ${
           compact
-            ? "gap-1 px-1.5 py-0.5 text-[11px] leading-none"
+            ? "gap-1 px-1.5 py-1 text-xs leading-none"
             : "gap-1.5 rounded-full px-2.5 py-0.5 text-xs leading-none"
         }`}
       >
@@ -136,11 +137,17 @@ export function CategoryBadge({
     return null;
   }
 
+  const displayName = formatCategoryNameForDisplay(
+    compact
+      ? (category.name ?? category.label.split(">").pop()?.trim() ?? category.label)
+      : category.label,
+  );
+
   return (
     <span
-      className={`inline-flex max-w-[9rem] shrink-0 items-center font-medium text-white ${
+      className={`inline-flex max-w-[7.5rem] shrink-0 items-center font-medium text-white ${
         compact
-          ? "gap-1 rounded-md px-1.5 py-0.5 text-[11px] leading-none"
+          ? "gap-1 rounded-md px-1.5 py-1 text-xs leading-none"
           : "gap-1.5 rounded-full px-2.5 py-0.5 text-xs leading-none"
       }`}
       style={{ backgroundColor: category.colour }}
@@ -150,7 +157,7 @@ export function CategoryBadge({
         iconName={category.icon_name}
         className={compact ? "h-3 w-3 shrink-0" : "h-3.5 w-3.5 shrink-0"}
       />
-      <span className="truncate">{category.label}</span>
+      <span className="truncate">{displayName}</span>
     </span>
   );
 }
