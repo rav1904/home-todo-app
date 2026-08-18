@@ -9,12 +9,13 @@ import type { SubtaskProgress } from "@/lib/tasks/subtasks/progress";
 import type { TaskSubtask } from "@/lib/tasks/subtasks/types";
 import {
   addDays,
+  dueAtToCalendarDayKey,
   getWeekStartDayKey,
   isSameLocalDay,
   localDayKeyToDate,
-  startOfLocalDay,
   toLocalDayKey,
 } from "@/lib/tasks/local-dates";
+import { isFocusDueOverdue } from "@/lib/tasks/focus";
 
 export type CalendarTask = {
   id: string;
@@ -92,7 +93,7 @@ export function groupCalendarTasksByDay(tasks: CalendarTask[]) {
   const grouped: Record<string, CalendarTask[]> = {};
 
   for (const task of tasks) {
-    const dayKey = toLocalDayKey(task.dueAt);
+    const dayKey = dueAtToCalendarDayKey(task.dueAt);
 
     if (!grouped[dayKey]) {
       grouped[dayKey] = [];
@@ -102,10 +103,17 @@ export function groupCalendarTasksByDay(tasks: CalendarTask[]) {
   }
 
   for (const dayKey of Object.keys(grouped)) {
-    grouped[dayKey].sort(
-      (left, right) =>
-        new Date(left.dueAt).getTime() - new Date(right.dueAt).getTime(),
-    );
+    grouped[dayKey].sort((left, right) => {
+      // Date-only tasks sort before timed ones on the same day.
+      const leftKey = dueAtToCalendarDayKey(left.dueAt);
+      const rightKey = dueAtToCalendarDayKey(right.dueAt);
+      if (leftKey !== rightKey) {
+        return leftKey.localeCompare(rightKey);
+      }
+      return (
+        new Date(left.dueAt).getTime() - new Date(right.dueAt).getTime()
+      );
+    });
   }
 
   return grouped;
@@ -138,12 +146,11 @@ export function splitListCalendarTasks(
   tasks: CalendarTask[],
   today = new Date(),
 ) {
-  const todayStart = startOfLocalDay(today);
   const overdue: CalendarTask[] = [];
   const upcoming: CalendarTask[] = [];
 
   for (const task of tasks) {
-    if (new Date(task.dueAt) < todayStart) {
+    if (isFocusDueOverdue(task.dueAt, today)) {
       overdue.push(task);
     } else {
       upcoming.push(task);

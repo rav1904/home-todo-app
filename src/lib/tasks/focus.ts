@@ -1,4 +1,10 @@
-import { endOfLocalDay, startOfLocalDay } from "@/lib/tasks/local-dates";
+import {
+  dueAtToCalendarDayKey,
+  endOfLocalDay,
+  startOfLocalDay,
+  toLocalDayKey,
+} from "@/lib/tasks/local-dates";
+import { isoHasExplicitTime } from "@/lib/tasks/due-datetime";
 import {
   comparePriorityDesc,
   parseTaskPriority,
@@ -25,10 +31,18 @@ export type FocusSections<T extends FocusTaskLike> = {
 };
 
 export function isFocusDueOverdue(dueAt: string, now = new Date()) {
+  if (!isoHasExplicitTime(dueAt)) {
+    return dueAtToCalendarDayKey(dueAt) < toLocalDayKey(now);
+  }
+
   return new Date(dueAt).getTime() < startOfLocalDay(now).getTime();
 }
 
 export function isFocusDueToday(dueAt: string, now = new Date()) {
+  if (!isoHasExplicitTime(dueAt)) {
+    return dueAtToCalendarDayKey(dueAt) === toLocalDayKey(now);
+  }
+
   const due = new Date(dueAt).getTime();
   return (
     due >= startOfLocalDay(now).getTime() &&
@@ -37,6 +51,10 @@ export function isFocusDueToday(dueAt: string, now = new Date()) {
 }
 
 export function isFocusDueAfterToday(dueAt: string, now = new Date()) {
+  if (!isoHasExplicitTime(dueAt)) {
+    return dueAtToCalendarDayKey(dueAt) > toLocalDayKey(now);
+  }
+
   return new Date(dueAt).getTime() > endOfLocalDay(now).getTime();
 }
 

@@ -13,11 +13,15 @@ import type {
   CalendarModalTask,
   CalendarTask,
 } from "@/lib/tasks/calendar";
+import {
+  groupCalendarTasksByDay,
+  splitListCalendarTasks,
+} from "@/lib/tasks/calendar";
 import type {
   CalendarNavLinks,
   CalendarView,
 } from "@/lib/tasks/calendar-params";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 
 type ViewSwitcherLink = {
   view: CalendarView;
@@ -32,10 +36,7 @@ type CalendarClientShellProps = {
   monthDays: CalendarDayCell[];
   weekDays: CalendarDayCell[];
   dateKey: string;
-  tasksByDay: Record<string, CalendarTask[]>;
-  listOverdue: CalendarTask[];
-  listUpcomingByDay: Record<string, CalendarTask[]>;
-  listUpcomingDayKeys: string[];
+  calendarTasks: CalendarTask[];
   modalTasksById: Record<string, CalendarModalTask>;
   categories: Category[];
   labels: Label[];
@@ -50,10 +51,7 @@ export function CalendarClientShell({
   monthDays,
   weekDays,
   dateKey,
-  tasksByDay,
-  listOverdue,
-  listUpcomingByDay,
-  listUpcomingDayKeys,
+  calendarTasks,
   modalTasksById,
   categories,
   labels,
@@ -62,6 +60,19 @@ export function CalendarClientShell({
 }: CalendarClientShellProps) {
   const [selectedTaskId, setSelectedTaskId] = useState<string | null>(null);
   const selectedTask = selectedTaskId ? modalTasksById[selectedTaskId] : null;
+
+  // Group in the browser so date-only dues use the user's local calendar day.
+  const tasksByDay = useMemo(
+    () => groupCalendarTasksByDay(calendarTasks),
+    [calendarTasks],
+  );
+  const listGroups = useMemo(
+    () =>
+      view === "list"
+        ? splitListCalendarTasks(calendarTasks)
+        : { overdue: [], upcomingByDay: {}, upcomingDayKeys: [] },
+    [calendarTasks, view],
+  );
 
   useEffect(() => {
     if (selectedTaskId && !modalTasksById[selectedTaskId]) {
@@ -102,9 +113,9 @@ export function CalendarClientShell({
       {view === "list" ? (
         <ListCalendar
           nav={nav}
-          overdue={listOverdue}
-          upcomingByDay={listUpcomingByDay}
-          upcomingDayKeys={listUpcomingDayKeys}
+          overdue={listGroups.overdue}
+          upcomingByDay={listGroups.upcomingByDay}
+          upcomingDayKeys={listGroups.upcomingDayKeys}
           onTaskSelect={setSelectedTaskId}
         />
       ) : null}

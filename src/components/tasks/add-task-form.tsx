@@ -13,7 +13,7 @@ import { getPersonalCategoryId } from "@/lib/categories/access";
 import type { Category } from "@/lib/categories/types";
 import type { Label } from "@/lib/labels/types";
 import { syncTaskLabels } from "@/lib/labels/sync-task-labels";
-import { datetimeLocalValueToIso } from "@/lib/tasks/due-datetime";
+import { datetimeLocalValueToIso, joinDatetimeLocalValue } from "@/lib/tasks/due-datetime";
 import type { TaskPriority } from "@/lib/tasks/priority";
 import {
   DEFAULT_TASK_RECURRENCE,
@@ -46,6 +46,8 @@ type AddTaskFormProps = {
   labels: Label[];
   categoryIdsByLabelId?: Record<string, string[]>;
   defaultCategoryId?: string | null;
+  /** YYYY-MM-DD or datetime-local value; time stays optional unless included. */
+  defaultDueAt?: string | null;
   showHeading?: boolean;
   embedded?: boolean;
   onSuccess?: () => void;
@@ -95,6 +97,7 @@ export function AddTaskForm({
   labels,
   categoryIdsByLabelId = {},
   defaultCategoryId = null,
+  defaultDueAt = null,
   showHeading = true,
   embedded = false,
   onSuccess,
@@ -102,10 +105,19 @@ export function AddTaskForm({
   const router = useRouter();
   const personalDefault =
     defaultCategoryId ?? getPersonalCategoryId(categories);
+  const initialDueAt = useMemo(() => {
+    if (!defaultDueAt) {
+      return "";
+    }
+    if (/^\d{4}-\d{2}-\d{2}$/.test(defaultDueAt)) {
+      return joinDatetimeLocalValue(defaultDueAt, "00:00");
+    }
+    return defaultDueAt;
+  }, [defaultDueAt]);
 
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
-  const [dueAt, setDueAt] = useState("");
+  const [dueAt, setDueAt] = useState(initialDueAt);
   const [reminder, setReminder] = useState<ReminderFormState>(
     emptyReminderFormState,
   );
@@ -222,7 +234,7 @@ export function AddTaskForm({
 
     setTitle("");
     setDescription("");
-    setDueAt("");
+    setDueAt(initialDueAt);
     setReminder(emptyReminderFormState());
     setPriority(DEFAULT_TASK_PRIORITY);
     setRecurrence(DEFAULT_TASK_RECURRENCE);

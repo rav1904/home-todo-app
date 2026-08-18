@@ -15,9 +15,37 @@ import {
 import { LABEL_SELECT_FIELDS, type Label } from "@/lib/labels/types";
 import { createClient } from "@/lib/supabase/client";
 import { Plus, X } from "lucide-react";
-import { useCallback, useEffect, useState } from "react";
+import { usePathname, useSearchParams } from "next/navigation";
+import { useCallback, useEffect, useMemo, useState } from "react";
+
+function readCalendarDayDefaultDue(
+  pathname: string,
+  searchParams: URLSearchParams,
+): string | null {
+  if (!pathname.startsWith("/dashboard/calendar")) {
+    return null;
+  }
+
+  if (searchParams.get("view") !== "day") {
+    return null;
+  }
+
+  const date = searchParams.get("date");
+  if (date && /^\d{4}-\d{2}-\d{2}$/.test(date)) {
+    return date;
+  }
+
+  return null;
+}
 
 export function QuickAddTaskLauncher() {
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
+  const defaultDueAt = useMemo(
+    () => readCalendarDayDefaultDue(pathname, searchParams),
+    [pathname, searchParams],
+  );
+
   const [open, setOpen] = useState(false);
   const [categories, setCategories] = useState<Category[]>([]);
   const [personalCategoryId, setPersonalCategoryId] = useState<string | null>(
@@ -171,10 +199,12 @@ export function QuickAddTaskLauncher() {
               </p>
             ) : (
               <AddTaskForm
+                key={defaultDueAt ?? "no-default-due"}
                 categories={categories}
                 labels={labels}
                 categoryIdsByLabelId={categoryIdsByLabelId}
                 defaultCategoryId={personalCategoryId}
+                defaultDueAt={defaultDueAt}
                 showHeading={false}
                 embedded
                 onSuccess={() => setOpen(false)}

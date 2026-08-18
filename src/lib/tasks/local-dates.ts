@@ -1,3 +1,5 @@
+import { isoHasExplicitTime } from "@/lib/tasks/due-datetime";
+
 export function startOfLocalDay(date: Date = new Date()) {
   const start = new Date(date);
   start.setHours(0, 0, 0, 0);
@@ -23,6 +25,31 @@ export function toLocalDayKey(value: Date | string) {
   const day = String(date.getDate()).padStart(2, "0");
 
   return `${year}-${month}-${day}`;
+}
+
+/**
+ * Calendar grouping key for a due_at ISO timestamp.
+ * - Canonical date-only (…T00:00:00.000Z): use the YYYY-MM-DD prefix (selected date).
+ * - Timed / legacy local-midnight: use the environment's local calendar date.
+ * Prefer calling this in the browser so legacy date-only tasks land on the user's day.
+ */
+export function dueAtToCalendarDayKey(dueAt: string) {
+  const canonical = dueAt.match(
+    /^(\d{4}-\d{2}-\d{2})T00:00:00(?:\.\d{1,3})?Z$/i,
+  );
+  if (canonical) {
+    return canonical[1];
+  }
+
+  return toLocalDayKey(dueAt);
+}
+
+/** Widen a fetch window so timezone-shifted dues are not dropped before client grouping. */
+export function expandRangeForTimezoneSkew(start: Date, end: Date) {
+  return {
+    start: addDays(start, -1),
+    end: addDays(end, 1),
+  };
 }
 
 export function parseMonthParam(
@@ -85,6 +112,14 @@ export function formatTaskTime(value: string) {
     hour: "numeric",
     minute: "2-digit",
   });
+}
+
+/** Time label for calendar chips; empty for date-only dues. */
+export function formatTaskTimeLabel(value: string) {
+  if (!isoHasExplicitTime(value)) {
+    return null;
+  }
+  return formatTaskTime(value);
 }
 
 export function parseDateParam(

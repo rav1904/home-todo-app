@@ -1,18 +1,14 @@
 import { CalendarClientShell } from "@/components/calendar/calendar-client-shell";
 import { DashboardHeader } from "@/components/dashboard/header";
 import { fetchCalendarPageData } from "@/lib/tasks/build-calendar-tasks";
-import {
-  buildMonthGrid,
-  buildWeekDays,
-  groupCalendarTasksByDay,
-  splitListCalendarTasks,
-} from "@/lib/tasks/calendar";
+import { buildMonthGrid, buildWeekDays } from "@/lib/tasks/calendar";
 import {
   buildCalendarNavLinks,
   buildViewSwitcherLinks,
   parseCalendarParams,
 } from "@/lib/tasks/calendar-params";
 import {
+  expandRangeForTimezoneSkew,
   getDayBounds,
   getMonthBounds,
   getWeekBounds,
@@ -48,17 +44,26 @@ export default async function CalendarPage({ searchParams }: CalendarPageProps) 
         calendarParams.year,
         calendarParams.month,
       );
-      fetchOptions = { mode: "range", start, end };
+      fetchOptions = {
+        mode: "range",
+        ...expandRangeForTimezoneSkew(start, end),
+      };
       break;
     }
     case "day": {
       const { start, end } = getDayBounds(calendarParams.dateKey);
-      fetchOptions = { mode: "range", start, end };
+      fetchOptions = {
+        mode: "range",
+        ...expandRangeForTimezoneSkew(start, end),
+      };
       break;
     }
     case "week": {
       const { start, end } = getWeekBounds(calendarParams.dateKey);
-      fetchOptions = { mode: "range", start, end };
+      fetchOptions = {
+        mode: "range",
+        ...expandRangeForTimezoneSkew(start, end),
+      };
       break;
     }
     case "list":
@@ -81,12 +86,6 @@ export default async function CalendarPage({ searchParams }: CalendarPageProps) 
     categoryIdsByLabelId,
     currentUserId,
   } = await fetchCalendarPageData(supabase, fetchOptions);
-
-  const tasksByDay = groupCalendarTasksByDay(calendarTasks);
-  const listGroups =
-    calendarParams.view === "list"
-      ? splitListCalendarTasks(calendarTasks)
-      : { overdue: [], upcomingByDay: {}, upcomingDayKeys: [] };
 
   const warningMessages = [
     categoriesError ? `Could not load categories: ${categoriesError}` : null,
@@ -143,10 +142,7 @@ export default async function CalendarPage({ searchParams }: CalendarPageProps) 
               )}
               weekDays={buildWeekDays(calendarParams.dateKey)}
               dateKey={calendarParams.dateKey}
-              tasksByDay={tasksByDay}
-              listOverdue={listGroups.overdue}
-              listUpcomingByDay={listGroups.upcomingByDay}
-              listUpcomingDayKeys={listGroups.upcomingDayKeys}
+              calendarTasks={calendarTasks}
               modalTasksById={modalTasksById}
               categories={categories}
               labels={labels}

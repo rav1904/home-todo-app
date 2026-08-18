@@ -1,5 +1,10 @@
 export const DUE_TIME_MINUTE_STEP = 5;
 
+/** Date-only dues are stored as UTC midnight of the selected calendar date. */
+const DATE_ONLY_UTC_SUFFIX = "T00:00:00.000Z";
+const DATE_ONLY_UTC_PATTERN =
+  /^(\d{4}-\d{2}-\d{2})T00:00:00(?:\.\d{1,3})?Z$/i;
+
 export function generateDueTimeOptions(
   step = DUE_TIME_MINUTE_STEP,
 ): string[] {
@@ -86,9 +91,27 @@ export function datetimeLocalHasExplicitTime(value: string): boolean {
   return parts.time !== "00:00";
 }
 
-/** True when the stored ISO timestamp has a non-midnight local time. */
+/** Stored as UTC midnight of the chosen YYYY-MM-DD (date-only, no wall-clock time). */
+export function isCanonicalDateOnlyDueAt(
+  iso: string | null | undefined,
+): boolean {
+  if (!iso) {
+    return false;
+  }
+
+  return DATE_ONLY_UTC_PATTERN.test(iso);
+}
+
+/**
+ * True when the due timestamp represents an explicit wall-clock time.
+ * Canonical date-only and legacy local-midnight values are treated as date-only.
+ */
 export function isoHasExplicitTime(iso: string | null | undefined): boolean {
   if (!iso) {
+    return false;
+  }
+
+  if (isCanonicalDateOnlyDueAt(iso)) {
     return false;
   }
 
@@ -96,6 +119,10 @@ export function isoHasExplicitTime(iso: string | null | undefined): boolean {
   return (
     date.getHours() !== 0 || date.getMinutes() !== 0 || date.getSeconds() !== 0
   );
+}
+
+export function dateOnlyDayKeyToIso(dayKey: string): string {
+  return `${dayKey}${DATE_ONLY_UTC_SUFFIX}`;
 }
 
 export function normalizeDatetimeLocalValue(value: string): string {
@@ -112,6 +139,11 @@ export function isoToDatetimeLocalValue(iso: string | null): string {
     return "";
   }
 
+  if (isCanonicalDateOnlyDueAt(iso)) {
+    const match = iso.match(DATE_ONLY_UTC_PATTERN);
+    return match ? `${match[1]}T00:00` : "";
+  }
+
   const date = new Date(iso);
   const year = date.getFullYear();
   const month = String(date.getMonth() + 1).padStart(2, "0");
@@ -119,6 +151,11 @@ export function isoToDatetimeLocalValue(iso: string | null): string {
   const time = normalizeLocalTimeString(
     `${String(date.getHours()).padStart(2, "0")}:${String(date.getMinutes()).padStart(2, "0")}`,
   );
+
+  // Legacy local-midnight date-only → keep as date-only in the form.
+  if (time === "00:00") {
+    return `${year}-${month}-${day}T00:00`;
+  }
 
   return `${year}-${month}-${day}T${time}`;
 }
@@ -131,6 +168,17 @@ export function datetimeLocalValueToIso(value: string): string | null {
   const normalized = normalizeDatetimeLocalValue(value);
   if (!normalized) {
     return null;
+  }
+
+  const parts = splitDatetimeLocalValue(normalized);
+  if (!parts) {
+    return null;
+  }
+
+  // Date-only: store the selected calendar date as UTC midnight of that date.
+  // Grouping uses the YYYY-MM-DD prefix so it does not shift by timezone.
+  if (!datetimeLocalHasExplicitTime(normalized)) {
+    return dateOnlyDayKeyToIso(parts.date);
   }
 
   return new Date(normalized).toISOString();

@@ -3,7 +3,7 @@
 import { DashboardNavProvider } from "@/components/dashboard/nav-context";
 import { Sidebar } from "@/components/dashboard/sidebar";
 import { QuickAddTaskLauncher } from "@/components/tasks/quick-add-task-launcher";
-import type { ReactNode } from "react";
+import { Suspense, type ReactNode } from "react";
 
 type DashboardShellProps = {
   showAdminLink?: boolean;
@@ -21,7 +21,9 @@ export function DashboardShell({
         <div className="relative flex min-w-0 max-w-full flex-1 flex-col overflow-x-hidden pb-24">
           {children}
         </div>
-        <QuickAddTaskLauncher />
+        <Suspense fallback={null}>
+          <QuickAddTaskLauncher />
+        </Suspense>
       </div>
     </DashboardNavProvider>
   );
