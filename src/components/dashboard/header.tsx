@@ -9,7 +9,8 @@ import {
 import { ThemeMenu } from "@/components/theme/theme-menu";
 import { getUserDisplayName } from "@/lib/auth/user-display";
 import { createClient } from "@/lib/supabase/client";
-import { Menu } from "lucide-react";
+import { Home, Menu } from "lucide-react";
+import Link from "next/link";
 import { useEffect, useState } from "react";
 
 type DashboardHeaderProps = {
@@ -54,7 +55,7 @@ export function DashboardHeader({
   return (
     <>
       <header className="sticky top-0 z-30 flex h-14 shrink-0 items-center justify-between gap-3 border-b border-stone-200/40 bg-white/80 px-4 backdrop-blur-md sm:px-6 lg:px-8 dark:border-stone-800/50 dark:bg-stone-900/80">
-        <div className="flex min-w-0 items-center gap-2 sm:gap-3">
+        <div className="flex min-w-0 items-center gap-1.5 sm:gap-2">
           <button
             type="button"
             onClick={toggleMobileNav}
@@ -65,6 +66,14 @@ export function DashboardHeader({
           >
             <Menu className="h-4 w-4" aria-hidden="true" />
           </button>
+          <Link
+            href="/dashboard"
+            aria-label="Go to home"
+            title="Home"
+            className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-lg text-stone-500 transition hover:bg-stone-100 hover:text-stone-800 dark:text-stone-400 dark:hover:bg-stone-800 dark:hover:text-stone-100"
+          >
+            <Home className="h-4 w-4" aria-hidden="true" />
+          </Link>
           <div className="min-w-0">
             <h1 className="truncate text-base font-semibold tracking-tight text-stone-900 dark:text-stone-100 sm:text-lg">
               {title}
