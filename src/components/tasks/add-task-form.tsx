@@ -156,6 +156,11 @@ export function AddTaskForm({
 
   function handleDueChange(nextDue: string) {
     setDueAt(nextDue);
+    if (!nextDue) {
+      setReminder(emptyReminderFormState());
+      setRecurrence(DEFAULT_TASK_RECURRENCE);
+      return;
+    }
     setReminder((current) => syncReminderFormWithDueLocal(nextDue, current));
   }
 

@@ -50,6 +50,7 @@ import {
   type TaskRecurrence,
 } from "@/lib/tasks/recurrence";
 import {
+  emptyReminderFormState,
   getReminderCardLabel,
   reminderFormFromDb,
   syncReminderFormWithDueLocal,
@@ -294,6 +295,11 @@ export function TaskListItem({
 
   function handleEditDueChange(nextDue: string) {
     setEditDueAt(nextDue);
+    if (!nextDue) {
+      setEditReminder(emptyReminderFormState());
+      setEditRecurrence(DEFAULT_TASK_RECURRENCE);
+      return;
+    }
     setEditReminder((current) => syncReminderFormWithDueLocal(nextDue, current));
   }
 

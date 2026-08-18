@@ -13,7 +13,7 @@ import {
   toolbarIconButtonActiveClassName,
   toolbarIconButtonClassName,
 } from "@/lib/ui/field-classes";
-import { Clock } from "lucide-react";
+import { Clock, X } from "lucide-react";
 import { useEffect, useState } from "react";
 
 type DueDatetimeFieldsProps = {
@@ -40,12 +40,19 @@ export function DueDatetimeFields({
   const timeValue = parts?.time ?? "";
   const hasExplicitTime = datetimeLocalHasExplicitTime(value);
   const [timeOpen, setTimeOpen] = useState(hasExplicitTime);
+  const canClear = Boolean(dateValue);
 
   useEffect(() => {
     if (hasExplicitTime) {
       setTimeOpen(true);
     }
   }, [hasExplicitTime]);
+
+  useEffect(() => {
+    if (!dateValue) {
+      setTimeOpen(false);
+    }
+  }, [dateValue]);
 
   function emit(date: string, time: string | null) {
     if (!date) {
@@ -56,10 +63,14 @@ export function DueDatetimeFields({
     onChange(joinDatetimeLocalValue(date, time ?? "00:00"));
   }
 
+  function clearDue() {
+    onChange("");
+    setTimeOpen(false);
+  }
+
   function handleDateChange(nextDate: string) {
     if (!nextDate) {
-      onChange("");
-      setTimeOpen(false);
+      clearDue();
       return;
     }
 
@@ -108,7 +119,7 @@ export function DueDatetimeFields({
           type="date"
           value={dateValue}
           onChange={(event) => handleDateChange(event.target.value)}
-          className={`${className} min-w-0 flex-1 basis-[10rem]`}
+          className={`${className} min-w-0 flex-1 basis-[9rem]`}
         />
         <button
           type="button"
@@ -116,15 +127,27 @@ export function DueDatetimeFields({
           aria-label={timeOpen ? "Hide due time" : "Add due time"}
           aria-pressed={timeOpen}
           title={timeOpen ? "Hide time" : "Add time"}
+          disabled={!dateValue && !timeOpen}
           className={`${toolbarIconButtonClassName} ${
             timeOpen || hasExplicitTime ? toolbarIconButtonActiveClassName : ""
           }`}
         >
           <Clock className="h-4 w-4" aria-hidden />
         </button>
+        {canClear ? (
+          <button
+            type="button"
+            onClick={clearDue}
+            aria-label={`Clear ${label.toLowerCase()}`}
+            title="Clear"
+            className={toolbarIconButtonClassName}
+          >
+            <X className="h-4 w-4" aria-hidden />
+          </button>
+        ) : null}
       </div>
 
-      {timeOpen ? (
+      {timeOpen && dateValue ? (
         <div className="mt-2 min-w-0">
           <label htmlFor={`${id}-time`} className={labelClassName}>
             Time
@@ -137,7 +160,6 @@ export function DueDatetimeFields({
             id={`${id}-time`}
             value={hasExplicitTime ? timeValue : ""}
             onChange={(event) => handleTimeChange(event.target.value)}
-            disabled={!dateValue}
             className={`${className} min-w-0`}
           >
             <option value="">No specific time</option>

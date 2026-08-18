@@ -152,17 +152,17 @@ export function reminderFormFromSelectValue(
   };
 }
 
-/** When due date changes: keep custom; recalc/clear relative. */
+/** When due date changes: clear all reminders if due removed; keep custom otherwise. */
 export function syncReminderFormWithDueLocal(
   dueLocal: string,
   reminder: ReminderFormState,
 ): ReminderFormState {
-  if (reminder.mode !== "relative_due") {
-    return reminder;
-  }
-
   if (!dueLocal) {
     return emptyReminderFormState();
+  }
+
+  if (reminder.mode !== "relative_due") {
+    return reminder;
   }
 
   return reminder;
