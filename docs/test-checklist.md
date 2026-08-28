@@ -103,7 +103,7 @@ Manual checks for current product behaviour. Prefer a fresh browser session (or 
 - [ ] Cannot move others’ shared task into Personal
 - [ ] Recurring shared complete keeps original creator on next occurrence
 - [ ] Calendar / Focus / Dashboard / Search include only visible shared + Personal
-- [ ] Admin Workspaces UI shows member count/list + admin note
+- [ ] Admin Categories UI shows member count/list + admin note
 - [ ] `npm run build` passes
 
 ---

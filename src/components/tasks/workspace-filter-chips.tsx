@@ -33,7 +33,7 @@ export function WorkspaceFilterChips({
     <div
       className={`flex max-w-full gap-2 overflow-x-auto overscroll-x-contain pb-0.5 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden ${className}`}
       role="tablist"
-      aria-label="Workspace filter"
+      aria-label="Category filter"
     >
       <button
         type="button"

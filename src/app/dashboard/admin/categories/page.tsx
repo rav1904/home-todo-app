@@ -67,8 +67,8 @@ export default async function AdminCategoriesPage() {
   return (
     <>
       <DashboardHeader
-        title="Shared workspaces"
-        description="Admin-managed global categories (shared workspaces) and subcategories"
+        title="Shared categories"
+        description="Admin-managed global categories and subcategories"
         email={user.email}
       />
       <div className="flex-1 overflow-auto overflow-x-hidden p-4 sm:p-6 lg:p-8">

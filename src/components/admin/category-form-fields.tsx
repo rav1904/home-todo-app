@@ -97,11 +97,11 @@ export function CategoryFormFields({
               onChange({ ...values, admin_note: event.target.value })
             }
             className={fieldClassName}
-            placeholder="e.g. Shopping workspace for User X only"
+            placeholder="e.g. Shopping category for User X only"
             maxLength={200}
           />
           <p className="mt-1.5 text-xs text-stone-500 dark:text-stone-400">
-            Helps distinguish shared workspaces with similar names. Not shown to
+            Helps distinguish shared categories with similar names. Not shown to
             non-admin users.
           </p>
         </div>

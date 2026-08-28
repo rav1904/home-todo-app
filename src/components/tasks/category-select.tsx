@@ -45,7 +45,7 @@ export function CategorySelect({
     <div className={`min-w-0 ${stackClass}`}>
       <div className="min-w-0">
         <label htmlFor={`${id}-main`} className={labelClass}>
-          Workspace
+          Category
           {optional ? (
             <span className="font-normal text-stone-400 dark:text-stone-500">
               {" "}

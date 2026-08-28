@@ -59,7 +59,7 @@ export default async function AdminPage() {
     <>
       <DashboardHeader
         title="Admin Panel"
-        description="Workspace user administration"
+        description="Category user administration"
         email={user.email}
       />
       <div className="flex-1 space-y-8 overflow-auto overflow-x-hidden p-4 sm:p-6 lg:p-8">
@@ -96,17 +96,17 @@ export default async function AdminPage() {
 
             <section className={`${cardClassName} p-6`}>
               <h2 className="text-lg font-semibold text-stone-900 dark:text-stone-100">
-                Users & workspace membership
+                Users & category membership
               </h2>
               <p className="mt-1 text-sm text-stone-500 dark:text-stone-400">
-                Grant shared workspace access (global top-level categories) per
+                Grant shared category access (global top-level categories) per
                 user. Personal categories stay private and automatic. Task
                 content is never shown here.
               </p>
 
               {accessError ? (
                 <div className="mt-4 rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-800 dark:border-amber-900/50 dark:bg-amber-950/40 dark:text-amber-300">
-                  Could not load workspace membership data: {accessError}. Apply{" "}
+                  Could not load category membership data: {accessError}. Apply{" "}
                   <code className="text-xs">sql/categories_personal_and_access.sql</code>{" "}
                   and{" "}
                   <code className="text-xs">sql/shared_workspace_tasks.sql</code>{" "}

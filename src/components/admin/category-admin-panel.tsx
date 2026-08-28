@@ -31,7 +31,7 @@ import { useMemo, useState } from "react";
 
 type CategoryAdminPanelProps = {
   categories: Category[];
-  /** Members of each top-level shared workspace (category id → users). */
+  /** Members of each top-level shared category (category id → users). */
   workspaceMembersByCategoryId?: Record<
     string,
     { id: string; displayName: string; email: string | null }[]
@@ -475,7 +475,7 @@ export function CategoryAdminPanel({
                   {category.name}
                   {!isSubcategory ? (
                     <span className="ml-2 text-xs font-normal text-emerald-700 dark:text-emerald-400">
-                      shared workspace
+                      shared category
                     </span>
                   ) : null}
                 </p>
@@ -542,13 +542,13 @@ export function CategoryAdminPanel({
     <div className="space-y-8">
       <section className={adminSectionClassName}>
         <h2 className="text-lg font-semibold text-stone-900 dark:text-stone-100">
-          Create shared workspace / category
+          Create shared category
         </h2>
         <p className="mt-1 text-sm text-stone-500 dark:text-stone-400">
-          Top-level global categories are shared workspaces. Grant membership
-          under Admin → Users. Personal categories are per-user and are not
-          managed here. Use distinct names (and an admin note) for user-specific
-          workspaces such as Shopping - User X.
+          Top-level global categories are shared. Grant membership under Admin
+          → Users. Personal categories are per-user and are not managed here.
+          Use distinct names (and an admin note) for user-specific categories
+          such as Shopping - User X.
         </p>
 
         <form onSubmit={handleCreate} className="mt-4 space-y-4">

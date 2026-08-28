@@ -203,20 +203,20 @@ export function UserCategoryAccessPanel({
                 >
                   {selectedCount === 0
                     ? "Personal only · Edit access"
-                    : `${selectedCount} workspace${selectedCount === 1 ? "" : "s"} · Edit access`}
+                    : `${selectedCount} categor${selectedCount === 1 ? "y" : "ies"} · Edit access`}
                 </button>
               </div>
 
               {isExpanded ? (
                 <div className="mt-3 min-w-0 space-y-2 rounded-xl border border-stone-200 bg-stone-50 p-3 dark:border-stone-700 dark:bg-stone-800/60">
                   <p className="text-xs text-stone-500 dark:text-stone-400">
-                    Personal stays private. Grant shared workspace membership
+                    Personal stays private. Grant shared category membership
                     for global top-level categories (subcategories inherit).
-                    Members can see each other&apos;s tasks in that workspace.
+                    Members can see each other&apos;s tasks in that category.
                   </p>
                   {sortedCategories.length === 0 ? (
                     <p className="text-xs text-stone-500 dark:text-stone-400">
-                      No shared workspaces yet.
+                      No shared categories yet.
                     </p>
                   ) : (
                     <ul className="space-y-1.5">

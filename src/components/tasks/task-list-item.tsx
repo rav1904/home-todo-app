@@ -720,7 +720,7 @@ export function TaskListItem({
           {showCreator ? (
             <span
               className="flex h-10 w-10 items-center justify-center"
-              title={`Created by ${creator?.displayName ?? "workspace member"}`}
+              title={`Created by ${creator?.displayName ?? "category member"}`}
             >
               <UserAvatar
                 name={creator?.displayName ?? "Member"}
