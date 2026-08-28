@@ -1,14 +1,14 @@
 /** Soft UI limit for new/edited task titles. Existing longer titles are not migrated. */
-export const TASK_TITLE_MAX_LENGTH = 90;
+export const TASK_TITLE_MAX_LENGTH = 50;
 
 /** Show a short-name nudge once the title reaches this length. */
-export const TASK_TITLE_WARNING_LENGTH = 60;
+export const TASK_TITLE_WARNING_LENGTH = 40;
 
 export const TASK_TITLE_LENGTH_HINT =
   "Keep the task name short. Use Notes for details.";
 
 export const TASK_TITLE_LIMIT_REACHED =
-  "Title limit reached (90). Use Notes for details.";
+  "Title limit reached (50). Use Notes for details.";
 
 /**
  * Validates a task title for create/update.
