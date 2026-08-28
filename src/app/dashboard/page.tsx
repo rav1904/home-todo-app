@@ -196,11 +196,12 @@ function CompactTaskList({
               />
               <div className="min-w-0 flex-1 basis-[8rem]">
                 <p
-                  className={`text-sm font-medium leading-snug break-words text-stone-900 dark:text-stone-100 ${
+                  className={`line-clamp-3 text-sm font-medium leading-snug break-words [overflow-wrap:anywhere] text-stone-900 dark:text-stone-100 ${
                     task.completed
                       ? "text-stone-400 line-through dark:text-stone-500"
                       : ""
                   }`}
+                  title={task.title}
                 >
                   {task.title}
                 </p>

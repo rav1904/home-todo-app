@@ -1,5 +1,17 @@
 "use client";
 
+import {
+  compactFieldClassName,
+  formLabelClassName,
+  titleFieldClassName,
+} from "@/lib/ui/field-classes";
+import {
+  TASK_TITLE_LENGTH_HINT,
+  TASK_TITLE_LIMIT_REACHED,
+  TASK_TITLE_MAX_LENGTH,
+  TASK_TITLE_WARNING_LENGTH,
+  constrainTaskTitleInput,
+} from "@/lib/tasks/title";
 import { ChevronDown, ChevronRight } from "lucide-react";
 import type { ReactNode } from "react";
 
@@ -50,29 +62,123 @@ export function TaskFormMoreDetails({
   );
 }
 
-type TaskFormNotesToggleProps = {
-  open: boolean;
-  onOpen: () => void;
-  children: ReactNode;
+type TaskTitleFieldProps = {
+  id: string;
+  value: string;
+  onChange: (value: string) => void;
+  placeholder?: string;
+  autoFocus?: boolean;
+  inputClassName?: string;
+  /** Visually hide the "Title" label (sr-only). */
+  hideLabel?: boolean;
 };
 
-/** Shows a quiet “Add notes” control until notes are opened or already present. */
-export function TaskFormNotesToggle({
-  open,
-  onOpen,
-  children,
-}: TaskFormNotesToggleProps) {
-  if (open) {
-    return <>{children}</>;
-  }
+export function TaskTitleField({
+  id,
+  value,
+  onChange,
+  placeholder = "What needs doing?",
+  autoFocus = false,
+  inputClassName = `${titleFieldClassName} min-h-11`,
+  hideLabel = true,
+}: TaskTitleFieldProps) {
+  const length = value.length;
+  const overLimit = length > TASK_TITLE_MAX_LENGTH;
+  const atLimit = length >= TASK_TITLE_MAX_LENGTH;
+  const showWarning = length >= TASK_TITLE_WARNING_LENGTH;
+  const showCounter = length > 0;
+  const enforceMaxLength = length <= TASK_TITLE_MAX_LENGTH;
 
   return (
-    <button
-      type="button"
-      onClick={onOpen}
-      className="cursor-pointer text-left text-sm text-stone-500 transition hover:text-stone-800 dark:text-stone-400 dark:hover:text-stone-200"
-    >
-      Add notes
-    </button>
+    <div className="min-w-0">
+      <label
+        htmlFor={id}
+        className={hideLabel ? "sr-only" : formLabelClassName}
+      >
+        Title
+      </label>
+      <input
+        id={id}
+        type="text"
+        required
+        autoFocus={autoFocus}
+        value={value}
+        maxLength={enforceMaxLength ? TASK_TITLE_MAX_LENGTH : undefined}
+        onChange={(event) =>
+          onChange(constrainTaskTitleInput(event.target.value, value))
+        }
+        className={`${inputClassName} min-w-0 max-w-full`}
+        placeholder={placeholder}
+        aria-describedby={`${id}-meta`}
+      />
+      <div
+        id={`${id}-meta`}
+        className="mt-1 flex min-w-0 flex-wrap items-start justify-between gap-x-2 gap-y-0.5"
+      >
+        {showWarning ? (
+          <p
+            className={`min-w-0 flex-1 text-xs leading-snug break-words ${
+              overLimit || atLimit
+                ? "font-medium text-rose-600 dark:text-rose-400"
+                : "text-amber-700 dark:text-amber-400"
+            }`}
+          >
+            {atLimit || overLimit
+              ? TASK_TITLE_LIMIT_REACHED
+              : TASK_TITLE_LENGTH_HINT}
+          </p>
+        ) : (
+          <span className="min-w-0 flex-1" />
+        )}
+        {showCounter ? (
+          <p
+            className={`shrink-0 text-xs tabular-nums ${
+              overLimit || atLimit
+                ? "font-medium text-rose-600 dark:text-rose-400"
+                : showWarning
+                  ? "text-amber-700 dark:text-amber-400"
+                  : "text-stone-400 dark:text-stone-500"
+            }`}
+            aria-live="polite"
+          >
+            {length}/{TASK_TITLE_MAX_LENGTH}
+          </p>
+        ) : null}
+      </div>
+    </div>
+  );
+}
+
+type TaskNotesFieldProps = {
+  id: string;
+  value: string;
+  onChange: (value: string) => void;
+  rows?: number;
+};
+
+export function TaskNotesField({
+  id,
+  value,
+  onChange,
+  rows = 2,
+}: TaskNotesFieldProps) {
+  return (
+    <div className="min-w-0">
+      <label htmlFor={id} className={formLabelClassName}>
+        Notes
+        <span className="font-normal text-stone-400 dark:text-stone-500">
+          {" "}
+          · optional
+        </span>
+      </label>
+      <textarea
+        id={id}
+        rows={rows}
+        value={value}
+        onChange={(event) => onChange(event.target.value)}
+        className={`${compactFieldClassName} max-w-full resize-y break-words`}
+        placeholder="Add notes or details…"
+      />
+    </div>
   );
 }

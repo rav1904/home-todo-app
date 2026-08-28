@@ -19,7 +19,8 @@ import {
 import { RecurrenceSelect } from "@/components/tasks/recurrence-select";
 import {
   TaskFormMoreDetails,
-  TaskFormNotesToggle,
+  TaskNotesField,
+  TaskTitleField,
 } from "@/components/tasks/task-form-shared";
 import { UserAvatar } from "@/components/ui/user-avatar";
 import { NULL_CATEGORY_DISPLAY } from "@/lib/categories/display";
@@ -58,15 +59,14 @@ import {
   type ReminderFormState,
 } from "@/lib/tasks/reminder";
 import { isFocusDueOverdue } from "@/lib/tasks/focus";
+import { validateTaskTitle } from "@/lib/tasks/title";
 import {
   compactFieldClassName,
   formErrorClassName,
-  formLabelClassName,
   formPrimaryButtonClassName,
   formSecondaryButtonClassName,
   taskActionButtonClassName,
   taskRowClassName,
-  titleFieldClassName,
 } from "@/lib/ui/field-classes";
 import { createClient } from "@/lib/supabase/client";
 import {
@@ -223,7 +223,6 @@ export function TaskListItem({
   const [editLabelIds, setEditLabelIds] = useState<string[]>(labelIds);
   const [extraLabels, setExtraLabels] = useState<Label[]>([]);
   const [editCompleted, setEditCompleted] = useState(completed);
-  const [notesOpen, setNotesOpen] = useState(Boolean(description?.trim()));
   const [detailsOpen, setDetailsOpen] = useState(
     Boolean(categoryId) || labelIds.length > 0,
   );
@@ -288,7 +287,6 @@ export function TaskListItem({
     setEditLabelIds(labelIds);
     setExtraLabels([]);
     setEditCompleted(completed);
-    setNotesOpen(Boolean(description?.trim()));
     setDetailsOpen(Boolean(categoryId) || labelIds.length > 0);
     setError(null);
     setIsEditing(true);
@@ -322,12 +320,14 @@ export function TaskListItem({
     setLoading(true);
     setError(null);
 
-    const trimmedTitle = editTitle.trim();
-    if (!trimmedTitle) {
-      setError("Title is required.");
+    const titleError = validateTaskTitle(editTitle);
+    if (titleError) {
+      setError(titleError);
       setLoading(false);
       return;
     }
+
+    const trimmedTitle = editTitle.trim();
 
     const supabase = createClient();
     const newDueAt = datetimeLocalValueToIso(editDueAt);
@@ -434,49 +434,22 @@ export function TaskListItem({
 
   if (isEditing) {
     const editContent = (
-      <form onSubmit={handleSave} className="space-y-3">
-        <div>
-          <label htmlFor={`edit-title-${id}`} className="sr-only">
-            Title
-          </label>
-          <input
-            id={`edit-title-${id}`}
-            type="text"
-            required
-            value={editTitle}
-            onChange={(event) => setEditTitle(event.target.value)}
-            className={titleFieldClassName}
-            placeholder="Task title"
-          />
-        </div>
+      <form onSubmit={handleSave} className="min-w-0 space-y-3">
+        <TaskTitleField
+          id={`edit-title-${id}`}
+          value={editTitle}
+          onChange={setEditTitle}
+          placeholder="Task title"
+        />
 
-        <TaskFormNotesToggle
-          open={notesOpen || Boolean(editDescription.trim())}
-          onOpen={() => setNotesOpen(true)}
-        >
-          <div>
-            <label
-              htmlFor={`edit-description-${id}`}
-              className={formLabelClassName}
-            >
-              Notes
-              <span className="font-normal text-stone-400 dark:text-stone-500">
-                {" "}
-                · optional
-              </span>
-            </label>
-            <textarea
-              id={`edit-description-${id}`}
-              rows={2}
-              value={editDescription}
-              onChange={(event) => setEditDescription(event.target.value)}
-              className={`${compactFieldClassName} resize-none`}
-              placeholder="Extra details"
-            />
-          </div>
-        </TaskFormNotesToggle>
+        <TaskNotesField
+          id={`edit-description-${id}`}
+          value={editDescription}
+          onChange={setEditDescription}
+          rows={3}
+        />
 
-        <div className="grid gap-3 sm:grid-cols-2">
+        <div className="grid min-w-0 gap-3 sm:grid-cols-2">
           <DueDatetimeFields
             id={`edit-due-at-${id}`}
             value={editDueAt}
@@ -618,11 +591,12 @@ export function TaskListItem({
               compact
             />
             <h2
-              className={`min-w-0 flex-1 basis-[12rem] text-base font-medium leading-snug break-words text-stone-900 dark:text-stone-100 ${
+              className={`min-w-0 flex-1 basis-[12rem] text-base font-medium leading-snug break-words [overflow-wrap:anywhere] line-clamp-3 text-stone-900 dark:text-stone-100 ${
                 completed
                   ? "text-stone-400 line-through dark:text-stone-500"
                   : ""
               }`}
+              title={title}
             >
               {title}
             </h2>
@@ -679,7 +653,7 @@ export function TaskListItem({
           </div>
 
           {description ? (
-            <p className="line-clamp-1 break-words text-sm text-stone-500 dark:text-stone-400">
+            <p className="line-clamp-2 break-words [overflow-wrap:anywhere] text-sm text-stone-500 dark:text-stone-400">
               {description}
             </p>
           ) : null}

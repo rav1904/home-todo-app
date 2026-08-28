@@ -9,6 +9,10 @@ import {
   DEFAULT_TASK_PRIORITY,
   PrioritySelect,
 } from "@/components/tasks/priority-select";
+import {
+  TaskNotesField,
+  TaskTitleField,
+} from "@/components/tasks/task-form-shared";
 import { getPersonalCategoryId } from "@/lib/categories/access";
 import type { Category } from "@/lib/categories/types";
 import type { Label } from "@/lib/labels/types";
@@ -26,18 +30,17 @@ import {
   toReminderDbColumns,
   type ReminderFormState,
 } from "@/lib/tasks/reminder";
+import { validateTaskTitle } from "@/lib/tasks/title";
 import {
   compactFieldClassName,
   densePanelClassName,
   formErrorClassName,
-  formLabelClassName,
   formPrimaryButtonClassName,
-  titleFieldClassName,
   toolbarIconButtonActiveClassName,
   toolbarIconButtonClassName,
 } from "@/lib/ui/field-classes";
 import { createClient } from "@/lib/supabase/client";
-import { AlignLeft, Bell, Flag, Repeat, Tags } from "lucide-react";
+import { Bell, Flag, Repeat, Tags } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useMemo, useState, type ReactNode } from "react";
 
@@ -53,7 +56,7 @@ type AddTaskFormProps = {
   onSuccess?: () => void;
 };
 
-type PanelKey = "priority" | "reminder" | "repeat" | "labels" | "notes";
+type PanelKey = "priority" | "reminder" | "repeat" | "labels";
 
 function ToolbarButton({
   label,
@@ -148,7 +151,6 @@ export function AddTaskForm({
   const hasPriority = priority !== DEFAULT_TASK_PRIORITY;
   const hasRepeat = recurrence !== DEFAULT_TASK_RECURRENCE;
   const hasLabels = labelIds.length > 0;
-  const hasNotes = Boolean(description.trim());
 
   function togglePanel(panel: PanelKey) {
     setOpenPanel((current) => (current === panel ? null : panel));
@@ -180,12 +182,14 @@ export function AddTaskForm({
       return;
     }
 
-    const trimmedTitle = title.trim();
-    if (!trimmedTitle) {
-      setError("Title is required.");
+    const titleError = validateTaskTitle(title);
+    if (titleError) {
+      setError(titleError);
       setLoading(false);
       return;
     }
+
+    const trimmedTitle = title.trim();
 
     const dueAtIso = datetimeLocalValueToIso(dueAt);
     const recurrenceError = validateRecurrenceDueAt(recurrence, dueAtIso);
@@ -267,30 +271,30 @@ export function AddTaskForm({
         </h2>
       ) : null}
 
-      <div className="flex min-w-0 items-stretch gap-2">
+      <div className="flex min-w-0 items-start gap-2">
         <div className="min-w-0 flex-1">
-          <label htmlFor="task-title" className="sr-only">
-            Title
-          </label>
-          <input
+          <TaskTitleField
             id="task-title"
-            type="text"
-            required
-            autoFocus={embedded}
             value={title}
-            onChange={(event) => setTitle(event.target.value)}
-            className={`${titleFieldClassName} min-h-11`}
-            placeholder="What needs doing?"
+            onChange={setTitle}
+            autoFocus={embedded}
           />
         </div>
         <button
           type="submit"
           disabled={loading}
-          className={`${formPrimaryButtonClassName} min-h-11 shrink-0 self-center`}
+          className={`${formPrimaryButtonClassName} min-h-11 shrink-0 self-start`}
         >
           {loading ? "…" : "Add"}
         </button>
       </div>
+
+      <TaskNotesField
+        id="task-description"
+        value={description}
+        onChange={setDescription}
+        rows={2}
+      />
 
       <div className="grid min-w-0 gap-2.5 sm:grid-cols-2">
         <CategorySelect
@@ -341,14 +345,6 @@ export function AddTaskForm({
         >
           <Tags className="h-4 w-4" aria-hidden />
         </ToolbarButton>
-        <ToolbarButton
-          label="Notes"
-          active={openPanel === "notes"}
-          populated={hasNotes}
-          onClick={() => togglePanel("notes")}
-        >
-          <AlignLeft className="h-4 w-4" aria-hidden />
-        </ToolbarButton>
       </div>
 
       {openPanel === "priority" ? (
@@ -396,26 +392,6 @@ export function AddTaskForm({
             onLabelCreated={(label) =>
               setExtraLabels((current) => [...current, label])
             }
-          />
-        </PanelShell>
-      ) : null}
-
-      {openPanel === "notes" ? (
-        <PanelShell>
-          <label htmlFor="task-description" className={formLabelClassName}>
-            Notes
-            <span className="font-normal text-stone-400 dark:text-stone-500">
-              {" "}
-              · optional
-            </span>
-          </label>
-          <textarea
-            id="task-description"
-            rows={2}
-            value={description}
-            onChange={(event) => setDescription(event.target.value)}
-            className={`${compactFieldClassName} resize-none`}
-            placeholder="Extra details"
           />
         </PanelShell>
       ) : null}
