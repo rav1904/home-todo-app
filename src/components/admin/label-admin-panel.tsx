@@ -5,6 +5,7 @@ import {
   createEmptyLabelFormValues,
 } from "@/components/admin/label-form-fields";
 import { LabelCategoryLinkFields } from "@/components/admin/label-category-link-fields";
+import { LoadingButton } from "@/components/ui/loading-button";
 import { buildCategoryLookup } from "@/lib/categories/tree";
 import type { Category } from "@/lib/categories/types";
 import {
@@ -353,13 +354,14 @@ export function LabelAdminPanel({
               disabled={loading}
             />
             <div className="flex flex-wrap gap-2">
-              <button
+              <LoadingButton
                 type="submit"
-                disabled={loading}
+                loading={loading}
+                idleLabel="Save changes"
+                loadingLabel="Saving…"
+                minLabelWidthClassName="min-w-[7.5rem]"
                 className="cursor-pointer rounded-xl bg-emerald-600 px-4 py-2 text-sm font-medium text-white transition hover:bg-emerald-700 disabled:cursor-not-allowed disabled:opacity-60"
-              >
-                {loading ? "Saving..." : "Save changes"}
-              </button>
+              />
               <button
                 type="button"
                 onClick={cancelEditing}
@@ -473,13 +475,14 @@ export function LabelAdminPanel({
             <p className={adminErrorBannerClassName}>{error}</p>
           ) : null}
 
-          <button
+          <LoadingButton
             type="submit"
-            disabled={loading}
+            loading={loading}
+            idleLabel="Create label"
+            loadingLabel="Creating…"
+            minLabelWidthClassName="min-w-[7.5rem]"
             className="cursor-pointer rounded-xl bg-emerald-600 px-4 py-2.5 text-sm font-medium text-white transition hover:bg-emerald-700 disabled:cursor-not-allowed disabled:opacity-60"
-          >
-            {loading ? "Creating..." : "Create label"}
-          </button>
+          />
         </form>
       </section>
 

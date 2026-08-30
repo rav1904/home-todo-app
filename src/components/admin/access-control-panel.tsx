@@ -1,5 +1,6 @@
 "use client";
 
+import { LoadingButton } from "@/components/ui/loading-button";
 import type {
   AccessRequestRow,
   AllowedUserRow,
@@ -107,30 +108,34 @@ export function AccessControlPanel({
                     ) : null}
                   </div>
                   <div className="flex shrink-0 gap-2">
-                    <button
+                    <LoadingButton
                       type="button"
-                      disabled={busyKey === `approve-${request.id}`}
+                      loading={busyKey === `approve-${request.id}`}
+                      disabled={busyKey !== null}
+                      idleLabel="Approve"
+                      loadingLabel="Approving…"
+                      minLabelWidthClassName="min-w-[6.5rem]"
                       className={formPrimaryButtonClassName}
                       onClick={() =>
                         runAction(`approve-${request.id}`, () =>
                           approveAccessRequest(request.id),
                         )
                       }
-                    >
-                      Approve
-                    </button>
-                    <button
+                    />
+                    <LoadingButton
                       type="button"
-                      disabled={busyKey === `reject-${request.id}`}
+                      loading={busyKey === `reject-${request.id}`}
+                      disabled={busyKey !== null}
+                      idleLabel="Reject"
+                      loadingLabel="Rejecting…"
+                      minLabelWidthClassName="min-w-[6.5rem]"
                       className={formSecondaryButtonClassName}
                       onClick={() =>
                         runAction(`reject-${request.id}`, () =>
                           rejectAccessRequest(request.id),
                         )
                       }
-                    >
-                      Reject
-                    </button>
+                    />
                   </div>
                 </div>
               </li>
@@ -171,13 +176,15 @@ export function AccessControlPanel({
             placeholder="name@example.com"
             className={`${fieldClassName} sm:flex-1`}
           />
-          <button
+          <LoadingButton
             type="submit"
-            disabled={busyKey === "add-email"}
+            loading={busyKey === "add-email"}
+            disabled={busyKey !== null}
+            idleLabel="Add"
+            loadingLabel="Adding…"
+            minLabelWidthClassName="min-w-[5rem]"
             className={formPrimaryButtonClassName}
-          >
-            Add
-          </button>
+          />
         </form>
       </section>
 
@@ -218,18 +225,20 @@ export function AccessControlPanel({
                     </p>
                   </div>
                   {!isAdminRow ? (
-                    <button
+                    <LoadingButton
                       type="button"
-                      disabled={busyKey === `revoke-${row.email}`}
+                      loading={busyKey === `revoke-${row.email}`}
+                      disabled={busyKey !== null}
+                      idleLabel="Revoke"
+                      loadingLabel="Revoking…"
+                      minLabelWidthClassName="min-w-[6.5rem]"
                       className={formSecondaryButtonClassName}
                       onClick={() =>
                         runAction(`revoke-${row.email}`, () =>
                           revokeAllowedEmail(row.email),
                         )
                       }
-                    >
-                      Revoke
-                    </button>
+                    />
                   ) : null}
                 </li>
               );
@@ -269,18 +278,20 @@ export function AccessControlPanel({
                       : formatDateTime(row.updated_at)}
                   </p>
                 </div>
-                <button
+                <LoadingButton
                   type="button"
-                  disabled={busyKey === `reapprove-${row.email}`}
+                  loading={busyKey === `reapprove-${row.email}`}
+                  disabled={busyKey !== null}
+                  idleLabel="Re-approve"
+                  loadingLabel="Approving…"
+                  minLabelWidthClassName="min-w-[7rem]"
                   className={formPrimaryButtonClassName}
                   onClick={() =>
                     runAction(`reapprove-${row.email}`, () =>
                       reapproveAllowedEmail(row.email),
                     )
                   }
-                >
-                  Re-approve
-                </button>
+                />
               </li>
             ))}
           </ul>

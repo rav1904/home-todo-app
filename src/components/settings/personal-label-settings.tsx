@@ -4,6 +4,7 @@ import {
   LabelFormFields,
   createEmptyLabelFormValues,
 } from "@/components/admin/label-form-fields";
+import { LoadingButton } from "@/components/ui/loading-button";
 import { getNextLabelSortOrder, sortLabels } from "@/lib/labels/sort";
 import type { Label, LabelFormValues } from "@/lib/labels/types";
 import { validateLabelFormValues } from "@/lib/labels/validation";
@@ -192,13 +193,14 @@ export function PersonalLabelSettings({
               onChange={setEditValues}
             />
             <div className="flex flex-wrap gap-2">
-              <button
+              <LoadingButton
                 type="submit"
-                disabled={loading}
+                loading={loading}
+                idleLabel="Save changes"
+                loadingLabel="Saving…"
+                minLabelWidthClassName="min-w-[7.5rem]"
                 className="cursor-pointer rounded-xl bg-emerald-600 px-4 py-2 text-sm font-medium text-white transition hover:bg-emerald-700 disabled:cursor-not-allowed disabled:opacity-60"
-              >
-                {loading ? "Saving..." : "Save changes"}
-              </button>
+              />
               <button
                 type="button"
                 onClick={cancelEditing}
@@ -311,13 +313,14 @@ export function PersonalLabelSettings({
             />
           </div>
           <div className="mt-4 flex flex-wrap gap-2">
-            <button
+            <LoadingButton
               type="submit"
-              disabled={loading}
+              loading={loading}
+              idleLabel="Create label"
+              loadingLabel="Creating…"
+              minLabelWidthClassName="min-w-[7.5rem]"
               className="cursor-pointer rounded-xl bg-emerald-600 px-4 py-2 text-sm font-medium text-white transition hover:bg-emerald-700 disabled:cursor-not-allowed disabled:opacity-60"
-            >
-              {loading ? "Creating..." : "Create label"}
-            </button>
+            />
             <button
               type="button"
               onClick={cancelCreate}

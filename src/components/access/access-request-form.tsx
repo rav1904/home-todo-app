@@ -1,5 +1,6 @@
 "use client";
 
+import { LoadingButton } from "@/components/ui/loading-button";
 import { SignOutButton } from "@/components/dashboard/sign-out-button";
 import { ThemeToggle } from "@/components/theme/theme-toggle";
 import { submitAccessRequest } from "@/lib/access/mutations";
@@ -10,7 +11,7 @@ import {
   formPrimaryButtonClassName,
 } from "@/lib/ui/field-classes";
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useRef, useState } from "react";
 
 type AccessRequestFormProps = {
   displayName: string;
@@ -28,9 +29,15 @@ export function AccessRequestForm({
   const [submitted, setSubmitted] = useState(alreadySubmitted);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const submittingRef = useRef(false);
 
   async function handleSubmit(event: React.FormEvent) {
     event.preventDefault();
+    if (submittingRef.current || loading) {
+      return;
+    }
+
+    submittingRef.current = true;
     setLoading(true);
     setError(null);
 
@@ -41,11 +48,13 @@ export function AccessRequestForm({
     if (submitError) {
       setError(submitError.message);
       setLoading(false);
+      submittingRef.current = false;
       return;
     }
 
     setSubmitted(true);
     setLoading(false);
+    submittingRef.current = false;
     router.refresh();
   }
 
@@ -99,13 +108,14 @@ export function AccessRequestForm({
 
             {error ? <p className={formErrorClassName}>{error}</p> : null}
 
-            <button
+            <LoadingButton
               type="submit"
-              disabled={loading}
+              loading={loading}
+              idleLabel="Submit request"
+              loadingLabel="Submitting…"
+              minLabelWidthClassName="min-w-[9rem]"
               className={`${formPrimaryButtonClassName} w-full`}
-            >
-              {loading ? "Submitting…" : "Submit request"}
-            </button>
+            />
           </form>
         )}
       </div>

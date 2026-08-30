@@ -1,9 +1,10 @@
 "use client";
 
+import { Spinner } from "@/components/ui/spinner";
 import { createClient } from "@/lib/supabase/client";
 import { taskActionButtonClassName } from "@/lib/ui/field-classes";
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useRef, useState } from "react";
 
 type TaskDeleteButtonProps = {
   id: string;
@@ -42,25 +43,39 @@ export function TaskDeleteButton({
 }: TaskDeleteButtonProps) {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const inFlightRef = useRef(false);
 
   async function handleDelete() {
+    if (inFlightRef.current || loading) {
+      return;
+    }
+
     if (!window.confirm(`Delete "${title}"?`)) {
       return;
     }
 
+    inFlightRef.current = true;
     setLoading(true);
+    setError(null);
 
     const supabase = createClient();
-    const { error } = await supabase.from("tasks").delete().eq("id", id);
+    const { error: deleteError } = await supabase
+      .from("tasks")
+      .delete()
+      .eq("id", id);
 
-    if (error) {
+    if (deleteError) {
+      setError(deleteError.message);
       setLoading(false);
+      inFlightRef.current = false;
       return;
     }
 
     router.refresh();
     onDeleted?.();
     setLoading(false);
+    inFlightRef.current = false;
   }
 
   const className =
@@ -69,14 +84,26 @@ export function TaskDeleteButton({
       : "inline-flex h-10 w-10 shrink-0 cursor-pointer items-center justify-center rounded-lg border border-stone-200 bg-white text-stone-500 transition hover:border-red-200 hover:bg-red-50 hover:text-red-700 disabled:cursor-not-allowed disabled:opacity-60 dark:border-stone-600 dark:bg-stone-800 dark:text-stone-400 dark:hover:border-red-900/50 dark:hover:bg-red-950/40 dark:hover:text-red-400";
 
   return (
-    <button
-      type="button"
-      onClick={handleDelete}
-      disabled={loading}
-      aria-label={loading ? `Deleting "${title}"` : `Delete "${title}"`}
-      className={className}
-    >
-      <TrashIcon />
-    </button>
+    <span className="relative inline-flex shrink-0">
+      <button
+        type="button"
+        onClick={handleDelete}
+        disabled={loading}
+        aria-busy={loading || undefined}
+        aria-label={loading ? `Deleting "${title}"` : `Delete "${title}"`}
+        title={loading ? "Deleting…" : "Delete"}
+        className={className}
+      >
+        {loading ? <Spinner className="h-4 w-4" /> : <TrashIcon />}
+      </button>
+      {error ? (
+        <span
+          role="alert"
+          className="absolute top-10 right-0 z-10 w-44 break-words rounded-md bg-red-50 px-2 py-1 text-xs text-red-700 shadow-sm dark:bg-red-950/80 dark:text-red-300"
+        >
+          {error}
+        </span>
+      ) : null}
+    </span>
   );
 }

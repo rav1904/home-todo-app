@@ -3,6 +3,7 @@
 import type { AppUserSummary } from "@/lib/admin/users";
 import { formatCategoryNameForDisplay } from "@/lib/categories/display";
 import type { Category } from "@/lib/categories/types";
+import { LoadingButton } from "@/components/ui/loading-button";
 import { UserAvatar } from "@/components/ui/user-avatar";
 import {
   formErrorClassName,
@@ -257,16 +258,15 @@ export function UserCategoryAccessPanel({
                     </ul>
                   )}
                   <div className="flex flex-wrap gap-2 pt-1">
-                    <button
+                    <LoadingButton
                       type="button"
+                      loading={savingUserId === appUser.id}
+                      idleLabel="Save membership"
+                      loadingLabel="Saving…"
+                      minLabelWidthClassName="min-w-[9rem]"
                       className={formPrimaryButtonClassName}
-                      disabled={savingUserId === appUser.id}
                       onClick={() => void saveGrants(appUser.id)}
-                    >
-                      {savingUserId === appUser.id
-                        ? "Saving..."
-                        : "Save membership"}
-                    </button>
+                    />
                     <button
                       type="button"
                       className={formSecondaryButtonClassName}

@@ -22,6 +22,7 @@ import {
   TaskNotesField,
   TaskTitleField,
 } from "@/components/tasks/task-form-shared";
+import { LoadingButton } from "@/components/ui/loading-button";
 import { UserAvatar } from "@/components/ui/user-avatar";
 import { NULL_CATEGORY_DISPLAY } from "@/lib/categories/display";
 import type { CategoryDisplay } from "@/lib/categories/tree";
@@ -229,6 +230,7 @@ export function TaskListItem({
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [checklistOpen, setChecklistOpen] = useState(false);
+  const savingRef = useRef(false);
 
   const isOwnTask = taskUserId === currentUserId;
   const showCreator = !isOwnTask;
@@ -317,6 +319,11 @@ export function TaskListItem({
 
   async function handleSave(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
+    if (savingRef.current || loading) {
+      return;
+    }
+
+    savingRef.current = true;
     setLoading(true);
     setError(null);
 
@@ -324,6 +331,7 @@ export function TaskListItem({
     if (titleError) {
       setError(titleError);
       setLoading(false);
+      savingRef.current = false;
       return;
     }
 
@@ -335,6 +343,7 @@ export function TaskListItem({
     if (recurrenceError) {
       setError(recurrenceError);
       setLoading(false);
+      savingRef.current = false;
       return;
     }
 
@@ -360,6 +369,7 @@ export function TaskListItem({
     if (updateError) {
       setError(updateError.message);
       setLoading(false);
+      savingRef.current = false;
       return;
     }
 
@@ -372,6 +382,7 @@ export function TaskListItem({
     if (labelsError) {
       setError(labelsError.message);
       setLoading(false);
+      savingRef.current = false;
       return;
     }
 
@@ -381,6 +392,7 @@ export function TaskListItem({
       if (completeError) {
         setError(completeError);
         setLoading(false);
+        savingRef.current = false;
         return;
       }
       if (completeData?.next_task_id) {
@@ -400,6 +412,7 @@ export function TaskListItem({
       if (!user) {
         setError("You must be signed in to save due date history.");
         setLoading(false);
+        savingRef.current = false;
         return;
       }
 
@@ -416,12 +429,14 @@ export function TaskListItem({
       if (historyError) {
         setError(historyError.message);
         setLoading(false);
+        savingRef.current = false;
         return;
       }
     }
 
     setIsEditing(false);
     setLoading(false);
+    savingRef.current = false;
     router.refresh();
     onSuccess?.();
   }
@@ -524,13 +539,14 @@ export function TaskListItem({
         {error ? <p className={formErrorClassName}>{error}</p> : null}
 
         <div className="flex flex-wrap gap-2 pt-0.5">
-          <button
+          <LoadingButton
             type="submit"
-            disabled={loading}
+            loading={loading}
+            idleLabel="Save"
+            loadingLabel="Saving…"
+            minLabelWidthClassName="min-w-[5.5rem]"
             className={formPrimaryButtonClassName}
-          >
-            {loading ? "Saving..." : "Save"}
-          </button>
+          />
           <button
             type="button"
             onClick={cancelEditing}

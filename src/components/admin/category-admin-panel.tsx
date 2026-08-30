@@ -4,6 +4,7 @@ import {
   CategoryFormFields,
   createEmptyCategoryFormValues,
 } from "@/components/admin/category-form-fields";
+import { LoadingButton } from "@/components/ui/loading-button";
 import { CategoryIcon } from "@/lib/categories/icons";
 import {
   getNextSortOrder,
@@ -421,13 +422,14 @@ export function CategoryAdminPanel({
               showParentSelect
             />
             <div className="flex flex-wrap gap-2">
-              <button
+              <LoadingButton
                 type="submit"
-                disabled={loading}
+                loading={loading}
+                idleLabel="Save changes"
+                loadingLabel="Saving…"
+                minLabelWidthClassName="min-w-[7.5rem]"
                 className="cursor-pointer rounded-xl bg-emerald-600 px-4 py-2 text-sm font-medium text-white transition hover:bg-emerald-700 disabled:cursor-not-allowed disabled:opacity-60"
-              >
-                {loading ? "Saving..." : "Save changes"}
-              </button>
+              />
               <button
                 type="button"
                 onClick={cancelEditing}
@@ -517,9 +519,10 @@ export function CategoryAdminPanel({
                   type="button"
                   onClick={() => setCategoryActive(category, false)}
                   disabled={loading}
+                  aria-busy={loading || undefined}
                   className={adminSecondaryButtonClassName}
                 >
-                  Archive
+                  {loading ? "Archiving…" : "Archive"}
                 </button>
               ) : (
                 <button
@@ -566,13 +569,14 @@ export function CategoryAdminPanel({
             </p>
           ) : null}
 
-          <button
+          <LoadingButton
             type="submit"
-            disabled={loading}
+            loading={loading}
+            idleLabel="Create category"
+            loadingLabel="Creating…"
+            minLabelWidthClassName="min-w-[8.5rem]"
             className="cursor-pointer rounded-xl bg-emerald-600 px-4 py-2.5 text-sm font-medium text-white transition hover:bg-emerald-700 disabled:cursor-not-allowed disabled:opacity-60"
-          >
-            {loading ? "Creating..." : "Create category"}
-          </button>
+          />
         </form>
       </section>
 

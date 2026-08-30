@@ -1,5 +1,6 @@
 "use client";
 
+import { DashboardNavLink } from "@/components/dashboard/dashboard-nav-link";
 import { useDashboardNav } from "@/components/dashboard/nav-context";
 import { SignOutButton } from "@/components/dashboard/sign-out-button";
 import {
@@ -10,7 +11,6 @@ import { ThemeMenu } from "@/components/theme/theme-menu";
 import { getUserDisplayName } from "@/lib/auth/user-display";
 import { createClient } from "@/lib/supabase/client";
 import { Home, Menu } from "lucide-react";
-import Link from "next/link";
 import { useEffect, useState } from "react";
 
 type DashboardHeaderProps = {
@@ -66,14 +66,20 @@ export function DashboardHeader({
           >
             <Menu className="h-4 w-4" aria-hidden="true" />
           </button>
-          <Link
+          <DashboardNavLink
             href="/dashboard"
+            exact
+            showPendingSpinner={false}
             aria-label="Go to home"
             title="Home"
-            className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-lg text-stone-500 transition hover:bg-stone-100 hover:text-stone-800 dark:text-stone-400 dark:hover:bg-stone-800 dark:hover:text-stone-100"
+            className={({ isPending }) =>
+              `inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-lg text-stone-500 transition hover:bg-stone-100 hover:text-stone-800 dark:text-stone-400 dark:hover:bg-stone-800 dark:hover:text-stone-100 ${
+                isPending ? "opacity-70 ring-1 ring-emerald-400/60" : ""
+              }`
+            }
           >
             <Home className="h-4 w-4" aria-hidden="true" />
-          </Link>
+          </DashboardNavLink>
           <div className="min-w-0">
             <h1 className="truncate text-base font-semibold tracking-tight text-stone-900 dark:text-stone-100 sm:text-lg">
               {title}

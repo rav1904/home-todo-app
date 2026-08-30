@@ -1,5 +1,6 @@
 "use client";
 
+import { DashboardNavLink } from "@/components/dashboard/dashboard-nav-link";
 import { useDashboardNav } from "@/components/dashboard/nav-context";
 import {
   CalendarDays,
@@ -10,7 +11,6 @@ import {
   Shield,
   X,
 } from "lucide-react";
-import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
 
@@ -96,10 +96,16 @@ export function Sidebar({ showAdminLink = false }: SidebarProps) {
         } ${mobileDrawerClosed ? "pointer-events-none" : ""}`}
       >
         <div className="flex h-14 items-center justify-between gap-2 px-3">
-          <Link
+          <DashboardNavLink
             href="/dashboard"
-            onClick={closeMobileNav}
-            className="flex min-w-0 items-center gap-2.5 rounded-lg px-1 py-1 transition hover:bg-stone-50 dark:hover:bg-stone-800/80"
+            exact
+            showPendingSpinner={false}
+            onNavigate={closeMobileNav}
+            className={({ isPending }) =>
+              `flex min-w-0 items-center gap-2.5 rounded-lg px-1 py-1 transition hover:bg-stone-50 dark:hover:bg-stone-800/80 ${
+                isPending ? "opacity-80" : ""
+              }`
+            }
           >
             <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-emerald-600 text-xs font-semibold tracking-tight text-white">
               H
@@ -107,7 +113,7 @@ export function Sidebar({ showAdminLink = false }: SidebarProps) {
             <p className="truncate text-sm font-semibold tracking-tight text-stone-900 dark:text-stone-100">
               Work Hard / Play Hard
             </p>
-          </Link>
+          </DashboardNavLink>
           <button
             type="button"
             onClick={closeMobileNav}
@@ -118,32 +124,31 @@ export function Sidebar({ showAdminLink = false }: SidebarProps) {
           </button>
         </div>
 
-        <nav className="flex flex-1 flex-col gap-0.5 px-3 pb-3 pt-1">
+        <nav className="flex flex-1 flex-col gap-0.5 px-3 pt-1 pb-3">
           {navItems.map((item) => {
-            const isActive =
-              item.href === "/dashboard"
-                ? pathname === "/dashboard"
-                : pathname.startsWith(item.href);
             const Icon = item.icon;
 
             return (
-              <Link
+              <DashboardNavLink
                 key={item.href}
                 href={item.href}
-                onClick={closeMobileNav}
-                className={`flex items-center gap-2.5 rounded-lg px-2.5 py-2 text-sm font-medium transition ${
-                  isActive
-                    ? "bg-emerald-50 text-emerald-800 dark:bg-emerald-950/40 dark:text-emerald-300"
-                    : "text-stone-600 hover:bg-stone-50 hover:text-stone-900 dark:text-stone-400 dark:hover:bg-stone-800/80 dark:hover:text-stone-100"
-                }`}
+                exact={item.href === "/dashboard"}
+                onNavigate={closeMobileNav}
+                className={({ isActive, isPending }) =>
+                  `flex items-center gap-2.5 rounded-lg px-2.5 py-2 text-sm font-medium transition ${
+                    isActive
+                      ? "bg-emerald-50 text-emerald-800 dark:bg-emerald-950/40 dark:text-emerald-300"
+                      : "text-stone-600 hover:bg-stone-50 hover:text-stone-900 dark:text-stone-400 dark:hover:bg-stone-800/80 dark:hover:text-stone-100"
+                  } ${isPending ? "ring-1 ring-emerald-400/60" : ""}`
+                }
               >
                 <Icon
                   className="h-4 w-4 shrink-0 opacity-80"
                   aria-hidden="true"
-                  strokeWidth={isActive ? 2.25 : 2}
+                  strokeWidth={2}
                 />
-                {item.label}
-              </Link>
+                <span className="min-w-0 truncate">{item.label}</span>
+              </DashboardNavLink>
             );
           })}
         </nav>

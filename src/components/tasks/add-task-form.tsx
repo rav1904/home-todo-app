@@ -39,10 +39,11 @@ import {
   toolbarIconButtonActiveClassName,
   toolbarIconButtonClassName,
 } from "@/lib/ui/field-classes";
+import { LoadingButton } from "@/components/ui/loading-button";
 import { createClient } from "@/lib/supabase/client";
 import { Bell, Flag, Repeat, Tags } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { useMemo, useState, type ReactNode } from "react";
+import { useMemo, useRef, useState, type ReactNode } from "react";
 
 type AddTaskFormProps = {
   categories: Category[];
@@ -136,6 +137,7 @@ export function AddTaskForm({
   const [openPanel, setOpenPanel] = useState<PanelKey | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const submittingRef = useRef(false);
 
   const availableLabels = useMemo(() => {
     const merged = new Map<string, Label>();
@@ -168,6 +170,11 @@ export function AddTaskForm({
 
   async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
+    if (submittingRef.current || loading) {
+      return;
+    }
+
+    submittingRef.current = true;
     setLoading(true);
     setError(null);
 
@@ -179,6 +186,7 @@ export function AddTaskForm({
     if (!user) {
       setError("You must be signed in to add a task.");
       setLoading(false);
+      submittingRef.current = false;
       return;
     }
 
@@ -186,6 +194,7 @@ export function AddTaskForm({
     if (titleError) {
       setError(titleError);
       setLoading(false);
+      submittingRef.current = false;
       return;
     }
 
@@ -196,6 +205,7 @@ export function AddTaskForm({
     if (recurrenceError) {
       setError(recurrenceError);
       setLoading(false);
+      submittingRef.current = false;
       return;
     }
 
@@ -219,6 +229,7 @@ export function AddTaskForm({
     if (insertError || !createdTask) {
       setError(insertError?.message ?? "Could not create task.");
       setLoading(false);
+      submittingRef.current = false;
       return;
     }
 
@@ -237,6 +248,7 @@ export function AddTaskForm({
       if (labelsError) {
         setError(labelsError.message);
         setLoading(false);
+        submittingRef.current = false;
         return;
       }
     }
@@ -252,6 +264,7 @@ export function AddTaskForm({
     setExtraLabels([]);
     setOpenPanel(null);
     setLoading(false);
+    submittingRef.current = false;
     router.refresh();
     onSuccess?.();
   }
@@ -280,13 +293,14 @@ export function AddTaskForm({
             autoFocus={embedded}
           />
         </div>
-        <button
+        <LoadingButton
           type="submit"
-          disabled={loading}
+          loading={loading}
+          idleLabel="Add"
+          loadingLabel="Adding…"
+          minLabelWidthClassName="min-w-[4.75rem]"
           className={`${formPrimaryButtonClassName} min-h-11 shrink-0 self-start`}
-        >
-          {loading ? "…" : "Add"}
-        </button>
+        />
       </div>
 
       <TaskNotesField

@@ -14,6 +14,8 @@ type DashboardNavContextValue = {
   openMobileNav: () => void;
   closeMobileNav: () => void;
   toggleMobileNav: () => void;
+  navigationPending: boolean;
+  setNavigationPending: (pending: boolean) => void;
 };
 
 const DashboardNavContext = createContext<DashboardNavContextValue | null>(
@@ -22,6 +24,7 @@ const DashboardNavContext = createContext<DashboardNavContextValue | null>(
 
 export function DashboardNavProvider({ children }: { children: ReactNode }) {
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
+  const [navigationPending, setNavigationPending] = useState(false);
 
   const openMobileNav = useCallback(() => setMobileNavOpen(true), []);
   const closeMobileNav = useCallback(() => setMobileNavOpen(false), []);
@@ -36,8 +39,16 @@ export function DashboardNavProvider({ children }: { children: ReactNode }) {
       openMobileNav,
       closeMobileNav,
       toggleMobileNav,
+      navigationPending,
+      setNavigationPending,
     }),
-    [mobileNavOpen, openMobileNav, closeMobileNav, toggleMobileNav],
+    [
+      mobileNavOpen,
+      openMobileNav,
+      closeMobileNav,
+      toggleMobileNav,
+      navigationPending,
+    ],
   );
 
   return (
