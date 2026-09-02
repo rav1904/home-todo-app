@@ -41,13 +41,14 @@ type RawTaskRow = {
   priority: string;
   recurrence: string;
   completed: boolean;
+  cancelled_at: string | null;
   created_at: string;
   category_id: string | null;
   user_id: string;
 };
 
 const TASK_SELECT =
-  "id, title, description, due_at, reminder_at, reminder_mode, reminder_offset_minutes, priority, recurrence, completed, created_at, category_id, user_id";
+  "id, title, description, due_at, reminder_at, reminder_mode, reminder_offset_minutes, priority, recurrence, completed, cancelled_at, created_at, category_id, user_id";
 
 export type CalendarFetchResult = {
   calendarTasks: CalendarTask[];
@@ -187,6 +188,11 @@ export async function fetchCalendarPageData(
   const modalTasksById: Record<string, CalendarModalTask> = {};
 
   for (const task of rawTasks) {
+    // Cancelled tasks stay out of default calendar views.
+    if (task.cancelled_at) {
+      continue;
+    }
+
     const category = getCategoryDisplay(task.category_id, categoryLookup);
     const categoryUnavailable = task.category_id !== null && category === null;
     const categoryRow = task.category_id
@@ -216,6 +222,7 @@ export async function fetchCalendarPageData(
       title: task.title,
       dueAt: task.due_at,
       completed: task.completed,
+      cancelledAt: task.cancelled_at,
       priority: parseTaskPriority(task.priority),
       recurrence: parseTaskRecurrence(task.recurrence),
       reminderAt: task.reminder_at,
@@ -237,6 +244,7 @@ export async function fetchCalendarPageData(
       priority: parseTaskPriority(task.priority),
       recurrence: parseTaskRecurrence(task.recurrence),
       completed: task.completed,
+      cancelledAt: task.cancelled_at,
       createdAt: task.created_at,
       categoryId: task.category_id,
       category,

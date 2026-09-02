@@ -125,7 +125,9 @@ Manual checks for current product behaviour. Prefer a fresh browser session (or 
 - [ ] Category filter (`?category=`)
 - [ ] Label filter (`?label=`)
 - [ ] Search `q` matches title/description as implemented
-- [ ] Status filter (open / completed / all as UI provides)
+- [ ] Status filter (open / completed / cancelled / all as UI provides)
+- [ ] Cancel task hides from Open; Restore returns to Open
+- [ ] Cancelling recurring task does not spawn next occurrence
 - [ ] Sort options reorder the list
 - [ ] Combined filters compose; clearing params resets
 - [ ] `?edit=` still surfaces the task even if filters would hide it

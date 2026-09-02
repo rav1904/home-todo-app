@@ -152,9 +152,10 @@ export default async function FocusPage() {
     supabase
       .from("tasks")
       .select(
-        "id, title, description, due_at, reminder_at, reminder_mode, reminder_offset_minutes, priority, recurrence, completed, created_at, category_id, user_id",
+        "id, title, description, due_at, reminder_at, reminder_mode, reminder_offset_minutes, priority, recurrence, completed, cancelled_at, created_at, category_id, user_id",
       )
       .eq("completed", false)
+      .is("cancelled_at", null)
       .order("created_at", { ascending: false }),
     supabase
       .from("labels")
@@ -284,6 +285,7 @@ export default async function FocusPage() {
         priority={task.priority}
         recurrence={task.recurrence}
         completed={task.completed}
+        cancelledAt={task.cancelled_at ?? null}
         createdAt={task.created_at}
         categoryId={task.category_id}
         category={category}

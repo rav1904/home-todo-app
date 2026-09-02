@@ -1,6 +1,7 @@
 "use client";
 
 import { CategoryBadge } from "@/components/tasks/category-select";
+import { EditTaskModal } from "@/components/tasks/edit-task-modal";
 import { WorkspaceFilterChips } from "@/components/tasks/workspace-filter-chips";
 import { UserAvatar } from "@/components/ui/user-avatar";
 import {
@@ -13,14 +14,19 @@ import {
   getCategoryDisplay,
 } from "@/lib/categories/tree";
 import { filterTasksByCategory } from "@/lib/categories/filter";
-import { isoHasExplicitTime } from "@/lib/tasks/due-datetime";
+import type { Label } from "@/lib/labels/types";
+import { isTaskOpen } from "@/lib/tasks/cancel";
+import { canDeleteSharedTask } from "@/lib/tasks/creators";
+import { formatHomeDueDate } from "@/lib/tasks/local-dates";
+import type { TaskSubtask } from "@/lib/tasks/subtasks/types";
 import {
   filterChipActiveClassName,
   filterChipClassName,
   filterChipIdleClassName,
 } from "@/lib/ui/field-classes";
 import Link from "next/link";
-import { useMemo, useState } from "react";
+import { usePathname } from "next/navigation";
+import { useEffect, useMemo, useState } from "react";
 
 export type DashboardHomeTask = {
   id: string;
@@ -28,9 +34,15 @@ export type DashboardHomeTask = {
   description: string | null;
   due_at: string | null;
   reminder_at: string | null;
+  reminder_mode?: string | null;
+  reminder_offset_minutes?: number | null;
+  priority?: string | null;
+  recurrence?: string | null;
   completed: boolean;
+  cancelled_at?: string | null;
   created_at: string;
   category_id: string | null;
+  user_id: string;
 };
 
 type HomeStatusFilter = "open" | "today" | "overdue" | "done";
@@ -40,6 +52,13 @@ type DashboardHomeClientProps = {
   avatarUrl: string | null;
   tasks: DashboardHomeTask[];
   categories: Category[];
+  labels: Label[];
+  categoryIdsByLabelId: Record<string, string[]>;
+  labelIdsByTaskId: Record<string, string[]>;
+  subtasksByTaskId: Record<string, TaskSubtask[]>;
+  currentUserId: string;
+  isAdmin: boolean;
+  initialEditTaskId?: string | null;
   loadError?: string | null;
 };
 
@@ -64,23 +83,6 @@ function isOverdue(dueAt: string, today = new Date()) {
   return new Date(dueAt) < startOfLocalDay(today);
 }
 
-function formatDateTime(value: string) {
-  const date = new Date(value);
-  if (!isoHasExplicitTime(value)) {
-    return date.toLocaleDateString(undefined, {
-      month: "short",
-      day: "numeric",
-    });
-  }
-
-  return date.toLocaleString(undefined, {
-    month: "short",
-    day: "numeric",
-    hour: "numeric",
-    minute: "2-digit",
-  });
-}
-
 function sortOpenTasksForHome(tasks: DashboardHomeTask[], today: Date) {
   return [...tasks].sort((a, b) => {
     const aOverdue = a.due_at && isOverdue(a.due_at, today) ? 0 : 1;
@@ -98,6 +100,13 @@ function sortOpenTasksForHome(tasks: DashboardHomeTask[], today: Date) {
     if (b.due_at) return 1;
     return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
   });
+}
+
+function syncEditQuery(pathname: string, editId: string | null) {
+  const url = editId
+    ? `${pathname}?edit=${encodeURIComponent(editId)}`
+    : pathname;
+  window.history.replaceState(window.history.state, "", url);
 }
 
 function StatusChip({
@@ -144,11 +153,22 @@ export function DashboardHomeClient({
   avatarUrl,
   tasks,
   categories,
+  labels,
+  categoryIdsByLabelId,
+  labelIdsByTaskId,
+  subtasksByTaskId,
+  currentUserId,
+  isAdmin,
+  initialEditTaskId = null,
   loadError = null,
 }: DashboardHomeClientProps) {
+  const pathname = usePathname();
   const today = useMemo(() => new Date(), []);
   const [workspaceId, setWorkspaceId] = useState<string>("all");
   const [statusFilter, setStatusFilter] = useState<HomeStatusFilter>("open");
+  const [editingTaskId, setEditingTaskId] = useState<string | null>(
+    initialEditTaskId,
+  );
 
   const categoryLookup = useMemo(
     () => buildCategoryLookup(categories),
@@ -159,8 +179,38 @@ export function DashboardHomeClient({
     [categories],
   );
 
+  const tasksById = useMemo(() => {
+    const map = new Map<string, DashboardHomeTask>();
+    for (const task of tasks) {
+      map.set(task.id, task);
+    }
+    return map;
+  }, [tasks]);
+
+  const editingTask = editingTaskId
+    ? (tasksById.get(editingTaskId) ?? null)
+    : null;
+
+  useEffect(() => {
+    if (initialEditTaskId && tasksById.has(initialEditTaskId)) {
+      setEditingTaskId(initialEditTaskId);
+    }
+  }, [initialEditTaskId, tasksById]);
+
+  useEffect(() => {
+    syncEditQuery(pathname, editingTaskId);
+  }, [pathname, editingTaskId]);
+
+  function openTask(taskId: string) {
+    setEditingTaskId(taskId);
+  }
+
+  function closeEdit() {
+    setEditingTaskId(null);
+  }
+
   const openTasks = useMemo(
-    () => tasks.filter((task) => !task.completed),
+    () => tasks.filter((task) => isTaskOpen(task)),
     [tasks],
   );
   const completedTasks = useMemo(
@@ -192,18 +242,18 @@ export function DashboardHomeClient({
     let next = byWorkspace;
     switch (statusFilter) {
       case "open":
-        next = byWorkspace.filter((task) => !task.completed);
+        next = byWorkspace.filter((task) => isTaskOpen(task));
         break;
       case "today":
         next = byWorkspace.filter(
           (task) =>
-            !task.completed && task.due_at && isDueToday(task.due_at, today),
+            isTaskOpen(task) && task.due_at && isDueToday(task.due_at, today),
         );
         break;
       case "overdue":
         next = byWorkspace.filter(
           (task) =>
-            !task.completed && task.due_at && isOverdue(task.due_at, today),
+            isTaskOpen(task) && task.due_at && isOverdue(task.due_at, today),
         );
         break;
       case "done":
@@ -303,11 +353,13 @@ export function DashboardHomeClient({
               const overdue = Boolean(
                 task.due_at &&
                   !task.completed &&
+                  !task.cancelled_at &&
                   isOverdue(task.due_at, today),
               );
               const dueToday = Boolean(
                 task.due_at &&
                   !task.completed &&
+                  !task.cancelled_at &&
                   isDueToday(task.due_at, today),
               );
               const category = getCategoryDisplay(
@@ -322,9 +374,10 @@ export function DashboardHomeClient({
 
               return (
                 <li key={task.id} className="min-w-0">
-                  <Link
-                    href={`/dashboard/tasks?edit=${task.id}`}
-                    className="flex min-w-0 items-start gap-2 py-2.5 transition hover:bg-stone-50/80 sm:items-center dark:hover:bg-stone-800/40"
+                  <button
+                    type="button"
+                    onClick={() => openTask(task.id)}
+                    className="flex w-full min-w-0 cursor-pointer items-start gap-2 py-2.5 text-left transition hover:bg-stone-50/80 sm:items-center dark:hover:bg-stone-800/40"
                   >
                     <CategoryBadge
                       category={workspaceDisplay}
@@ -352,7 +405,7 @@ export function DashboardHomeClient({
                                 : "text-stone-400 dark:text-stone-500"
                           }`}
                         >
-                          {formatDateTime(task.due_at)}
+                          {formatHomeDueDate(task.due_at)}
                         </p>
                       ) : null}
                     </div>
@@ -366,16 +419,52 @@ export function DashboardHomeClient({
                               : "text-stone-400 dark:text-stone-500"
                         }`}
                       >
-                        {formatDateTime(task.due_at)}
+                        {formatHomeDueDate(task.due_at)}
                       </span>
                     ) : null}
-                  </Link>
+                  </button>
                 </li>
               );
             })}
           </ul>
         )}
       </section>
+
+      {editingTask ? (
+        <EditTaskModal
+          open
+          onClose={closeEdit}
+          id={editingTask.id}
+          title={editingTask.title}
+          description={editingTask.description}
+          dueAt={editingTask.due_at}
+          reminderAt={editingTask.reminder_at}
+          reminderMode={editingTask.reminder_mode}
+          reminderOffsetMinutes={editingTask.reminder_offset_minutes}
+          priority={editingTask.priority}
+          recurrence={editingTask.recurrence}
+          completed={editingTask.completed}
+          cancelledAt={editingTask.cancelled_at}
+          categoryId={editingTask.category_id}
+          categories={categories}
+          labels={labels}
+          categoryIdsByLabelId={categoryIdsByLabelId}
+          labelIds={labelIdsByTaskId[editingTask.id] ?? []}
+          subtasks={subtasksByTaskId[editingTask.id] ?? []}
+          taskUserId={editingTask.user_id}
+          currentUserId={currentUserId}
+          canDelete={canDeleteSharedTask({
+            currentUserId,
+            isAdmin,
+            taskUserId: editingTask.user_id,
+            categoryId: editingTask.category_id,
+            categoryScope:
+              categoryLookup.get(editingTask.category_id ?? "")?.scope ?? null,
+          })}
+          onSuccess={closeEdit}
+          onDeleted={closeEdit}
+        />
+      ) : null}
     </div>
   );
 }

@@ -5,6 +5,7 @@ import {
   toLocalDayKey,
 } from "@/lib/tasks/local-dates";
 import { isoHasExplicitTime } from "@/lib/tasks/due-datetime";
+import { isTaskOpen } from "@/lib/tasks/cancel";
 import {
   comparePriorityDesc,
   parseTaskPriority,
@@ -19,6 +20,7 @@ export type FocusTaskLike = {
   reminder_at: string | null;
   priority?: string | null;
   completed: boolean;
+  cancelled_at?: string | null;
   created_at: string;
 };
 
@@ -164,13 +166,13 @@ function sortUpNext<T extends FocusTaskLike>(tasks: T[]) {
   });
 }
 
-/** Exclusive focus buckets for open tasks. Completed tasks are ignored. */
+/** Exclusive focus buckets for open tasks. Completed/cancelled ignored. */
 export function buildFocusSections<T extends FocusTaskLike>(
   tasks: T[],
   now = new Date(),
   upNextLimit = FOCUS_UP_NEXT_LIMIT,
 ): FocusSections<T> {
-  const openTasks = tasks.filter((task) => !task.completed);
+  const openTasks = tasks.filter((task) => isTaskOpen(task));
   const claimed = new Set<string>();
 
   const overdue: T[] = [];

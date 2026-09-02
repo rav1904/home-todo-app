@@ -69,7 +69,7 @@ export function GlobalSearch({ open, onClose }: GlobalSearchProps) {
       supabase
         .from("tasks")
         .select(
-          "id, title, description, due_at, reminder_at, priority, recurrence, completed, category_id, created_at",
+          "id, title, description, due_at, reminder_at, priority, recurrence, completed, cancelled_at, category_id, created_at",
         )
         .order("created_at", { ascending: false }),
       supabase

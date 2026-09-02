@@ -59,6 +59,8 @@ export type TasksClientTask = {
   priority: string | null;
   recurrence: string | null;
   completed: boolean;
+  cancelled_at: string | null;
+  cancelled_by?: string | null;
   created_at: string;
   category_id: string | null;
   user_id: string;
@@ -286,6 +288,7 @@ export function TasksClient({
           [
             { id: "open", label: "Open" },
             { id: "completed", label: "Completed" },
+            { id: "cancelled", label: "Cancelled" },
             { id: "all", label: "All" },
           ] as const
         ).map((option) => {
@@ -516,6 +519,7 @@ export function TasksClient({
                 priority={task.priority}
                 recurrence={task.recurrence}
                 completed={task.completed}
+                cancelledAt={task.cancelled_at}
                 createdAt={task.created_at}
                 categoryId={task.category_id}
                 category={category}

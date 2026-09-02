@@ -279,13 +279,14 @@ export function TaskFiltersBar({ categories, labels }: TaskFiltersBarProps) {
         role="tablist"
         aria-label="Status filter"
       >
-        {(
-          [
-            { id: "open", label: "Open" },
-            { id: "completed", label: "Completed" },
-            { id: "all", label: "All" },
-          ] as const
-        ).map((option) => {
+            {(
+              [
+                { id: "open", label: "Open" },
+                { id: "completed", label: "Completed" },
+                { id: "cancelled", label: "Cancelled" },
+                { id: "all", label: "All" },
+              ] as const
+            ).map((option) => {
           const selected = statusFilter === option.id;
           return (
             <button

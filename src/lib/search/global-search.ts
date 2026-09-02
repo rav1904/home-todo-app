@@ -1,6 +1,7 @@
 import type { Category } from "@/lib/categories/types";
 import { getCategoryDisplay } from "@/lib/categories/tree";
 import type { Label } from "@/lib/labels/types";
+import { isTaskCancelled, isTaskOpen } from "@/lib/tasks/cancel";
 import {
   isFocusDueOverdue,
   isFocusDueToday,
@@ -37,6 +38,7 @@ export type GlobalSearchTask = {
   priority: string;
   recurrence: string;
   completed: boolean;
+  cancelled_at?: string | null;
   category_id: string | null;
   created_at: string;
 };
@@ -164,7 +166,7 @@ export function parseGlobalSearchQuery(raw: string): ParsedGlobalSearchQuery {
     const statusMatch = lower.match(/^status:(.+)$/);
     if (statusMatch) {
       const value = statusMatch[1];
-      if (value === "open" || value === "completed") {
+      if (value === "open" || value === "completed" || value === "cancelled" || value === "all") {
         status = value;
       }
       continue;
@@ -221,11 +223,25 @@ function taskMatchesParsed(
   labelLookup: Map<string, Label>,
   now: Date,
 ): boolean {
-  if (parsed.status === "open" && task.completed) {
-    return false;
-  }
-  if (parsed.status === "completed" && !task.completed) {
-    return false;
+  if (parsed.status === "open") {
+    if (!isTaskOpen(task)) {
+      return false;
+    }
+  } else if (parsed.status === "completed") {
+    if (!task.completed) {
+      return false;
+    }
+  } else if (parsed.status === "cancelled") {
+    if (!isTaskCancelled(task)) {
+      return false;
+    }
+  } else if (parsed.status === "all") {
+    // include everything
+  } else {
+    // Default: hide cancelled (same spirit as Open list), still allow completed matches.
+    if (isTaskCancelled(task)) {
+      return false;
+    }
   }
 
   if (parsed.priority) {
@@ -236,7 +252,7 @@ function taskMatchesParsed(
 
   if (parsed.overdue) {
     if (
-      task.completed ||
+      !isTaskOpen(task) ||
       !task.due_at ||
       !isFocusDueOverdue(task.due_at, now)
     ) {
@@ -245,7 +261,11 @@ function taskMatchesParsed(
   }
 
   if (parsed.today) {
-    if (task.completed || !task.due_at || !isFocusDueToday(task.due_at, now)) {
+    if (
+      !isTaskOpen(task) ||
+      !task.due_at ||
+      !isFocusDueToday(task.due_at, now)
+    ) {
       return false;
     }
   }
@@ -340,7 +360,11 @@ function buildTaskMeta(
   categoryLookup: Map<string, Category>,
 ): string {
   const parts: string[] = [];
-  parts.push(task.completed ? "Completed" : "Open");
+  if (isTaskCancelled(task)) {
+    parts.push("Cancelled");
+  } else {
+    parts.push(task.completed ? "Completed" : "Open");
+  }
   parts.push(parseTaskPriority(task.priority));
   const category = getCategoryDisplay(task.category_id, categoryLookup);
   if (category) {
@@ -402,6 +426,16 @@ function buildQuickFilters(
       href: buildTasksFilterUrl(
         "/dashboard/tasks",
         emptyListState({ statusFilter: "completed" }),
+      ),
+    });
+  }
+  if (parsed.status === "cancelled" || lower.includes("status:cancelled")) {
+    maybeAdd({
+      id: "status-cancelled",
+      label: "Cancelled tasks",
+      href: buildTasksFilterUrl(
+        "/dashboard/tasks",
+        emptyListState({ statusFilter: "cancelled" }),
       ),
     });
   }

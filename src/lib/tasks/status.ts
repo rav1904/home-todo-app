@@ -1,12 +1,19 @@
-export type TaskStatusFilter = "all" | "open" | "completed";
+import { isTaskCancelled, isTaskOpen } from "@/lib/tasks/cancel";
 
-/** Default list view: incomplete tasks only. */
+export type TaskStatusFilter = "all" | "open" | "completed" | "cancelled";
+
+/** Default list view: incomplete, non-cancelled tasks only. */
 export const DEFAULT_TASK_STATUS_FILTER: TaskStatusFilter = "open";
 
 export function parseStatusFilterParam(
   param: string | undefined,
 ): TaskStatusFilter {
-  if (param === "all" || param === "completed" || param === "open") {
+  if (
+    param === "all" ||
+    param === "completed" ||
+    param === "open" ||
+    param === "cancelled"
+  ) {
     return param;
   }
 
@@ -34,10 +41,17 @@ export function getStatusFilterLabel(
       return "All";
     case "completed":
       return "Completed";
+    case "cancelled":
+      return "Cancelled";
   }
 }
 
-export function filterTasksByStatus<T extends { completed: boolean }>(
+type StatusTaskLike = {
+  completed: boolean;
+  cancelled_at?: string | null;
+};
+
+export function filterTasksByStatus<T extends StatusTaskLike>(
   tasks: T[],
   filter: TaskStatusFilter,
 ): T[] {
@@ -45,8 +59,10 @@ export function filterTasksByStatus<T extends { completed: boolean }>(
     case "all":
       return tasks;
     case "open":
-      return tasks.filter((task) => !task.completed);
+      return tasks.filter((task) => isTaskOpen(task));
     case "completed":
       return tasks.filter((task) => task.completed);
+    case "cancelled":
+      return tasks.filter((task) => isTaskCancelled(task));
   }
 }

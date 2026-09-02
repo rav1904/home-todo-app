@@ -22,6 +22,7 @@ export type CalendarTask = {
   title: string;
   dueAt: string;
   completed: boolean;
+  cancelledAt: string | null;
   priority: TaskPriority;
   recurrence: TaskRecurrence;
   reminderAt: string | null;
@@ -43,6 +44,7 @@ export type CalendarModalTask = {
   priority: TaskPriority;
   recurrence: TaskRecurrence;
   completed: boolean;
+  cancelledAt: string | null;
   createdAt: string;
   categoryId: string | null;
   category: CategoryDisplay | null;

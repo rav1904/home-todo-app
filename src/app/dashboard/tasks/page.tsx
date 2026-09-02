@@ -43,7 +43,7 @@ export default async function TasksPage({ searchParams }: TasksPageProps) {
     supabase
       .from("tasks")
       .select(
-        "id, title, description, due_at, reminder_at, reminder_mode, reminder_offset_minutes, priority, recurrence, completed, created_at, category_id, user_id",
+        "id, title, description, due_at, reminder_at, reminder_mode, reminder_offset_minutes, priority, recurrence, completed, cancelled_at, cancelled_by, created_at, category_id, user_id",
       )
       .order("created_at", { ascending: false }),
     supabase
@@ -80,6 +80,8 @@ export default async function TasksPage({ searchParams }: TasksPageProps) {
     priority: string | null;
     recurrence: string | null;
     completed: boolean;
+    cancelled_at: string | null;
+    cancelled_by: string | null;
     created_at: string;
     category_id: string | null;
     user_id: string;

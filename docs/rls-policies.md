@@ -76,6 +76,15 @@ No new RLS policies — existing task owner policies cover all three. Reminder d
 
 **Priority v1:** `priority` text NOT NULL DEFAULT `'medium'` (`sql/tasks_priority.sql`), values `low` | `medium` | `high` | `urgent`. No new RLS — covered by task owner policies. Admin does not see other users’ priorities via task content.
 
+**Cancel v1:** Columns on `tasks` (`sql/cancel_tasks.sql`):
+
+| Column | Notes |
+|--------|--------|
+| `cancelled_at` | Soft-cancel timestamp; null = not cancelled |
+| `cancelled_by` | `auth.users` who cancelled |
+
+Open views = `completed = false` AND `cancelled_at IS NULL`. Cancel is **not** complete and does **not** call `complete_task_with_recurrence`. Covered by existing `"Users update accessible tasks"` (owner or shared workspace member). No new RLS. Personal/null-category remain owner-only; admin still cannot see others’ Personal tasks.
+
 **Recurrence v1:** Columns on `tasks` (`sql/tasks_recurrence.sql`):
 
 | Column | Role |

@@ -28,7 +28,7 @@ export async function completeTaskWithRecurrence(
 ): Promise<{ data: CompleteTaskWithRecurrenceResult | null; error: string | null }> {
   const { data: snapshot, error: snapshotError } = await supabase
     .from("tasks")
-    .select("recurrence, due_at, completed")
+    .select("recurrence, due_at, completed, cancelled_at")
     .eq("id", taskId)
     .maybeSingle();
 
@@ -40,7 +40,16 @@ export async function completeTaskWithRecurrence(
     return { data: null, error: snapshotError.message };
   }
 
-  const before = snapshot as TaskRecurrenceSnapshot | null;
+  const before = snapshot as (TaskRecurrenceSnapshot & {
+    cancelled_at: string | null;
+  }) | null;
+
+  if (before?.cancelled_at) {
+    return {
+      data: null,
+      error: "Cancelled tasks cannot be completed. Restore the task first.",
+    };
+  }
   const recurrence = parseTaskRecurrence(before?.recurrence);
   const dueAt = before?.due_at ?? null;
 

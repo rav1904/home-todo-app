@@ -44,6 +44,46 @@ export function dueAtToCalendarDayKey(dueAt: string) {
   return toLocalDayKey(dueAt);
 }
 
+const HOME_DUE_MONTHS = [
+  "Jan",
+  "Feb",
+  "Mar",
+  "Apr",
+  "May",
+  "Jun",
+  "Jul",
+  "Aug",
+  "Sep",
+  "Oct",
+  "Nov",
+  "Dec",
+] as const;
+
+/**
+ * Compact date-only label for the dashboard/home task list: "DD MMM YY".
+ * Uses dueAtToCalendarDayKey so date-only tasks stay on the intended calendar day.
+ * Never includes time.
+ */
+export function formatHomeDueDate(dueAt: string): string {
+  const dayKey = dueAtToCalendarDayKey(dueAt);
+  const [yearPart, monthPart, dayPart] = dayKey.split("-");
+  const year = Number(yearPart);
+  const monthIndex = Number(monthPart) - 1;
+  const day = Number(dayPart);
+
+  if (
+    !Number.isFinite(year) ||
+    !Number.isFinite(monthIndex) ||
+    monthIndex < 0 ||
+    monthIndex > 11 ||
+    !Number.isFinite(day)
+  ) {
+    return dayKey;
+  }
+
+  return `${String(day).padStart(2, "0")} ${HOME_DUE_MONTHS[monthIndex]} ${String(year).slice(-2)}`;
+}
+
 /** Widen a fetch window so timezone-shifted dues are not dropped before client grouping. */
 export function expandRangeForTimezoneSkew(start: Date, end: Date) {
   return {

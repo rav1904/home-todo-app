@@ -90,8 +90,8 @@ export function TaskDeleteButton({
         onClick={handleDelete}
         disabled={loading}
         aria-busy={loading || undefined}
-        aria-label={loading ? `Deleting "${title}"` : `Delete "${title}"`}
-        title={loading ? "Deleting…" : "Delete"}
+        aria-label={loading ? "Deleting…" : "Delete task"}
+        title={loading ? "Deleting…" : "Delete task"}
         className={className}
       >
         {loading ? <Spinner className="h-4 w-4" /> : <TrashIcon />}

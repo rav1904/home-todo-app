@@ -10,6 +10,7 @@
 --   (sql/tasks_reminder_at.sql)
 -- Priority v1: tasks.priority (sql/tasks_priority.sql)
 -- Recurrence v1: tasks.recurrence + spawned_from_task_id (sql/tasks_recurrence.sql)
+-- Cancel v1: tasks.cancelled_at + cancelled_by (sql/cancel_tasks.sql)
 -- Category access: Personal per user + global grants (sql/categories_personal_and_access.sql)
 -- App access: allowlist + requests (sql/app_access_control.sql)
 -- Shared workspaces: global categories share tasks with members (sql/shared_workspace_tasks.sql)
@@ -119,6 +120,8 @@ create table if not exists public.tasks (
   recurrence text not null default 'none', -- none | weekly | fortnightly | monthly | quarterly | semi_annual | annual
   spawned_from_task_id uuid references public.tasks (id) on delete set null,
   completed boolean not null default false,
+  cancelled_at timestamptz, -- null = not cancelled; soft-cancel (not completed)
+  cancelled_by uuid references auth.users (id) on delete set null,
   category_id uuid references public.categories (id) on delete set null,
   created_at timestamptz not null default now()
 );
@@ -129,7 +132,13 @@ create table if not exists public.tasks (
 --   tasks_reminder_consistency_check
 -- Partial index for active reminders (open tasks with reminder_at set):
 --   tasks_user_id_reminder_at_active_idx ON (user_id, reminder_at)
---   WHERE reminder_at IS NOT NULL AND completed = false
+--   WHERE reminder_at IS NOT NULL AND completed = false AND cancelled_at IS NULL
+--
+-- Cancel checks (see sql/cancel_tasks.sql):
+--   tasks_cancelled_consistency_check (cancelled_at/by both null or both set)
+--   tasks_cancelled_not_completed_check (cancelled implies completed = false)
+-- Open-active index: tasks_open_active_idx WHERE completed = false AND cancelled_at IS NULL
+-- Open = completed = false AND cancelled_at IS NULL. Cancel does not spawn recurrence.
 
 -- App: custom reminder is independent of due_at.
 -- App: relative_due recalculates reminder_at when due_at changes; clears if due_at cleared.

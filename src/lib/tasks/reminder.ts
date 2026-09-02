@@ -215,10 +215,13 @@ export function toReminderDbColumns(
 export type ReminderTaskLike = {
   reminder_at: string | null;
   completed: boolean;
+  cancelled_at?: string | null;
 };
 
 export function hasActiveReminder(task: ReminderTaskLike): boolean {
-  return Boolean(task.reminder_at) && !task.completed;
+  return (
+    Boolean(task.reminder_at) && !task.completed && !task.cancelled_at
+  );
 }
 
 /** Due now or overdue — wall-clock comparison. */
@@ -252,10 +255,11 @@ export function getReminderCardLabel(
   options?: {
     reminderMode?: string | null;
     reminderOffsetMinutes?: number | null;
+    cancelled?: boolean;
     now?: Date;
   },
 ): { text: string; overdue: boolean } | null {
-  if (!reminderAt || completed) {
+  if (!reminderAt || completed || options?.cancelled) {
     return null;
   }
 

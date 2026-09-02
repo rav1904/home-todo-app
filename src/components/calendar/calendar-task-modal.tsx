@@ -85,6 +85,7 @@ export function CalendarTaskModal({
             priority={task.priority}
             recurrence={task.recurrence}
             completed={task.completed}
+            cancelledAt={task.cancelledAt}
             createdAt={task.createdAt}
             categoryId={task.categoryId}
             category={task.category}
