@@ -1,6 +1,6 @@
 # Test checklist
 
-Last updated: 2026-08-08
+Last updated: 2026-09-02
 
 Manual checks for current product behaviour. Prefer a fresh browser session (or private window) when verifying privacy.
 
@@ -89,6 +89,23 @@ Manual checks for current product behaviour. Prefer a fresh browser session (or 
 - [ ] Re-approve restores access
 - [ ] Admin still cannot see other users’ Personal task content
 - [ ] No Personal category for brand-new unapproved Auth users
+
+## Display name override
+
+Prerequisite: `sql/user_display_name_overrides.sql`.
+
+- [ ] Admin Access: each approved/revoked user shows email, Google name, override, effective name, access status
+- [ ] Admin can set `parixnirav@gmail.com` override to `Pari`; header and labels show Pari
+- [ ] Admin can clear the override; Google/email fallback returns
+- [ ] Admin Users list shows Google name, override, and effective name
+- [ ] Shared task creator badge uses the override
+- [ ] Workspace member lists (Admin → Categories) use the effective name
+- [ ] Non-admin cannot call `admin_set_display_name_override` (`not_admin`)
+- [ ] Unapproved users stay blocked; access control still works
+- [ ] Shared workspace visibility unchanged; Personal tasks stay private
+- [ ] Mobile admin user/access lists do not overflow (incl. magnified iOS)
+- [ ] Blank override saves as null; max 40 characters; no control characters
+- [ ] `npm run build` passes
 
 ## Shared workspaces
 

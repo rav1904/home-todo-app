@@ -8,7 +8,7 @@ import {
   GlobalSearchButton,
 } from "@/components/search/global-search";
 import { ThemeMenu } from "@/components/theme/theme-menu";
-import { getUserDisplayName } from "@/lib/auth/user-display";
+import { fetchEffectiveDisplayName } from "@/lib/auth/effective-display-name";
 import { createClient } from "@/lib/supabase/client";
 import { Home, Menu } from "lucide-react";
 import { useEffect, useState } from "react";
@@ -40,9 +40,10 @@ export function DashboardHeader({
         return;
       }
 
-      setUserName(
-        getUserDisplayName(user.user_metadata, user.email, "there"),
-      );
+      const name = await fetchEffectiveDisplayName(supabase, user, "there");
+      if (!cancelled) {
+        setUserName(name);
+      }
     }
 
     void loadUserName();

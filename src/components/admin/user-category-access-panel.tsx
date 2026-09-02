@@ -1,5 +1,6 @@
 "use client";
 
+import { DisplayNameOverrideField } from "@/components/admin/display-name-override-field";
 import type { AppUserSummary } from "@/lib/admin/users";
 import { formatCategoryNameForDisplay } from "@/lib/categories/display";
 import type { Category } from "@/lib/categories/types";
@@ -58,6 +59,7 @@ export function UserCategoryAccessPanel({
     {},
   );
   const [savingUserId, setSavingUserId] = useState<string | null>(null);
+  const [nameBusyKey, setNameBusyKey] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   const grantMap = useMemo(() => buildGrantMap(grants), [grants]);
@@ -157,6 +159,22 @@ export function UserCategoryAccessPanel({
     router.refresh();
   }
 
+  async function runNameAction(
+    key: string,
+    action: () => Promise<{ error: { message: string } | null }>,
+  ) {
+    setError(null);
+    setNameBusyKey(key);
+    const { error: actionError } = await action();
+    if (actionError) {
+      setError(actionError.message);
+      setNameBusyKey(null);
+      return;
+    }
+    setNameBusyKey(null);
+    router.refresh();
+  }
+
   return (
     <div className="mt-4 min-w-0 space-y-3">
       {error ? <p className={formErrorClassName}>{error}</p> : null}
@@ -179,12 +197,38 @@ export function UserCategoryAccessPanel({
                   size="sm"
                 />
                 <div className="min-w-0 flex-1">
-                  <p className="truncate font-medium text-stone-900 dark:text-stone-100">
+                  <p className="break-words font-medium text-stone-900 dark:text-stone-100">
                     {appUser.displayName}
                   </p>
                   <p className="break-all text-xs text-stone-500 dark:text-stone-400">
                     {appUser.email ?? "—"}
                   </p>
+                  <dl className="mt-2 min-w-0 space-y-1 text-xs text-stone-500 dark:text-stone-400">
+                    <div className="min-w-0">
+                      <dt className="inline text-stone-400 dark:text-stone-500">
+                        Google:{" "}
+                      </dt>
+                      <dd className="inline break-words">
+                        {appUser.authDisplayName || "—"}
+                      </dd>
+                    </div>
+                    <div className="min-w-0">
+                      <dt className="inline text-stone-400 dark:text-stone-500">
+                        Override:{" "}
+                      </dt>
+                      <dd className="inline break-words">
+                        {appUser.displayNameOverride || "None"}
+                      </dd>
+                    </div>
+                    <div className="min-w-0">
+                      <dt className="inline text-stone-400 dark:text-stone-500">
+                        Effective:{" "}
+                      </dt>
+                      <dd className="inline break-words font-medium text-stone-700 dark:text-stone-300">
+                        {appUser.displayName}
+                      </dd>
+                    </div>
+                  </dl>
                   <p className="mt-1 text-[11px] text-stone-400 dark:text-stone-500">
                     Created {formatDateTime(appUser.createdAt)}
                     {" · "}
@@ -193,6 +237,19 @@ export function UserCategoryAccessPanel({
                       ? formatDateTime(appUser.lastSignInAt)
                       : "Never"}
                   </p>
+                  {appUser.hasAllowlistRow && appUser.email ? (
+                    <div className="mt-3">
+                      <DisplayNameOverrideField
+                        email={appUser.email}
+                        override={appUser.displayNameOverride}
+                        busyKey={
+                          savingUserId ? `grants-${savingUserId}` : nameBusyKey
+                        }
+                        actionPrefix={`override-${appUser.id}`}
+                        onAction={runNameAction}
+                      />
+                    </div>
+                  ) : null}
                 </div>
               </div>
 

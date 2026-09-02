@@ -1,9 +1,7 @@
 import { AccessRequestForm } from "@/components/access/access-request-form";
 import { isCurrentUserAllowed } from "@/lib/access/allowed";
 import { getMyPendingAccessRequest } from "@/lib/access/queries";
-import {
-  getUserDisplayName,
-} from "@/lib/auth/user-display";
+import { fetchEffectiveDisplayName } from "@/lib/auth/effective-display-name";
 import { createClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
 
@@ -22,9 +20,9 @@ export default async function AccessRequestPage() {
   }
 
   const pending = await getMyPendingAccessRequest();
-  const displayName = getUserDisplayName(
-    user.user_metadata,
-    user.email,
+  const displayName = await fetchEffectiveDisplayName(
+    supabase,
+    user,
     "Google user",
   );
 

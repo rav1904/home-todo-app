@@ -1,6 +1,6 @@
 # RLS policies
 
-Last updated: 2026-08-12
+Last updated: 2026-09-02
 
 Documentation of expected Row Level Security behaviour. Apply scripts live under `sql/` where noted. Some older policies were created in the Supabase SQL editor only.
 
@@ -35,7 +35,9 @@ Source: `sql/app_access_control.sql`
 | `access_requests` | INSERT | Requester | Own uid + JWT email + pending + not allowed |
 | `access_requests` | UPDATE | Admin | Approve/reject (prefer admin RPCs) |
 
-Preferred mutations: `submit_access_request`, `admin_approve_access_request`, `admin_reject_access_request`, `admin_add_allowed_email`, `admin_revoke_allowed_email`, `admin_reapprove_allowed_email`.
+Preferred mutations: `submit_access_request`, `admin_approve_access_request`, `admin_reject_access_request`, `admin_add_allowed_email`, `admin_revoke_allowed_email`, `admin_reapprove_allowed_email`, `admin_set_display_name_override`.
+
+`display_name_override` is an admin-only column on `app_allowed_users` (`sql/user_display_name_overrides.sql`). No extra RLS: existing owner SELECT (own email) and admin UPDATE cover it. Non-admins cannot change their own override. Shared-task creator names use `get_task_creator_profiles` (includes override) so members do not need SELECT on other users’ allowlist rows.
 
 ---
 
@@ -46,6 +48,7 @@ Preferred mutations: `submit_access_request`, `admin_approve_access_request`, `a
 | `user_can_access_task` | Own task, or non-personal category with `user_can_use_category` (admin ⇒ all globals) |
 | `user_can_mutate_task` | Same as access (v1) |
 | `user_can_delete_task` | Creator, or admin when category is shared/global |
+| `get_task_creator_profiles` | Allowed users only; returns id/email/avatar + effective display name (override → Auth name → email). Does not expose allowlist rows or private tasks. |
 
 Policies: `"Users select accessible tasks"`, `"Users insert own tasks"`, `"Users update accessible tasks"`, `"Users delete deletable tasks"`. Related `task_labels` / `task_subtasks` / `task_due_date_changes` follow parent task access/mutate.
 

@@ -1,7 +1,7 @@
 -- Documentation reference for the home-todo-app schema.
 -- NOT a full migration to run blindly against production.
 -- Authoritative apply scripts (when present) live under sql/.
--- Last updated: 2026-08-10
+-- Last updated: 2026-09-02
 --
 -- Tables: tasks, categories, labels, task_labels, label_categories,
 --         user_category_access, task_due_date_changes, task_subtasks,
@@ -13,6 +13,7 @@
 -- Cancel v1: tasks.cancelled_at + cancelled_by (sql/cancel_tasks.sql)
 -- Category access: Personal per user + global grants (sql/categories_personal_and_access.sql)
 -- App access: allowlist + requests (sql/app_access_control.sql)
+-- Display names: admin override on allowlist (sql/user_display_name_overrides.sql)
 -- Shared workspaces: global categories share tasks with members (sql/shared_workspace_tasks.sql)
 
 -- =============================================================================
@@ -51,6 +52,7 @@ create table if not exists public.categories (
 -- =============================================================================
 -- app_allowed_users + access_requests (app membership)
 -- Source of truth for apply: sql/app_access_control.sql
+-- Display name override: sql/user_display_name_overrides.sql
 -- =============================================================================
 
 create table if not exists public.app_allowed_users (
@@ -63,7 +65,8 @@ create table if not exists public.app_allowed_users (
   updated_at timestamptz not null default now(),
   created_by uuid references auth.users (id) on delete set null,
   revoked_at timestamptz,
-  revoked_by uuid references auth.users (id) on delete set null
+  revoked_by uuid references auth.users (id) on delete set null,
+  display_name_override text -- admin-only; null = Google/Auth/email fallback; max 40 chars
 );
 
 create table if not exists public.access_requests (
@@ -79,8 +82,10 @@ create table if not exists public.access_requests (
   reviewed_by uuid references auth.users (id) on delete set null
 );
 
--- Helpers: is_app_allowed(), submit_access_request, admin_approve/reject/add/revoke/reapprove
+-- Helpers: is_app_allowed(), submit_access_request, admin_approve/reject/add/revoke/reapprove,
+--          admin_set_display_name_override (sql/user_display_name_overrides.sql)
 -- Admin email is always allowed via is_app_admin() even if allowlist row missing/revoked.
+-- Display name override is admin-write only; blank saves as null.
 
 -- =============================================================================
 -- user_category_access (admin grants of global top-level categories)
@@ -98,9 +103,9 @@ create table if not exists public.user_category_access (
 -- Personal access is NOT stored here.
 -- Grants = shared workspace membership for that top-level category.
 
--- Helpers (sql/shared_workspace_tasks.sql):
+-- Helpers (sql/shared_workspace_tasks.sql; display names also sql/user_display_name_overrides.sql):
 --   user_can_access_task / user_can_mutate_task / user_can_delete_task
---   task_category_is_personal, get_task_creator_profiles
+--   task_category_is_personal, get_task_creator_profiles (override → Auth name → email)
 --   complete_task_with_recurrence keeps parent.user_id on spawn
 
 -- =============================================================================

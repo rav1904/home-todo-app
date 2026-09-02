@@ -1,10 +1,8 @@
 import { DashboardHeader } from "@/components/dashboard/header";
 import { DashboardHomeClient } from "@/components/dashboard/dashboard-home-client";
 import { isAdminUser } from "@/lib/admin";
-import {
-  getUserAvatarUrl,
-  getUserDisplayName,
-} from "@/lib/auth/user-display";
+import { fetchEffectiveDisplayName } from "@/lib/auth/effective-display-name";
+import { getUserAvatarUrl } from "@/lib/auth/user-display";
 import { loadAccessibleCategories } from "@/lib/categories/access";
 import {
   groupCategoryIdsByLabel,
@@ -97,11 +95,7 @@ export default async function DashboardPage({ searchParams }: DashboardPageProps
     subtasksByTaskId = subtasksResult.subtasksByTaskId;
   }
 
-  const displayName = getUserDisplayName(
-    user?.user_metadata,
-    user?.email,
-    "there",
-  );
+  const displayName = await fetchEffectiveDisplayName(supabase, user, "there");
   const avatarUrl = getUserAvatarUrl(user?.user_metadata);
   const currentUserId = user?.id ?? "";
   const isAdmin = isAdminUser(user?.email);

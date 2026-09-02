@@ -1,9 +1,10 @@
 "use client";
 
+import { DisplayNameOverrideField } from "@/components/admin/display-name-override-field";
 import { LoadingButton } from "@/components/ui/loading-button";
 import type {
   AccessRequestRow,
-  AllowedUserRow,
+  AllowedUserAdminView,
 } from "@/lib/access/queries";
 import {
   addAllowedEmail,
@@ -23,8 +24,8 @@ import { useState } from "react";
 
 type AccessControlPanelProps = {
   pendingRequests: AccessRequestRow[];
-  approvedUsers: AllowedUserRow[];
-  revokedUsers: AllowedUserRow[];
+  approvedUsers: AllowedUserAdminView[];
+  revokedUsers: AllowedUserAdminView[];
   adminEmail: string;
 };
 
@@ -36,6 +37,45 @@ function formatDateTime(value: string) {
     hour: "numeric",
     minute: "2-digit",
   });
+}
+
+function UserNameDetails({
+  row,
+  accessStatus,
+}: {
+  row: AllowedUserAdminView;
+  accessStatus: string;
+}) {
+  return (
+    <dl className="mt-2 min-w-0 space-y-1 text-xs text-stone-500 dark:text-stone-400">
+      <div className="min-w-0">
+        <dt className="inline text-stone-400 dark:text-stone-500">Google: </dt>
+        <dd className="inline break-words">
+          {row.authDisplayName || "Not signed in yet"}
+        </dd>
+      </div>
+      <div className="min-w-0">
+        <dt className="inline text-stone-400 dark:text-stone-500">
+          Override:{" "}
+        </dt>
+        <dd className="inline break-words">
+          {row.display_name_override || "None"}
+        </dd>
+      </div>
+      <div className="min-w-0">
+        <dt className="inline text-stone-400 dark:text-stone-500">
+          Effective:{" "}
+        </dt>
+        <dd className="inline break-words font-medium text-stone-700 dark:text-stone-300">
+          {row.effectiveDisplayName}
+        </dd>
+      </div>
+      <div className="min-w-0">
+        <dt className="inline text-stone-400 dark:text-stone-500">Access: </dt>
+        <dd className="inline">{accessStatus}</dd>
+      </div>
+    </dl>
+  );
 }
 
 export function AccessControlPanel({
@@ -66,7 +106,7 @@ export function AccessControlPanel({
   }
 
   return (
-    <div className="space-y-8">
+    <div className="min-w-0 space-y-8">
       {error ? <p className={formErrorClassName}>{error}</p> : null}
 
       <section className="space-y-3">
@@ -202,16 +242,16 @@ export function AccessControlPanel({
             No approved users.
           </p>
         ) : (
-          <ul className="divide-y divide-stone-200 rounded-2xl border border-stone-200 dark:divide-stone-700 dark:border-stone-700">
+          <ul className="min-w-0 divide-y divide-stone-200 rounded-2xl border border-stone-200 dark:divide-stone-700 dark:border-stone-700">
             {approvedUsers.map((row) => {
               const isAdminRow =
                 row.email.toLowerCase() === adminEmail.toLowerCase();
               return (
                 <li
                   key={row.id}
-                  className="flex flex-col gap-2 px-4 py-3 sm:flex-row sm:items-center sm:justify-between"
+                  className="flex min-w-0 flex-col gap-3 px-4 py-3 sm:flex-row sm:items-start sm:justify-between"
                 >
-                  <div className="min-w-0">
+                  <div className="min-w-0 w-full sm:flex-1">
                     <p className="break-all text-sm font-medium text-stone-900 dark:text-stone-100">
                       {row.email}
                       {isAdminRow ? (
@@ -220,9 +260,19 @@ export function AccessControlPanel({
                         </span>
                       ) : null}
                     </p>
-                    <p className="text-xs text-stone-400 dark:text-stone-500">
+                    <UserNameDetails row={row} accessStatus="Approved" />
+                    <p className="mt-1 text-xs text-stone-400 dark:text-stone-500">
                       {row.source} · since {formatDateTime(row.created_at)}
                     </p>
+                    <div className="mt-3">
+                      <DisplayNameOverrideField
+                        email={row.email}
+                        override={row.display_name_override}
+                        busyKey={busyKey}
+                        actionPrefix={`override-${row.id}`}
+                        onAction={runAction}
+                      />
+                    </div>
                   </div>
                   {!isAdminRow ? (
                     <LoadingButton
@@ -261,22 +311,32 @@ export function AccessControlPanel({
             No revoked users.
           </p>
         ) : (
-          <ul className="divide-y divide-stone-200 rounded-2xl border border-stone-200 dark:divide-stone-700 dark:border-stone-700">
+          <ul className="min-w-0 divide-y divide-stone-200 rounded-2xl border border-stone-200 dark:divide-stone-700 dark:border-stone-700">
             {revokedUsers.map((row) => (
               <li
                 key={row.id}
-                className="flex flex-col gap-2 px-4 py-3 sm:flex-row sm:items-center sm:justify-between"
+                className="flex min-w-0 flex-col gap-3 px-4 py-3 sm:flex-row sm:items-start sm:justify-between"
               >
-                <div className="min-w-0">
+                <div className="min-w-0 w-full sm:flex-1">
                   <p className="break-all text-sm font-medium text-stone-900 dark:text-stone-100">
                     {row.email}
                   </p>
-                  <p className="text-xs text-stone-400 dark:text-stone-500">
+                  <UserNameDetails row={row} accessStatus="Revoked" />
+                  <p className="mt-1 text-xs text-stone-400 dark:text-stone-500">
                     Revoked{" "}
                     {row.revoked_at
                       ? formatDateTime(row.revoked_at)
                       : formatDateTime(row.updated_at)}
                   </p>
+                  <div className="mt-3">
+                    <DisplayNameOverrideField
+                      email={row.email}
+                      override={row.display_name_override}
+                      busyKey={busyKey}
+                      actionPrefix={`override-${row.id}`}
+                      onAction={runAction}
+                    />
+                  </div>
                 </div>
                 <LoadingButton
                   type="button"

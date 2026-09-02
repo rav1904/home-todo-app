@@ -94,7 +94,7 @@ export default async function AdminPage() {
               </article>
             </section>
 
-            <section className={`${cardClassName} p-6`}>
+            <section className={`${cardClassName} min-w-0 p-4 sm:p-6`}>
               <h2 className="text-lg font-semibold text-stone-900 dark:text-stone-100">
                 Users & category membership
               </h2>

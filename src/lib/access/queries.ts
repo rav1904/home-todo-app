@@ -23,6 +23,12 @@ export type AllowedUserRow = {
   created_at: string;
   updated_at: string;
   revoked_at: string | null;
+  display_name_override: string | null;
+};
+
+export type AllowedUserAdminView = AllowedUserRow & {
+  authDisplayName: string | null;
+  effectiveDisplayName: string;
 };
 
 export async function listPendingAccessRequests(): Promise<AccessRequestRow[]> {
@@ -49,7 +55,7 @@ export async function listAllowedUsersByStatus(
   const { data, error } = await supabase
     .from("app_allowed_users")
     .select(
-      "id, email, user_id, status, source, created_at, updated_at, revoked_at",
+      "id, email, user_id, status, source, created_at, updated_at, revoked_at, display_name_override",
     )
     .eq("status", status)
     .order("email", { ascending: true });

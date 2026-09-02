@@ -48,3 +48,42 @@ export async function reapproveAllowedEmail(email: string) {
   });
   return { error };
 }
+
+function displayNameOverrideErrorMessage(message: string | undefined) {
+  const text = message ?? "";
+  if (text.includes("not_admin")) {
+    return "Only an admin can update display names.";
+  }
+  if (text.includes("not_found")) {
+    return "That user is not on the allowlist.";
+  }
+  if (text.includes("display_name_too_long")) {
+    return "Display name must be 40 characters or fewer.";
+  }
+  if (text.includes("invalid_display_name")) {
+    return "Display name cannot include control characters.";
+  }
+  if (text.includes("invalid_email")) {
+    return "A valid email is required.";
+  }
+  return text || "Could not update display name.";
+}
+
+export async function setDisplayNameOverride(
+  email: string,
+  displayNameOverride: string | null,
+) {
+  const supabase = createClient();
+  const { error } = await supabase.rpc("admin_set_display_name_override", {
+    p_email: email,
+    p_display_name_override: displayNameOverride,
+  });
+
+  if (!error) {
+    return { error: null };
+  }
+
+  return {
+    error: { message: displayNameOverrideErrorMessage(error.message) },
+  };
+}
