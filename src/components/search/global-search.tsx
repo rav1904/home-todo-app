@@ -11,6 +11,7 @@ import {
   type GlobalSearchSnapshot,
   type GlobalSearchTask,
 } from "@/lib/search/global-search";
+import { loadTaskCreatorProfiles } from "@/lib/tasks/creators";
 import { createClient } from "@/lib/supabase/client";
 import { Search, X } from "lucide-react";
 import { useRouter } from "next/navigation";
@@ -69,7 +70,7 @@ export function GlobalSearch({ open, onClose }: GlobalSearchProps) {
       supabase
         .from("tasks")
         .select(
-          "id, title, description, due_at, reminder_at, priority, recurrence, completed, cancelled_at, category_id, created_at",
+          "id, title, description, due_at, reminder_at, priority, recurrence, completed, cancelled_at, category_id, created_at, assigned_to",
         )
         .order("created_at", { ascending: false }),
       supabase
@@ -110,11 +111,28 @@ export function GlobalSearch({ open, onClose }: GlobalSearchProps) {
       labelIdsByTaskId[taskId].push(labelId);
     }
 
+    const assigneeIds = [
+      ...new Set(
+        (tasks ?? [])
+          .map((task) => (task as GlobalSearchTask).assigned_to)
+          .filter((id): id is string => Boolean(id)),
+      ),
+    ];
+    const assigneeProfiles = await loadTaskCreatorProfiles(
+      supabase,
+      assigneeIds,
+    );
+    const assigneeNamesByUserId: Record<string, string> = {};
+    for (const [id, profile] of Object.entries(assigneeProfiles)) {
+      assigneeNamesByUserId[id] = profile.displayName;
+    }
+
     setSnapshot({
       tasks: (tasks ?? []) as GlobalSearchTask[],
       categories: (categories ?? []) as Category[],
       labels: (labels ?? []) as Label[],
       labelIdsByTaskId,
+      assigneeNamesByUserId,
     });
     setLoading(false);
   }, []);

@@ -2,6 +2,7 @@
 
 import { CategoryBadge } from "@/components/tasks/category-select";
 import { EditTaskModal } from "@/components/tasks/edit-task-modal";
+import { AssigneeFilterChips } from "@/components/tasks/assignee-filter-chips";
 import { WorkspaceFilterChips } from "@/components/tasks/workspace-filter-chips";
 import { UserAvatar } from "@/components/ui/user-avatar";
 import {
@@ -16,12 +17,21 @@ import {
 import { filterTasksByCategory } from "@/lib/categories/filter";
 import type { Label } from "@/lib/labels/types";
 import { isTaskOpen } from "@/lib/tasks/cancel";
-import { canDeleteSharedTask } from "@/lib/tasks/creators";
+import {
+  collectAssigneeFilterPeople,
+  filterTasksByAssignee,
+  type TaskAssigneeFilter,
+} from "@/lib/tasks/assignee-filter";
+import {
+  canDeleteSharedTask,
+  shouldShowTaskCreator,
+  type TaskCreatorProfile,
+} from "@/lib/tasks/creators";
+import { TaskAttribution } from "@/components/tasks/task-attribution";
 import { formatHomeDueDate } from "@/lib/tasks/local-dates";
 import type { TaskSubtask } from "@/lib/tasks/subtasks/types";
 import {
   filterChipActiveClassName,
-  filterChipClassName,
   filterChipIdleClassName,
 } from "@/lib/ui/field-classes";
 import Link from "next/link";
@@ -43,6 +53,7 @@ export type DashboardHomeTask = {
   created_at: string;
   category_id: string | null;
   user_id: string;
+  assigned_to: string | null;
 };
 
 type HomeStatusFilter = "open" | "today" | "overdue" | "done";
@@ -58,6 +69,7 @@ type DashboardHomeClientProps = {
   subtasksByTaskId: Record<string, TaskSubtask[]>;
   currentUserId: string;
   isAdmin: boolean;
+  peopleByUserId: Record<string, TaskCreatorProfile>;
   initialEditTaskId?: string | null;
   loadError?: string | null;
 };
@@ -109,6 +121,16 @@ function syncEditQuery(pathname: string, editId: string | null) {
   window.history.replaceState(window.history.state, "", url);
 }
 
+function homeDueClass(overdue: boolean, dueToday: boolean) {
+  if (overdue) {
+    return "font-medium text-rose-700 dark:text-rose-300";
+  }
+  if (dueToday) {
+    return "text-stone-500 dark:text-stone-400";
+  }
+  return "text-stone-400 dark:text-stone-500";
+}
+
 function StatusChip({
   label,
   value,
@@ -136,7 +158,7 @@ function StatusChip({
       type="button"
       onClick={onSelect}
       aria-pressed={selected}
-      className={`${filterChipClassName} gap-1.5 !rounded-lg px-2.5 py-1.5 ${
+      className={`inline-flex min-h-8 shrink-0 cursor-pointer items-center gap-1 rounded-lg border px-2.5 py-1 text-xs font-medium transition ${
         selected ? filterChipActiveClassName : filterChipIdleClassName
       }`}
     >
@@ -159,6 +181,7 @@ export function DashboardHomeClient({
   subtasksByTaskId,
   currentUserId,
   isAdmin,
+  peopleByUserId,
   initialEditTaskId = null,
   loadError = null,
 }: DashboardHomeClientProps) {
@@ -166,6 +189,9 @@ export function DashboardHomeClient({
   const today = useMemo(() => new Date(), []);
   const [workspaceId, setWorkspaceId] = useState<string>("all");
   const [statusFilter, setStatusFilter] = useState<HomeStatusFilter>("open");
+  const [assigneeFilter, setAssigneeFilter] = useState<TaskAssigneeFilter>({
+    type: "all",
+  });
   const [editingTaskId, setEditingTaskId] = useState<string | null>(
     initialEditTaskId,
   );
@@ -262,17 +288,24 @@ export function DashboardHomeClient({
     }
 
     if (statusFilter === "done") {
-      return [...next].sort(
+      next = [...next].sort(
         (a, b) =>
           new Date(b.created_at).getTime() - new Date(a.created_at).getTime(),
       );
+    } else {
+      next = sortOpenTasksForHome(next, today);
     }
 
-    return sortOpenTasksForHome(next, today);
-  }, [tasks, workspaceId, statusFilter, subsByParent, today]);
+    return filterTasksByAssignee(next, assigneeFilter, currentUserId);
+  }, [tasks, workspaceId, statusFilter, assigneeFilter, subsByParent, today, currentUserId]);
+
+  const assigneePeople = useMemo(
+    () => collectAssigneeFilterPeople(tasks, peopleByUserId, currentUserId),
+    [tasks, peopleByUserId, currentUserId],
+  );
 
   return (
-    <div className="mx-auto max-w-3xl space-y-3 overflow-x-hidden">
+    <div className="mx-auto max-w-3xl space-y-4 overflow-x-hidden">
       <div className="flex min-w-0 items-center gap-2.5">
         <UserAvatar name={displayName} avatarUrl={avatarUrl} size="sm" />
         <div className="min-w-0">
@@ -293,42 +326,51 @@ export function DashboardHomeClient({
         </div>
       ) : null}
 
-      <div className="flex max-w-full gap-1.5 overflow-x-auto overscroll-x-contain pb-0.5 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-        <StatusChip
-          label="Open"
-          value={openTasks.length}
-          selected={statusFilter === "open"}
-          onSelect={() => setStatusFilter("open")}
-        />
-        <StatusChip
-          label="Today"
-          value={dueTodayCount}
-          selected={statusFilter === "today"}
-          onSelect={() => setStatusFilter("today")}
-          emphasize="warning"
-        />
-        <StatusChip
-          label="Overdue"
-          value={overdueCount}
-          selected={statusFilter === "overdue"}
-          onSelect={() => setStatusFilter("overdue")}
-          emphasize="danger"
-        />
-        <StatusChip
-          label="Done"
-          value={completedTasks.length}
-          selected={statusFilter === "done"}
-          onSelect={() => setStatusFilter("done")}
+      <div className="min-w-0 space-y-2">
+        <div className="flex max-w-full gap-1.5 overflow-x-auto overscroll-x-contain pb-0.5 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+          <StatusChip
+            label="Open"
+            value={openTasks.length}
+            selected={statusFilter === "open"}
+            onSelect={() => setStatusFilter("open")}
+          />
+          <StatusChip
+            label="Today"
+            value={dueTodayCount}
+            selected={statusFilter === "today"}
+            onSelect={() => setStatusFilter("today")}
+            emphasize="warning"
+          />
+          <StatusChip
+            label="Overdue"
+            value={overdueCount}
+            selected={statusFilter === "overdue"}
+            onSelect={() => setStatusFilter("overdue")}
+            emphasize="danger"
+          />
+          <StatusChip
+            label="Done"
+            value={completedTasks.length}
+            selected={statusFilter === "done"}
+            onSelect={() => setStatusFilter("done")}
+          />
+        </div>
+
+        {categories.length > 0 ? (
+          <WorkspaceFilterChips
+            categories={categories}
+            activeId={workspaceId}
+            onSelect={setWorkspaceId}
+          />
+        ) : null}
+
+        <AssigneeFilterChips
+          active={assigneeFilter}
+          currentUserId={currentUserId}
+          people={assigneePeople}
+          onSelect={setAssigneeFilter}
         />
       </div>
-
-      {categories.length > 0 ? (
-        <WorkspaceFilterChips
-          categories={categories}
-          activeId={workspaceId}
-          onSelect={setWorkspaceId}
-        />
-      ) : null}
 
       <section className="min-w-0">
         <div className="mb-1.5 flex items-center justify-between gap-2">
@@ -372,55 +414,74 @@ export function DashboardHomeClient({
                 category ??
                 (categoryUnavailable ? null : NULL_CATEGORY_DISPLAY);
 
+              const showAuthor = shouldShowTaskCreator({
+                taskUserId: task.user_id,
+                currentUserId,
+                categoryId: task.category_id,
+                categoryScope:
+                  categoryLookup.get(task.category_id ?? "")?.scope ?? null,
+              });
+              const hasPeople = showAuthor || Boolean(task.assigned_to);
+              const dueClass = homeDueClass(overdue, dueToday);
+              const dueLabel = task.due_at
+                ? formatHomeDueDate(task.due_at)
+                : null;
+
               return (
                 <li key={task.id} className="min-w-0">
                   <button
                     type="button"
                     onClick={() => openTask(task.id)}
-                    className="flex w-full min-w-0 cursor-pointer items-start gap-2 py-2.5 text-left transition hover:bg-stone-50/80 sm:items-center dark:hover:bg-stone-800/40"
+                    className="grid w-full min-w-0 cursor-pointer grid-cols-[auto_minmax(0,1fr)] items-start gap-x-2.5 gap-y-0.5 overflow-hidden py-2.5 text-left transition hover:bg-stone-50/80 sm:grid-cols-[6.5rem_minmax(0,1fr)_4.75rem] dark:hover:bg-stone-800/40"
                   >
-                    <CategoryBadge
-                      category={workspaceDisplay}
-                      unavailable={categoryUnavailable}
-                      compact
-                    />
-                    <div className="min-w-0 flex-1">
-                      <p
-                        className={`line-clamp-2 text-sm font-medium leading-snug break-words [overflow-wrap:anywhere] text-stone-900 dark:text-stone-100 ${
-                          task.completed
-                            ? "text-stone-400 line-through dark:text-stone-500"
-                            : ""
-                        }`}
-                        title={task.title}
-                      >
-                        {task.title}
-                      </p>
-                      {task.due_at ? (
-                        <p
-                          className={`mt-0.5 text-[11px] tabular-nums sm:hidden ${
-                            overdue
-                              ? "font-medium text-rose-700 dark:text-rose-300"
-                              : dueToday
-                                ? "font-medium text-amber-800 dark:text-amber-300"
-                                : "text-stone-400 dark:text-stone-500"
-                          }`}
-                        >
-                          {formatHomeDueDate(task.due_at)}
-                        </p>
-                      ) : null}
-                    </div>
-                    {task.due_at ? (
+                    <span className="min-w-0 max-w-[6.5rem] self-center sm:col-start-1 sm:row-start-1 sm:max-w-none sm:self-start sm:pt-0.5">
+                      <CategoryBadge
+                        category={workspaceDisplay}
+                        unavailable={categoryUnavailable}
+                        compact
+                        muted
+                      />
+                    </span>
+                    {dueLabel ? (
                       <span
-                        className={`hidden shrink-0 text-xs tabular-nums sm:inline ${
-                          overdue
-                            ? "font-medium text-rose-700 dark:text-rose-300"
-                            : dueToday
-                              ? "font-medium text-amber-800 dark:text-amber-300"
-                              : "text-stone-400 dark:text-stone-500"
-                        }`}
+                        className={`justify-self-end self-center whitespace-nowrap text-[11px] tabular-nums sm:col-start-3 sm:row-start-1 sm:self-start sm:pt-0.5 sm:w-full sm:text-right sm:text-xs ${dueClass}`}
                       >
-                        {formatHomeDueDate(task.due_at)}
+                        {dueLabel}
                       </span>
+                    ) : (
+                      <span className="hidden sm:col-start-3 sm:row-start-1 sm:block" />
+                    )}
+                    <p
+                      className={`col-span-2 min-w-0 line-clamp-2 text-[15px] font-medium leading-snug break-words [overflow-wrap:anywhere] text-stone-900 dark:text-stone-100 sm:col-span-1 sm:col-start-2 sm:row-start-1 ${
+                        task.completed
+                          ? "text-stone-400 line-through dark:text-stone-500"
+                          : ""
+                      }`}
+                      title={task.title}
+                    >
+                      {task.title}
+                    </p>
+                    {hasPeople ? (
+                      <div className="col-span-2 min-w-0 sm:col-span-1 sm:col-start-2 sm:row-start-2">
+                        <TaskAttribution
+                          showAuthor={showAuthor}
+                          authorName={
+                            showAuthor
+                              ? (peopleByUserId[task.user_id]?.displayName ??
+                                "Member")
+                              : null
+                          }
+                          creatorId={task.user_id}
+                          assigneeId={task.assigned_to}
+                          assigneeName={
+                            task.assigned_to
+                              ? (peopleByUserId[task.assigned_to]
+                                  ?.displayName ?? null)
+                              : null
+                          }
+                          currentUserId={currentUserId}
+                        />
+                      </div>
                     ) : null}
                   </button>
                 </li>
@@ -453,6 +514,7 @@ export function DashboardHomeClient({
           subtasks={subtasksByTaskId[editingTask.id] ?? []}
           taskUserId={editingTask.user_id}
           currentUserId={currentUserId}
+          assignedTo={editingTask.assigned_to}
           canDelete={canDeleteSharedTask({
             currentUserId,
             isAdmin,

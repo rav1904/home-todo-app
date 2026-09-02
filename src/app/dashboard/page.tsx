@@ -12,6 +12,10 @@ import {
 import { LABEL_SELECT_FIELDS, type Label } from "@/lib/labels/types";
 import { fetchSubtasksByTaskId } from "@/lib/tasks/subtasks/group";
 import type { TaskSubtask } from "@/lib/tasks/subtasks/types";
+import {
+  collectTaskPeopleIds,
+  loadTaskCreatorProfiles,
+} from "@/lib/tasks/creators";
 import { createClient } from "@/lib/supabase/server";
 import { Suspense } from "react";
 
@@ -35,7 +39,7 @@ export default async function DashboardPage({ searchParams }: DashboardPageProps
     supabase
       .from("tasks")
       .select(
-        "id, title, description, due_at, reminder_at, reminder_mode, reminder_offset_minutes, priority, recurrence, completed, cancelled_at, created_at, category_id, user_id",
+        "id, title, description, due_at, reminder_at, reminder_mode, reminder_offset_minutes, priority, recurrence, completed, cancelled_at, created_at, category_id, user_id, assigned_to",
       )
       .order("created_at", { ascending: false }),
     loadAccessibleCategories(supabase),
@@ -64,6 +68,7 @@ export default async function DashboardPage({ searchParams }: DashboardPageProps
     created_at: string;
     category_id: string | null;
     user_id: string;
+    assigned_to: string | null;
   }>;
 
   let labelIdsByTaskId: Record<string, string[]> = {};
@@ -99,6 +104,10 @@ export default async function DashboardPage({ searchParams }: DashboardPageProps
   const avatarUrl = getUserAvatarUrl(user?.user_metadata);
   const currentUserId = user?.id ?? "";
   const isAdmin = isAdminUser(user?.email);
+  const peopleByUserId = await loadTaskCreatorProfiles(
+    supabase,
+    collectTaskPeopleIds(allTasks, currentUserId),
+  );
   const activeLabels = (labels ?? []) as Label[];
   const categoryIdsByLabelId = groupCategoryIdsByLabel(
     (labelCategoryLinks ?? []) as LabelCategoryLink[],
@@ -135,6 +144,7 @@ export default async function DashboardPage({ searchParams }: DashboardPageProps
             subtasksByTaskId={subtasksByTaskId}
             currentUserId={currentUserId}
             isAdmin={isAdmin}
+            peopleByUserId={peopleByUserId}
             initialEditTaskId={editParam ?? null}
             loadError={loadError}
           />

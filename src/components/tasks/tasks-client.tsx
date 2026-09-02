@@ -1,6 +1,7 @@
 "use client";
 
 import { TaskListItem } from "@/components/tasks/task-list-item";
+import { AssigneeFilterChips } from "@/components/tasks/assignee-filter-chips";
 import { WorkspaceFilterChips } from "@/components/tasks/workspace-filter-chips";
 import {
   filterTasksByCategory,
@@ -23,6 +24,13 @@ import { groupLabelsForPicker, resolveTaskLabelDisplay } from "@/lib/labels/disp
 import type { Label } from "@/lib/labels/types";
 import type { TaskCreatorProfile } from "@/lib/tasks/creators";
 import { canDeleteSharedTask } from "@/lib/tasks/creators";
+import {
+  assigneeFilterToParam,
+  collectAssigneeFilterPeople,
+  filterTasksByAssignee,
+  parseAssigneeFilterParam,
+  type TaskAssigneeFilter,
+} from "@/lib/tasks/assignee-filter";
 import type { DueDateHistoryCounts } from "@/lib/tasks/due-date-change";
 import { filterTasksBySearch } from "@/lib/tasks/search";
 import {
@@ -64,6 +72,7 @@ export type TasksClientTask = {
   created_at: string;
   category_id: string | null;
   user_id: string;
+  assigned_to: string | null;
 };
 
 type TasksClientProps = {
@@ -89,6 +98,7 @@ function syncUrl(
     q: string | null;
     label: string | null;
     sort: string | null;
+    assignee: string | null;
     edit: string | null;
   },
 ) {
@@ -98,6 +108,7 @@ function syncUrl(
   if (next.sort) params.set("sort", next.sort);
   if (next.category) params.set("category", next.category);
   if (next.label) params.set("label", next.label);
+  if (next.assignee) params.set("assignee", next.assignee);
   if (next.edit) params.set("edit", next.edit);
   const query = params.toString();
   const url = query ? `${pathname}?${query}` : pathname;
@@ -146,6 +157,13 @@ export function TasksClient({
   );
   const [statusFilter, setStatusFilter] = useState<TaskStatusFilter>(() =>
     parseStatusFilterParam(searchParams.get("status") ?? undefined),
+  );
+  const [assigneeFilter, setAssigneeFilter] = useState<TaskAssigneeFilter>(
+    () =>
+      parseAssigneeFilterParam(
+        searchParams.get("assignee") ?? undefined,
+        currentUserId,
+      ),
   );
   const [labelFilter, setLabelFilter] = useState<TaskLabelFilter>(() =>
     parseLabelFilterParam(searchParams.get("label") ?? undefined, labelLookup),
@@ -212,6 +230,7 @@ export function TasksClient({
             ? NO_LABEL_FILTER_VALUE
             : labelFilter.labelId,
       sort: sort === DEFAULT_TASK_SORT ? null : sort,
+      assignee: assigneeFilterToParam(assigneeFilter),
       edit: editTaskId,
     });
   }, [
@@ -221,6 +240,7 @@ export function TasksClient({
     searchQuery,
     labelFilter,
     sort,
+    assigneeFilter,
     editTaskId,
   ]);
 
@@ -236,7 +256,12 @@ export function TasksClient({
       labelIdsByTaskId,
     );
     const byStatus = filterTasksByStatus(byLabel, statusFilter);
-    const bySearch = filterTasksBySearch(byStatus, searchQuery);
+    const byAssignee = filterTasksByAssignee(
+      byStatus,
+      assigneeFilter,
+      currentUserId,
+    );
+    const bySearch = filterTasksBySearch(byAssignee, searchQuery);
     return sortTasks(bySearch, sort);
   }, [
     tasks,
@@ -245,9 +270,16 @@ export function TasksClient({
     labelFilter,
     labelIdsByTaskId,
     statusFilter,
+    assigneeFilter,
+    currentUserId,
     searchQuery,
     sort,
   ]);
+
+  const assigneePeople = useMemo(
+    () => collectAssigneeFilterPeople(tasks, creatorsByUserId, currentUserId),
+    [tasks, creatorsByUserId, currentUserId],
+  );
 
   const tasksToRender =
     editTaskId && !filteredTasks.some((task) => task.id === editTaskId)
@@ -278,6 +310,13 @@ export function TasksClient({
           onSelect={handleWorkspaceSelect}
         />
       ) : null}
+
+      <AssigneeFilterChips
+        active={assigneeFilter}
+        currentUserId={currentUserId}
+        people={assigneePeople}
+        onSelect={setAssigneeFilter}
+      />
 
       <div
         className="flex max-w-full gap-2 overflow-x-auto overscroll-x-contain pb-0.5 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
@@ -329,13 +368,15 @@ export function TasksClient({
         statusFilter !== "open" ||
         searchQuery ||
         labelFilter.type !== "all" ||
-        sort !== DEFAULT_TASK_SORT ? (
+        sort !== DEFAULT_TASK_SORT ||
+        assigneeFilter.type !== "all" ? (
           <button
             type="button"
             onClick={() => {
               setCategoryFilter({ type: "all" });
               setStatusFilter("open");
               setLabelFilter({ type: "all" });
+              setAssigneeFilter({ type: "all" });
               setSort(DEFAULT_TASK_SORT);
               setSearchDraft("");
               setSearchQuery("");
@@ -543,6 +584,12 @@ export function TasksClient({
                 creator={
                   task.user_id !== currentUserId
                     ? (creatorsByUserId[task.user_id] ?? null)
+                    : null
+                }
+                assignedTo={task.assigned_to}
+                assignee={
+                  task.assigned_to
+                    ? (creatorsByUserId[task.assigned_to] ?? null)
                     : null
                 }
                 canDelete={canDeleteSharedTask({

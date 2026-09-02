@@ -107,6 +107,25 @@ Prerequisite: `sql/user_display_name_overrides.sql`.
 - [ ] Blank override saves as null; max 40 characters; no control characters
 - [ ] `npm run build` passes
 
+## Task author and assignee
+
+Prerequisite: `sql/tasks_assigned_to.sql` (after shared workspace + display name SQL).
+
+- [ ] Existing tasks load with `assigned_to` null
+- [ ] Create Personal task with no assignee
+- [ ] Create Personal task assigned to self; cannot assign to another user
+- [ ] Create shared (e.g. Primon) task and assign to a workspace member
+- [ ] Assignee dropdown only lists that workspace’s members (+ Unassigned)
+- [ ] User without workspace access is not in the dropdown
+- [ ] Changing category to one the assignee cannot use clears assignee and shows a hint
+- [ ] Shared members see assignee; author chip shows creator on others’ shared tasks
+- [ ] Display name override is used first (e.g. Pari)
+- [ ] Being assigned does not grant visibility without workspace access
+- [ ] Recurring complete copies `assigned_to` only if still eligible
+- [ ] Completed/cancelled filters still hide those tasks by default
+- [ ] Mobile has no horizontal overflow
+- [ ] `npm run build` passes
+
 ## Shared workspaces
 
 - [ ] Apply `sql/shared_workspace_tasks.sql` (after app access + category access SQL)

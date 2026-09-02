@@ -8,7 +8,10 @@ import {
   type LabelCategoryLink,
 } from "@/lib/labels/category-links";
 import { LABEL_SELECT_FIELDS, type Label } from "@/lib/labels/types";
-import { loadTaskCreatorProfiles } from "@/lib/tasks/creators";
+import {
+  collectTaskPeopleIds,
+  loadTaskCreatorProfiles,
+} from "@/lib/tasks/creators";
 import { aggregateDueDateHistoryCounts } from "@/lib/tasks/due-date-change";
 import { fetchSubtasksByTaskId } from "@/lib/tasks/subtasks/group";
 import type { TaskSubtask } from "@/lib/tasks/subtasks/types";
@@ -23,6 +26,7 @@ type TasksPageProps = {
     q?: string;
     status?: string;
     sort?: string;
+    assignee?: string;
   }>;
 };
 
@@ -43,7 +47,7 @@ export default async function TasksPage({ searchParams }: TasksPageProps) {
     supabase
       .from("tasks")
       .select(
-        "id, title, description, due_at, reminder_at, reminder_mode, reminder_offset_minutes, priority, recurrence, completed, cancelled_at, cancelled_by, created_at, category_id, user_id",
+        "id, title, description, due_at, reminder_at, reminder_mode, reminder_offset_minutes, priority, recurrence, completed, cancelled_at, cancelled_by, created_at, category_id, user_id, assigned_to",
       )
       .order("created_at", { ascending: false }),
     supabase
@@ -85,6 +89,7 @@ export default async function TasksPage({ searchParams }: TasksPageProps) {
     created_at: string;
     category_id: string | null;
     user_id: string;
+    assigned_to: string | null;
   }>;
 
   const taskIds = allTasks.map((task) => task.id);
@@ -130,16 +135,9 @@ export default async function TasksPage({ searchParams }: TasksPageProps) {
 
   const currentUserId = user?.id ?? "";
   const isAdmin = isAdminUser(user?.email);
-  const creatorUserIds = [
-    ...new Set(
-      allTasks
-        .map((task) => task.user_id)
-        .filter((taskUserId) => taskUserId !== currentUserId),
-    ),
-  ];
   const creatorsByUserId = await loadTaskCreatorProfiles(
     supabase,
-    creatorUserIds,
+    collectTaskPeopleIds(allTasks, currentUserId),
   );
 
   const errors = [

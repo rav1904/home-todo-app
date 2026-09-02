@@ -8,6 +8,7 @@ import {
 } from "@/components/tasks/checklist-toggle";
 import { TaskDeleteButton } from "@/components/tasks/task-delete-button";
 import { CategorySelect } from "@/components/tasks/category-select";
+import { AssigneeSelect } from "@/components/tasks/assignee-select";
 import { LabelSelect } from "@/components/tasks/label-select";
 import { DueDatetimeFields } from "@/components/tasks/due-datetime-fields";
 import { ReminderFields } from "@/components/tasks/reminder-fields";
@@ -93,6 +94,7 @@ type EditTaskModalProps = {
   subtasks?: TaskSubtask[];
   taskUserId: string;
   currentUserId: string;
+  assignedTo?: string | null;
   canDelete?: boolean;
   onSuccess?: () => void;
   onDeleted?: () => void;
@@ -157,6 +159,7 @@ export function EditTaskModal({
   subtasks = [],
   taskUserId,
   currentUserId,
+  assignedTo = null,
   canDelete = true,
   onSuccess,
   onDeleted,
@@ -179,6 +182,8 @@ export function EditTaskModal({
     parseTaskRecurrence(recurrence),
   );
   const [editCategoryId, setEditCategoryId] = useState<string | null>(categoryId);
+  const [editAssignedTo, setEditAssignedTo] = useState<string | null>(assignedTo);
+  const [assigneeResetHint, setAssigneeResetHint] = useState(false);
   const [editLabelIds, setEditLabelIds] = useState<string[]>(labelIds);
   const [extraLabels, setExtraLabels] = useState<Label[]>([]);
   const [editCompleted, setEditCompleted] = useState(completed);
@@ -235,6 +240,8 @@ export function EditTaskModal({
     setEditPriority(parseTaskPriority(priority));
     setEditRecurrence(parseTaskRecurrence(recurrence));
     setEditCategoryId(categoryId);
+    setEditAssignedTo(assignedTo);
+    setAssigneeResetHint(false);
     setEditLabelIds(labelIds);
     setExtraLabels([]);
     setEditCompleted(completed);
@@ -253,6 +260,7 @@ export function EditTaskModal({
     priority,
     recurrence,
     categoryId,
+    assignedTo,
     labelIds,
     completed,
     subtasks.length,
@@ -330,6 +338,7 @@ export function EditTaskModal({
         priority: editPriority,
         recurrence: editRecurrence,
         category_id: editCategoryId,
+        assigned_to: editAssignedTo,
         ...(becomingComplete ? {} : { completed: editCompleted }),
       })
       .eq("id", id);
@@ -471,7 +480,10 @@ export function EditTaskModal({
                 id={`edit-category-${id}`}
                 categories={editableCategories}
                 value={editCategoryId}
-                onChange={setEditCategoryId}
+                onChange={(next) => {
+                  setEditCategoryId(next);
+                  setAssigneeResetHint(false);
+                }}
                 className={compactFieldClassName}
                 compact
               />
@@ -481,6 +493,23 @@ export function EditTaskModal({
                 onChange={handleEditDueChange}
               />
             </div>
+
+            <AssigneeSelect
+              id={`edit-assignee-${id}`}
+              categoryId={editCategoryId}
+              value={editAssignedTo}
+              currentUserId={currentUserId}
+              onChange={(next) => {
+                setEditAssignedTo(next);
+                setAssigneeResetHint(false);
+              }}
+              onInvalidated={() => setAssigneeResetHint(true)}
+            />
+            {assigneeResetHint ? (
+              <p className="text-xs text-amber-700 dark:text-amber-400">
+                Assignee was cleared because they are not in this workspace.
+              </p>
+            ) : null}
 
             <div className="flex max-w-full flex-wrap items-center gap-1">
               <ToolbarButton

@@ -28,6 +28,11 @@ import {
   type TaskSortOption,
 } from "@/lib/tasks/sort";
 import {
+  assigneeFilterToParam,
+  isAssigneeFilterActive,
+  type TaskAssigneeFilter,
+} from "@/lib/tasks/assignee-filter";
+import {
   getStatusFilterLabel,
   isStatusFilterActive,
   statusFilterToParam,
@@ -38,6 +43,7 @@ export type TasksListQueryState = {
   categoryFilter: TaskCategoryFilter;
   labelFilter: TaskLabelFilter;
   statusFilter: TaskStatusFilter;
+  assigneeFilter: TaskAssigneeFilter;
   searchQuery: TaskSearchQuery;
   sort: TaskSortOption;
 };
@@ -50,6 +56,7 @@ export function buildTasksFilterUrl(
   const categoryParam = categoryFilterToParam(state.categoryFilter);
   const labelParam = labelFilterToParam(state.labelFilter);
   const statusParam = statusFilterToParam(state.statusFilter);
+  const assigneeParam = assigneeFilterToParam(state.assigneeFilter);
   const searchParam = searchQueryToParam(state.searchQuery);
   const sortParam = sortOptionToParam(state.sort);
 
@@ -73,6 +80,10 @@ export function buildTasksFilterUrl(
     params.set("label", labelParam);
   }
 
+  if (assigneeParam) {
+    params.set("assignee", assigneeParam);
+  }
+
   const query = params.toString();
   return query ? `${pathname}?${query}` : pathname;
 }
@@ -82,6 +93,7 @@ export function isAnyTaskFilterActive(state: TasksListQueryState) {
     isCategoryFilterActive(state.categoryFilter) ||
     isLabelFilterActive(state.labelFilter) ||
     isStatusFilterActive(state.statusFilter) ||
+    isAssigneeFilterActive(state.assigneeFilter) ||
     isSearchQueryActive(state.searchQuery) ||
     isSortOptionActive(state.sort)
   );

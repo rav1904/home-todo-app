@@ -1,6 +1,7 @@
 "use client";
 
 import { CategorySelect } from "@/components/tasks/category-select";
+import { AssigneeSelect } from "@/components/tasks/assignee-select";
 import { ChecklistDraftPanel } from "@/components/tasks/checklist-draft-field";
 import {
   ChecklistPanel,
@@ -48,7 +49,7 @@ import { LoadingButton } from "@/components/ui/loading-button";
 import { createClient } from "@/lib/supabase/client";
 import { Bell, Flag, Repeat, Tags } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { useMemo, useRef, useState, type ReactNode } from "react";
+import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 
 type AddTaskFormProps = {
   categories: Category[];
@@ -137,6 +138,9 @@ export function AddTaskForm({
   const [categoryId, setCategoryId] = useState<string | null>(
     () => personalDefault,
   );
+  const [assignedTo, setAssignedTo] = useState<string | null>(null);
+  const [assigneeResetHint, setAssigneeResetHint] = useState(false);
+  const [currentUserId, setCurrentUserId] = useState<string | null>(null);
   const [labelIds, setLabelIds] = useState<string[]>([]);
   const [extraLabels, setExtraLabels] = useState<Label[]>([]);
   const [draftSubtasks, setDraftSubtasks] = useState<string[]>([]);
@@ -144,6 +148,23 @@ export function AddTaskForm({
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const submittingRef = useRef(false);
+
+  useEffect(() => {
+    let cancelled = false;
+    async function loadCurrentUser() {
+      const supabase = createClient();
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+      if (!cancelled) {
+        setCurrentUserId(user?.id ?? null);
+      }
+    }
+    void loadCurrentUser();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   const availableLabels = useMemo(() => {
     const merged = new Map<string, Label>();
@@ -236,6 +257,7 @@ export function AddTaskForm({
         priority,
         recurrence,
         category_id: categoryId,
+        assigned_to: assignedTo,
       })
       .select("id")
       .single();
@@ -297,6 +319,8 @@ export function AddTaskForm({
     setPriority(DEFAULT_TASK_PRIORITY);
     setRecurrence(DEFAULT_TASK_RECURRENCE);
     setCategoryId(personalDefault);
+    setAssignedTo(null);
+    setAssigneeResetHint(false);
     setLabelIds([]);
     setExtraLabels([]);
     setDraftSubtasks([]);
@@ -353,7 +377,10 @@ export function AddTaskForm({
           id="task-category"
           categories={categories}
           value={categoryId}
-          onChange={setCategoryId}
+          onChange={(next) => {
+            setCategoryId(next);
+            setAssigneeResetHint(false);
+          }}
           className={`${compactFieldClassName} min-h-11`}
           compact
         />
@@ -363,6 +390,23 @@ export function AddTaskForm({
           onChange={handleDueChange}
         />
       </div>
+
+      <AssigneeSelect
+        id="task-assignee"
+        categoryId={categoryId}
+        value={assignedTo}
+        currentUserId={currentUserId}
+        onChange={(next) => {
+          setAssignedTo(next);
+          setAssigneeResetHint(false);
+        }}
+        onInvalidated={() => setAssigneeResetHint(true)}
+      />
+      {assigneeResetHint ? (
+        <p className="text-xs text-amber-700 dark:text-amber-400">
+          Assignee was cleared because they are not in this workspace.
+        </p>
+      ) : null}
 
       <div className="flex max-w-full flex-wrap items-center gap-1">
         <ToolbarButton

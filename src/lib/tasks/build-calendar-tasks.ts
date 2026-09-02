@@ -18,6 +18,7 @@ import { LABEL_SELECT_FIELDS, type Label } from "@/lib/labels/types";
 import type { CalendarModalTask, CalendarTask } from "@/lib/tasks/calendar";
 import {
   canDeleteSharedTask,
+  collectTaskPeopleIds,
   loadTaskCreatorProfiles,
   type TaskCreatorProfile,
 } from "@/lib/tasks/creators";
@@ -45,10 +46,11 @@ type RawTaskRow = {
   created_at: string;
   category_id: string | null;
   user_id: string;
+  assigned_to: string | null;
 };
 
 const TASK_SELECT =
-  "id, title, description, due_at, reminder_at, reminder_mode, reminder_offset_minutes, priority, recurrence, completed, cancelled_at, created_at, category_id, user_id";
+  "id, title, description, due_at, reminder_at, reminder_mode, reminder_offset_minutes, priority, recurrence, completed, cancelled_at, created_at, category_id, user_id, assigned_to";
 
 export type CalendarFetchResult = {
   calendarTasks: CalendarTask[];
@@ -176,12 +178,9 @@ export async function fetchCalendarPageData(
     subtasksByTaskId = subtasksResult.subtasksByTaskId;
   }
 
-  const otherCreatorIds = rawTasks
-    .map((task) => task.user_id)
-    .filter((id) => id && id !== currentUserId);
   const creatorsByUserId = await loadTaskCreatorProfiles(
     supabase,
-    otherCreatorIds,
+    collectTaskPeopleIds(rawTasks, currentUserId),
   );
 
   const calendarTasks: CalendarTask[] = [];
@@ -259,6 +258,10 @@ export async function fetchCalendarPageData(
         task.user_id !== currentUserId
           ? (creatorsByUserId[task.user_id] ?? null)
           : null,
+      assignedTo: task.assigned_to,
+      assignee: task.assigned_to
+        ? (creatorsByUserId[task.assigned_to] ?? null)
+        : null,
     };
   }
 

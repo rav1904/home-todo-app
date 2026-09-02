@@ -41,6 +41,7 @@ export type GlobalSearchTask = {
   cancelled_at?: string | null;
   category_id: string | null;
   created_at: string;
+  assigned_to?: string | null;
 };
 
 export type GlobalSearchSnapshot = {
@@ -48,6 +49,7 @@ export type GlobalSearchSnapshot = {
   categories: Category[];
   labels: Label[];
   labelIdsByTaskId: Record<string, string[]>;
+  assigneeNamesByUserId?: Record<string, string>;
 };
 
 export type ParsedGlobalSearchQuery = {
@@ -111,6 +113,7 @@ function emptyListState(
     categoryFilter: { type: "all" },
     labelFilter: { type: "all" },
     statusFilter: "open",
+    assigneeFilter: { type: "all" },
     searchQuery: "",
     sort: DEFAULT_TASK_SORT,
     ...overrides,
@@ -358,6 +361,7 @@ function taskMatchesParsed(
 function buildTaskMeta(
   task: GlobalSearchTask,
   categoryLookup: Map<string, Category>,
+  assigneeNamesByUserId?: Record<string, string>,
 ): string {
   const parts: string[] = [];
   if (isTaskCancelled(task)) {
@@ -369,6 +373,12 @@ function buildTaskMeta(
   const category = getCategoryDisplay(task.category_id, categoryLookup);
   if (category) {
     parts.push(category.label);
+  }
+  if (task.assigned_to) {
+    const assigneeName = assigneeNamesByUserId?.[task.assigned_to];
+    if (assigneeName) {
+      parts.push(`Assigned to ${assigneeName}`);
+    }
   }
   return parts.join(" · ");
 }
@@ -555,7 +565,11 @@ export function runGlobalSearch(
       id: task.id,
       title: task.title,
       href: `/dashboard/tasks?edit=${encodeURIComponent(task.id)}`,
-      meta: buildTaskMeta(task, categoryLookup),
+      meta: buildTaskMeta(
+        task,
+        categoryLookup,
+        snapshot.assigneeNamesByUserId,
+      ),
     }));
 
   const free = parsed.freeText;

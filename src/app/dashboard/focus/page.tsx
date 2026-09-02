@@ -19,6 +19,7 @@ import {
 import { LABEL_SELECT_FIELDS, type Label } from "@/lib/labels/types";
 import {
   canDeleteSharedTask,
+  collectTaskPeopleIds,
   loadTaskCreatorProfiles,
 } from "@/lib/tasks/creators";
 import { aggregateDueDateHistoryCounts } from "@/lib/tasks/due-date-change";
@@ -42,6 +43,7 @@ type FocusTask = FocusTaskLike & {
   recurrence: string | null;
   category_id: string | null;
   user_id: string;
+  assigned_to: string | null;
   created_at: string;
 };
 
@@ -152,7 +154,7 @@ export default async function FocusPage() {
     supabase
       .from("tasks")
       .select(
-        "id, title, description, due_at, reminder_at, reminder_mode, reminder_offset_minutes, priority, recurrence, completed, cancelled_at, created_at, category_id, user_id",
+        "id, title, description, due_at, reminder_at, reminder_mode, reminder_offset_minutes, priority, recurrence, completed, cancelled_at, created_at, category_id, user_id, assigned_to",
       )
       .eq("completed", false)
       .is("cancelled_at", null)
@@ -180,9 +182,7 @@ export default async function FocusPage() {
   const isAdmin = isAdminUser(user?.email);
   const creatorsByUserId = await loadTaskCreatorProfiles(
     supabase,
-    openTasks
-      .map((task) => task.user_id)
-      .filter((id) => id && id !== currentUserId),
+    collectTaskPeopleIds(openTasks, currentUserId),
   );
 
   let historyError: string | null = null;
@@ -302,6 +302,12 @@ export default async function FocusPage() {
         creator={
           task.user_id !== currentUserId
             ? (creatorsByUserId[task.user_id] ?? null)
+            : null
+        }
+        assignedTo={task.assigned_to}
+        assignee={
+          task.assigned_to
+            ? (creatorsByUserId[task.assigned_to] ?? null)
             : null
         }
         canDelete={canDeleteSharedTask({

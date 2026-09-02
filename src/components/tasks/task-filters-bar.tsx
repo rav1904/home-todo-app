@@ -21,6 +21,7 @@ import {
 } from "@/lib/labels/filter";
 import { groupLabelsForPicker } from "@/lib/labels/display";
 import type { Label } from "@/lib/labels/types";
+import { parseAssigneeFilterParam } from "@/lib/tasks/assignee-filter";
 import {
   buildTasksFilterUrl,
   type TasksListQueryState,
@@ -189,6 +190,10 @@ export function TaskFiltersBar({ categories, labels }: TaskFiltersBarProps) {
       categoryFilter,
       labelFilter,
       statusFilter,
+      assigneeFilter: parseAssigneeFilterParam(
+        searchParams.get("assignee") ?? undefined,
+        "",
+      ),
       searchQuery,
       sort,
       ...overrides,

@@ -49,10 +49,12 @@ Preferred mutations: `submit_access_request`, `admin_approve_access_request`, `a
 | `user_can_mutate_task` | Same as access (v1) |
 | `user_can_delete_task` | Creator, or admin when category is shared/global |
 | `get_task_creator_profiles` | Allowed users only; returns id/email/avatar + effective display name (override → Auth name → email). Does not expose allowlist rows or private tasks. |
+| `user_can_assign_task_to_category` | Null assignee allowed. Personal: assignee owns that Personal category. Shared: approved user with top-level grant, or admin. Null category: false (private creator-only handled in trigger). |
+| `get_assignable_users_for_category` | Caller must be allowed and able to use the category (or own Personal / null). Returns effective display names. Does not grant task visibility. |
 
 Policies: `"Users select accessible tasks"`, `"Users insert own tasks"`, `"Users update accessible tasks"`, `"Users delete deletable tasks"`. Related `task_labels` / `task_subtasks` / `task_due_date_changes` follow parent task access/mutate.
 
-Recurrence RPC: mutate access; spawned row keeps **parent `user_id`**.
+Recurrence RPC: mutate access; spawned row keeps **parent `user_id`**; copies **`assigned_to`** only if still eligible.
 
 ---
 
@@ -64,6 +66,17 @@ Recurrence RPC: mutate access; spawned row keeps **parent `user_id`**.
 | INSERT | Creator | `user_id = auth.uid()` + allowed + usable category (or null) |
 | UPDATE | Owner or workspace member | `user_can_mutate_task(id)`; creator immutable |
 | DELETE | Creator or admin (shared only) | `user_can_delete_task(id)` |
+
+**Author vs assignee (`sql/tasks_assigned_to.sql`):**
+
+| Column | Role |
+|--------|------|
+| `user_id` | Immutable creator/author. Not editable from the app. |
+| `assigned_to` | Optional. Null = unassigned. **Does not grant SELECT.** |
+
+Trigger `tasks_enforce_assigned_to`: Personal/null-category → `assigned_to` is null or equals `user_id`. Shared → approved user with workspace access (`user_can_assign_task_to_category`). Existing task RLS is unchanged — assignment never opens Personal/private tasks.
+
+RPC `complete_task_with_recurrence(uuid)` runs as **SECURITY DEFINER** with `is_app_allowed()`, `user_can_mutate_task`, and spawn **`user_id = parent.user_id`** (creator preserved). Copies `assigned_to` only when still eligible; otherwise null. Idempotent via unique `spawned_from_task_id`. Apply `sql/shared_workspace_tasks.sql` after earlier recurrence scripts. Apply `sql/tasks_assigned_to.sql` for assignee.
 
 Admin does **not** get blanket SELECT on all tasks.
 
@@ -95,7 +108,7 @@ Open views = `completed = false` AND `cancelled_at IS NULL`. Cancel is **not** c
 | `recurrence` | `none` / interval values; recurring requires `due_at` |
 | `spawned_from_task_id` | Parent occurrence; unique when set (dedup) |
 
-RPC `complete_task_with_recurrence(uuid)` runs as **SECURITY DEFINER** with `is_app_allowed()`, `user_can_mutate_task`, and spawn **`user_id = parent.user_id`** (creator preserved). Idempotent via unique `spawned_from_task_id`. Apply `sql/shared_workspace_tasks.sql` after earlier recurrence scripts.
+RPC `complete_task_with_recurrence(uuid)` runs as **SECURITY DEFINER** with `is_app_allowed()`, `user_can_mutate_task`, and spawn **`user_id = parent.user_id`** (creator preserved). Copies `assigned_to` only if still eligible (`sql/tasks_assigned_to.sql`). Idempotent via unique `spawned_from_task_id`. Apply `sql/shared_workspace_tasks.sql` after earlier recurrence scripts.
 
 ---
 

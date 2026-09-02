@@ -13,13 +13,16 @@ import { LabelBadges } from "@/components/tasks/label-badges";
 import {
   PriorityBadge,
 } from "@/components/tasks/priority-select";
-import { UserAvatar } from "@/components/ui/user-avatar";
+import { TaskAttribution } from "@/components/tasks/task-attribution";
 import { NULL_CATEGORY_DISPLAY } from "@/lib/categories/display";
 import type { CategoryDisplay } from "@/lib/categories/tree";
 import type { Category } from "@/lib/categories/types";
 import type { TaskLabelDisplay } from "@/lib/labels/display";
 import type { Label } from "@/lib/labels/types";
-import type { TaskCreatorProfile } from "@/lib/tasks/creators";
+import {
+  shouldShowTaskCreator,
+  type TaskCreatorProfile,
+} from "@/lib/tasks/creators";
 import { isoHasExplicitTime } from "@/lib/tasks/due-datetime";
 import {
   DEFAULT_TASK_PRIORITY,
@@ -78,6 +81,8 @@ type TaskListItemProps = {
   taskUserId: string;
   currentUserId: string;
   creator?: TaskCreatorProfile | null;
+  assignedTo?: string | null;
+  assignee?: TaskCreatorProfile | null;
   canDelete?: boolean;
 };
 
@@ -165,14 +170,24 @@ export function TaskListItem({
   taskUserId,
   currentUserId,
   creator = null,
+  assignedTo = null,
+  assignee = null,
   canDelete = true,
 }: TaskListItemProps) {
   const itemRef = useRef<HTMLLIElement>(null);
   const [isEditing, setIsEditing] = useState(initialEditing);
   const [checklistOpen, setChecklistOpen] = useState(false);
 
-  const isOwnTask = taskUserId === currentUserId;
-  const showCreator = !isOwnTask;
+  const categoryScope =
+    categoryId == null
+      ? null
+      : (categories.find((entry) => entry.id === categoryId)?.scope ?? null);
+  const showCreator = shouldShowTaskCreator({
+    taskUserId,
+    currentUserId,
+    categoryId,
+    categoryScope,
+  });
   const isCancelled = Boolean(cancelledAt);
 
   useEffect(() => {
@@ -207,6 +222,15 @@ export function TaskListItem({
   const workspaceDisplay =
     category ??
     (categoryUnavailable ? null : NULL_CATEGORY_DISPLAY);
+  const hasPeople = showCreator || Boolean(assignedTo);
+  const hasSecondary =
+    isCancelled ||
+    taskPriority !== DEFAULT_TASK_PRIORITY ||
+    Boolean(reminderLabel) ||
+    Boolean(recurrenceBadgeText) ||
+    taskLabels.labels.length > 0 ||
+    taskLabels.unavailableCount > 0;
+  const showMetaRow = hasPeople || Boolean(dueAt) || hasSecondary;
 
   const wrapperClassName = embedded
     ? ""
@@ -216,7 +240,7 @@ export function TaskListItem({
 
   const readContent = (
     <>
-      <div className="flex min-w-0 items-start gap-2">
+      <div className="flex min-w-0 items-start gap-2 overflow-hidden">
         <div className="flex h-11 w-11 shrink-0 items-center justify-center">
           {isCancelled ? (
             <span
@@ -231,15 +255,16 @@ export function TaskListItem({
           )}
         </div>
 
-        <div className="min-w-0 flex-1 space-y-1.5">
-          <div className="flex min-w-0 flex-wrap items-start gap-x-2 gap-y-1">
+        <div className="min-w-0 flex-1 space-y-1">
+          <div className="flex min-w-0 items-start gap-2">
             <CategoryBadge
               category={workspaceDisplay}
               unavailable={categoryUnavailable}
               compact
+              className="mt-0.5"
             />
             <h2
-              className={`min-w-0 flex-1 basis-[12rem] text-base font-medium leading-snug break-words [overflow-wrap:anywhere] line-clamp-3 ${
+              className={`line-clamp-2 min-w-0 flex-1 text-base font-medium leading-snug break-words [overflow-wrap:anywhere] ${
                 completed
                   ? "text-stone-400 line-through dark:text-stone-500"
                   : isCancelled
@@ -250,20 +275,12 @@ export function TaskListItem({
             >
               {title}
             </h2>
-          </div>
-
-          <div className="flex min-w-0 flex-wrap items-center gap-1.5">
-            {isCancelled ? (
-              <span className="inline-flex items-center rounded-md bg-stone-100 px-2 py-1 text-xs font-medium text-stone-500 dark:bg-stone-800 dark:text-stone-400">
-                Cancelled
-              </span>
-            ) : null}
             {dueAt ? (
               <span
-                className={`inline-flex max-w-full items-center rounded-md px-2 py-1 text-xs font-medium tabular-nums ${
+                className={`hidden shrink-0 pt-0.5 text-xs tabular-nums sm:inline ${
                   dueIsOverdue
-                    ? "bg-rose-50 text-rose-700 dark:bg-rose-950/40 dark:text-rose-300"
-                    : "bg-stone-100 text-stone-600 dark:bg-stone-800 dark:text-stone-300"
+                    ? "font-medium text-rose-700 dark:text-rose-300"
+                    : "text-stone-400 dark:text-stone-500"
                 }`}
               >
                 {dueIsOverdue ? "Overdue · " : ""}
@@ -273,39 +290,78 @@ export function TaskListItem({
                 ) : null}
               </span>
             ) : null}
-            <PriorityBadge
-              priority={taskPriority}
-              hideDefault
-              className="!px-2 !py-1 !text-xs"
-            />
-            {reminderLabel ? (
-              <span
-                className={`inline-flex items-center gap-1 rounded-md px-2 py-1 text-xs font-medium ${
-                  reminderLabel.overdue
-                    ? "bg-rose-50 text-rose-700 dark:bg-rose-950/40 dark:text-rose-300"
-                    : "bg-stone-100 text-stone-600 dark:bg-stone-800 dark:text-stone-300"
-                }`}
-                title={reminderLabel.text}
-              >
-                <Bell className="h-3.5 w-3.5" aria-hidden />
-                <span className="sr-only">{reminderLabel.text}</span>
-              </span>
-            ) : null}
-            {recurrenceBadgeText ? (
-              <span
-                className="inline-flex items-center gap-1 rounded-md bg-sky-50 px-2 py-1 text-xs font-medium text-sky-700 dark:bg-sky-950/40 dark:text-sky-300"
-                title={recurrenceBadgeText}
-              >
-                <Repeat className="h-3.5 w-3.5" aria-hidden />
-                <span className="sr-only">{recurrenceBadgeText}</span>
-              </span>
-            ) : null}
-            <LabelBadges
-              labels={taskLabels.labels}
-              unavailableCount={taskLabels.unavailableCount}
-              maxVisible={2}
-            />
           </div>
+
+          {showMetaRow ? (
+            <div
+              className={`flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1 ${
+                hasPeople || hasSecondary ? "" : "sm:hidden"
+              }`}
+            >
+              <TaskAttribution
+                showAuthor={showCreator}
+                authorName={
+                  creator?.displayName ?? (showCreator ? "Member" : null)
+                }
+                creatorId={taskUserId}
+                assigneeId={assignedTo}
+                assigneeName={assignee?.displayName ?? null}
+                currentUserId={currentUserId}
+              />
+              {dueAt ? (
+                <span
+                  className={`text-[11px] tabular-nums sm:hidden ${
+                    dueIsOverdue
+                      ? "font-medium text-rose-700 dark:text-rose-300"
+                      : "text-stone-400 dark:text-stone-500"
+                  }`}
+                >
+                  {dueIsOverdue ? "Overdue · " : ""}
+                  {formatDueMeta(dueAt)}
+                  {dueHasTime ? (
+                    <span className="sr-only"> (includes time)</span>
+                  ) : null}
+                </span>
+              ) : null}
+              {isCancelled ? (
+                <span className="text-[11px] font-medium text-stone-400 dark:text-stone-500">
+                  Cancelled
+                </span>
+              ) : null}
+              <PriorityBadge
+                priority={taskPriority}
+                hideDefault
+                className="!px-1.5 !py-0.5 !text-[11px]"
+              />
+              {reminderLabel ? (
+                <span
+                  className={`inline-flex items-center text-stone-400 dark:text-stone-500 ${
+                    reminderLabel.overdue
+                      ? "text-rose-600 dark:text-rose-300"
+                      : ""
+                  }`}
+                  title={reminderLabel.text}
+                >
+                  <Bell className="h-3.5 w-3.5" aria-hidden />
+                  <span className="sr-only">{reminderLabel.text}</span>
+                </span>
+              ) : null}
+              {recurrenceBadgeText ? (
+                <span
+                  className="inline-flex items-center text-stone-400 dark:text-stone-500"
+                  title={recurrenceBadgeText}
+                >
+                  <Repeat className="h-3.5 w-3.5" aria-hidden />
+                  <span className="sr-only">{recurrenceBadgeText}</span>
+                </span>
+              ) : null}
+              <LabelBadges
+                labels={taskLabels.labels}
+                unavailableCount={taskLabels.unavailableCount}
+                maxVisible={2}
+              />
+            </div>
+          ) : null}
 
           {description ? (
             <p className="line-clamp-2 break-words [overflow-wrap:anywhere] text-sm text-stone-500 dark:text-stone-400">
@@ -354,18 +410,6 @@ export function TaskListItem({
         </div>
 
         <div className="flex shrink-0 flex-col items-center gap-0.5 sm:flex-row sm:items-start">
-          {showCreator ? (
-            <span
-              className="flex h-10 w-10 items-center justify-center"
-              title={`Created by ${creator?.displayName ?? "category member"}`}
-            >
-              <UserAvatar
-                name={creator?.displayName ?? "Member"}
-                avatarUrl={creator?.avatarUrl}
-                size="sm"
-              />
-            </span>
-          ) : null}
           <button
             type="button"
             onClick={() => setIsEditing(true)}
@@ -414,6 +458,7 @@ export function TaskListItem({
         subtasks={subtasks}
         taskUserId={taskUserId}
         currentUserId={currentUserId}
+        assignedTo={assignedTo}
         canDelete={canDelete}
         onSuccess={onSuccess}
         onDeleted={onDeleted}

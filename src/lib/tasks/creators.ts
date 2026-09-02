@@ -7,6 +7,24 @@ export type TaskCreatorProfile = {
   avatarUrl: string | null;
 };
 
+export type TaskUserProfile = TaskCreatorProfile;
+
+export function collectTaskPeopleIds(
+  tasks: Array<{ user_id: string; assigned_to?: string | null }>,
+  currentUserId: string | null,
+): string[] {
+  const ids: string[] = [];
+  for (const task of tasks) {
+    if (task.user_id && task.user_id !== currentUserId) {
+      ids.push(task.user_id);
+    }
+    if (task.assigned_to) {
+      ids.push(task.assigned_to);
+    }
+  }
+  return ids;
+}
+
 export async function loadTaskCreatorProfiles(
   supabase: SupabaseClient,
   userIds: string[],
@@ -39,6 +57,28 @@ export async function loadTaskCreatorProfiles(
     };
   }
   return map;
+}
+
+/** Show creator on a task row only when it is someone else's shared-workspace task. */
+export function shouldShowTaskCreator(options: {
+  taskUserId: string;
+  currentUserId: string;
+  categoryId: string | null;
+  categoryScope: "personal" | "global" | null;
+}): boolean {
+  if (options.taskUserId === options.currentUserId) {
+    return false;
+  }
+
+  if (!options.categoryId) {
+    return false;
+  }
+
+  if (options.categoryScope === "personal") {
+    return false;
+  }
+
+  return true;
 }
 
 /** UI + RLS-aligned delete rule for shared workspaces. */
