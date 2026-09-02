@@ -161,7 +161,7 @@ export function QuickAddTaskLauncher() {
 
       {open ? (
         <div
-          className="fixed inset-0 z-50 flex items-end justify-center bg-stone-900/50 p-4 sm:items-center"
+          className="fixed inset-0 z-50 flex items-end justify-center bg-stone-900/50 p-0 sm:items-center sm:p-4"
           role="presentation"
           onClick={() => setOpen(false)}
         >
@@ -169,7 +169,7 @@ export function QuickAddTaskLauncher() {
             role="dialog"
             aria-modal="true"
             aria-labelledby="quick-add-task-title"
-            className="max-h-[min(90vh,720px)] w-full max-w-lg overflow-y-auto rounded-2xl border border-stone-200 bg-white p-4 shadow-xl dark:border-stone-700 dark:bg-stone-900"
+            className="max-h-[min(92vh,720px)] w-full max-w-lg overflow-y-auto rounded-t-2xl border border-stone-200 bg-white p-4 shadow-xl sm:rounded-2xl dark:border-stone-700 dark:bg-stone-900"
             onClick={(event) => event.stopPropagation()}
           >
             <div className="mb-3 flex items-center justify-between gap-3">

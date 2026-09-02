@@ -1,43 +1,14 @@
-import { AddTaskForm } from "@/components/tasks/add-task-form";
-import { TaskFiltersBar } from "@/components/tasks/task-filters-bar";
-import { TaskListItem } from "@/components/tasks/task-list-item";
+import { TasksClient } from "@/components/tasks/tasks-client";
 import { DashboardHeader } from "@/components/dashboard/header";
 import { isAdminUser } from "@/lib/admin";
 import { loadAccessibleCategories } from "@/lib/categories/access";
-import {
-  filterTasksByCategory,
-  parseCategoryFilterParam,
-} from "@/lib/categories/filter";
-import {
-  buildCategoryLookup,
-  buildCategoryTree,
-  getCategoryDisplay,
-} from "@/lib/categories/tree";
-import {
-  buildLabelLookup,
-  resolveTaskLabelDisplay,
-} from "@/lib/labels/display";
 import {
   groupCategoryIdsByLabel,
   LABEL_CATEGORY_LINK_FIELDS,
   type LabelCategoryLink,
 } from "@/lib/labels/category-links";
-import { filterTasksByLabel, parseLabelFilterParam } from "@/lib/labels/filter";
 import { LABEL_SELECT_FIELDS, type Label } from "@/lib/labels/types";
-import {
-  canDeleteSharedTask,
-  loadTaskCreatorProfiles,
-} from "@/lib/tasks/creators";
-import {
-  getTaskFilterDescription,
-  isAnyTaskFilterActive,
-} from "@/lib/tasks/filter";
-import { filterTasksBySearch, parseSearchQueryParam } from "@/lib/tasks/search";
-import { parseSortParam, sortTasks } from "@/lib/tasks/sort";
-import {
-  filterTasksByStatus,
-  parseStatusFilterParam,
-} from "@/lib/tasks/status";
+import { loadTaskCreatorProfiles } from "@/lib/tasks/creators";
 import { aggregateDueDateHistoryCounts } from "@/lib/tasks/due-date-change";
 import { fetchSubtasksByTaskId } from "@/lib/tasks/subtasks/group";
 import type { TaskSubtask } from "@/lib/tasks/subtasks/types";
@@ -56,14 +27,7 @@ type TasksPageProps = {
 };
 
 export default async function TasksPage({ searchParams }: TasksPageProps) {
-  const {
-    category: categoryParam,
-    label: labelParam,
-    edit: editParam,
-    q: searchParam,
-    status: statusParam,
-    sort: sortParam,
-  } = await searchParams;
+  const { edit: editParam } = await searchParams;
   const supabase = await createClient();
   const {
     data: { user },
@@ -78,7 +42,9 @@ export default async function TasksPage({ searchParams }: TasksPageProps) {
   ] = await Promise.all([
     supabase
       .from("tasks")
-      .select("id, title, description, due_at, reminder_at, reminder_mode, reminder_offset_minutes, priority, recurrence, completed, created_at, category_id, user_id")
+      .select(
+        "id, title, description, due_at, reminder_at, reminder_mode, reminder_offset_minutes, priority, recurrence, completed, created_at, category_id, user_id",
+      )
       .order("created_at", { ascending: false }),
     supabase
       .from("labels")
@@ -92,77 +58,16 @@ export default async function TasksPage({ searchParams }: TasksPageProps) {
 
   const categoriesError = categoriesResult.error;
   const activeCategories = categoriesResult.categories;
-  const personalCategoryId = categoriesResult.personalCategoryId;
   const activeLabels = (labels ?? []) as Label[];
   const categoryIdsByLabelId = groupCategoryIdsByLabel(
     (labelCategoryLinks ?? []) as LabelCategoryLink[],
   );
-  const labelLookup = buildLabelLookup(activeLabels);
-  const categoryLookup = buildCategoryLookup(activeCategories);
-  const { subsByParent } = buildCategoryTree(activeCategories);
-  const categoryFilter = parseCategoryFilterParam(categoryParam, categoryLookup);
-  const labelFilter = parseLabelFilterParam(labelParam, labelLookup);
-  const statusFilter = parseStatusFilterParam(statusParam);
-  const searchQuery = parseSearchQueryParam(searchParam);
-  const sort = parseSortParam(sortParam);
-  const listQueryState = {
-    categoryFilter,
-    labelFilter,
-    statusFilter,
-    searchQuery,
-    sort,
-  };
-
   let historyError: string | null = null;
   let historyByTaskId: ReturnType<typeof aggregateDueDateHistoryCounts> = {};
   let taskLabelsError: string | null = null;
   let labelIdsByTaskId: Record<string, string[]> = {};
   let subtasksError: string | null = null;
   let subtasksByTaskId: Record<string, TaskSubtask[]> = {};
-
-  if (tasks && tasks.length > 0) {
-    const taskIds = tasks.map((task) => task.id);
-    const [
-      { data: changes, error: changesError },
-      { data: taskLabelRows, error: taskLabelsFetchError },
-      subtasksResult,
-    ] = await Promise.all([
-      supabase
-        .from("task_due_date_changes")
-        .select("task_id, change_direction")
-        .in("task_id", taskIds),
-      supabase
-        .from("task_labels")
-        .select("task_id, label_id")
-        .in("task_id", taskIds),
-      fetchSubtasksByTaskId(supabase, taskIds),
-    ]);
-
-    if (changesError) {
-      historyError = changesError.message;
-    } else {
-      historyByTaskId = aggregateDueDateHistoryCounts(changes ?? []);
-    }
-
-    if (taskLabelsFetchError) {
-      taskLabelsError = taskLabelsFetchError.message;
-    } else {
-      labelIdsByTaskId = (taskLabelRows ?? []).reduce<Record<string, string[]>>(
-        (accumulator, row) => {
-          if (!accumulator[row.task_id]) {
-            accumulator[row.task_id] = [];
-          }
-
-          accumulator[row.task_id].push(row.label_id);
-          return accumulator;
-        },
-        {},
-      );
-    }
-
-    subtasksError = subtasksResult.error;
-    subtasksByTaskId = subtasksResult.subtasksByTaskId;
-  }
 
   const allTasks = (tasks ?? []) as Array<{
     id: string;
@@ -180,198 +85,103 @@ export default async function TasksPage({ searchParams }: TasksPageProps) {
     user_id: string;
   }>;
 
+  const taskIds = allTasks.map((task) => task.id);
+
+  if (taskIds.length > 0) {
+    const [
+      historyResult,
+      taskLabelsResult,
+      subtasksResult,
+    ] = await Promise.all([
+      supabase
+        .from("task_due_date_changes")
+        .select("task_id, change_direction")
+        .in("task_id", taskIds),
+      supabase
+        .from("task_labels")
+        .select("task_id, label_id")
+        .in("task_id", taskIds),
+      fetchSubtasksByTaskId(supabase, taskIds),
+    ]);
+
+    if (historyResult.error) {
+      historyError = historyResult.error.message;
+    } else {
+      historyByTaskId = aggregateDueDateHistoryCounts(
+        historyResult.data ?? [],
+      );
+    }
+
+    if (taskLabelsResult.error) {
+      taskLabelsError = taskLabelsResult.error.message;
+    } else {
+      for (const row of taskLabelsResult.data ?? []) {
+        const list = labelIdsByTaskId[row.task_id] ?? [];
+        list.push(row.label_id);
+        labelIdsByTaskId[row.task_id] = list;
+      }
+    }
+
+    subtasksError = subtasksResult.error;
+    subtasksByTaskId = subtasksResult.subtasksByTaskId;
+  }
+
   const currentUserId = user?.id ?? "";
   const isAdmin = isAdminUser(user?.email);
+  const creatorUserIds = [
+    ...new Set(
+      allTasks
+        .map((task) => task.user_id)
+        .filter((taskUserId) => taskUserId !== currentUserId),
+    ),
+  ];
   const creatorsByUserId = await loadTaskCreatorProfiles(
     supabase,
-    allTasks
-      .map((task) => task.user_id)
-      .filter((id) => id && id !== currentUserId),
+    creatorUserIds,
   );
 
-  const filteredByCategory = filterTasksByCategory(
-    allTasks,
-    categoryFilter,
-    subsByParent,
-  );
-  const filteredByLabel = filterTasksByLabel(
-    filteredByCategory,
-    labelFilter,
-    labelIdsByTaskId,
-  );
-  const filteredByStatus = filterTasksByStatus(filteredByLabel, statusFilter);
-  const filteredBySearch = filterTasksBySearch(filteredByStatus, searchQuery);
-  const filteredTasks = sortTasks(filteredBySearch, sort);
-  const tasksToRender =
-    editParam && !filteredTasks.some((task) => task.id === editParam)
-      ? [
-          ...allTasks.filter((task) => task.id === editParam),
-          ...filteredTasks,
-        ]
-      : filteredTasks;
-  const filterActive = isAnyTaskFilterActive(listQueryState);
-  const filterDescription = getTaskFilterDescription(
-    listQueryState,
-    categoryLookup,
-    labelLookup,
-    subsByParent,
-  );
+  const errors = [
+    error?.message ? `Could not load tasks: ${error.message}` : null,
+    labelsError?.message
+      ? `Could not load labels: ${labelsError.message}`
+      : null,
+    labelCategoryLinksError?.message
+      ? `Could not load label category links: ${labelCategoryLinksError.message}`
+      : null,
+    categoriesError?.message
+      ? `Could not load categories: ${categoriesError.message}`
+      : null,
+    taskLabelsError ? `Could not load task labels: ${taskLabelsError}` : null,
+    historyError ? `Could not load due date history: ${historyError}` : null,
+    subtasksError ? `Could not load subtasks: ${subtasksError}` : null,
+  ].filter((message): message is string => Boolean(message));
 
   return (
     <>
-      <DashboardHeader
-        title="Tasks"
-        email={user?.email}
-      />
-      <div className="mx-auto flex w-full max-w-3xl flex-1 flex-col space-y-3 overflow-auto overflow-x-hidden p-3 sm:p-4 lg:p-5">
+      <DashboardHeader title="Tasks" email={user?.email} />
+      <div className="flex-1 overflow-auto overflow-x-hidden p-3 sm:p-4 lg:p-5">
         <Suspense
           fallback={
             <div className="min-h-10 text-sm text-stone-500 dark:text-stone-400">
-              Loading filters...
+              Loading tasks...
             </div>
           }
         >
-          <TaskFiltersBar
+          <TasksClient
+            tasks={allTasks}
             categories={activeCategories}
             labels={activeLabels}
+            categoryIdsByLabelId={categoryIdsByLabelId}
+            labelIdsByTaskId={labelIdsByTaskId}
+            subtasksByTaskId={subtasksByTaskId}
+            historyByTaskId={historyByTaskId}
+            creatorsByUserId={creatorsByUserId}
+            currentUserId={currentUserId}
+            isAdmin={isAdmin}
+            editTaskId={editParam ?? null}
+            errors={errors}
           />
         </Suspense>
-
-        <AddTaskForm
-          categories={activeCategories}
-          labels={activeLabels}
-          categoryIdsByLabelId={categoryIdsByLabelId}
-          defaultCategoryId={personalCategoryId}
-        />
-
-        {labelsError ? (
-          <div className="rounded-xl border border-amber-200 bg-amber-50 px-3 py-2 text-sm break-words text-amber-800">
-            Could not load labels: {labelsError.message}
-          </div>
-        ) : null}
-
-        {labelCategoryLinksError ? (
-          <div className="rounded-xl border border-amber-200 bg-amber-50 px-3 py-2 text-sm break-words text-amber-800">
-            Could not load label category links:{" "}
-            {labelCategoryLinksError.message}
-          </div>
-        ) : null}
-
-        {categoriesError ? (
-          <div className="rounded-xl border border-amber-200 bg-amber-50 px-3 py-2 text-sm break-words text-amber-800">
-            Could not load categories: {categoriesError.message}
-          </div>
-        ) : null}
-
-        {error ? (
-          <div className="rounded-xl border border-red-200 bg-red-50 px-3 py-2 text-sm break-words text-red-700">
-            Could not load tasks: {error.message}
-          </div>
-        ) : null}
-
-        {taskLabelsError ? (
-          <div className="rounded-xl border border-amber-200 bg-amber-50 px-3 py-2 text-sm break-words text-amber-800">
-            Could not load task labels: {taskLabelsError}
-          </div>
-        ) : null}
-
-        {historyError ? (
-          <div className="rounded-xl border border-amber-200 bg-amber-50 px-3 py-2 text-sm break-words text-amber-800">
-            Could not load due date history: {historyError}
-          </div>
-        ) : null}
-
-        {subtasksError ? (
-          <div className="rounded-xl border border-amber-200 bg-amber-50 px-3 py-2 text-sm break-words text-amber-800 dark:border-amber-900/50 dark:bg-amber-950/40 dark:text-amber-300">
-            Could not load subtasks: {subtasksError}
-          </div>
-        ) : null}
-
-        {allTasks.length > 0 && tasksToRender.length > 0 ? (
-          <ul className="min-w-0 overflow-hidden rounded-xl border border-stone-200/80 bg-white px-2 dark:border-stone-700/80 dark:bg-stone-900">
-            {tasksToRender.map((task) => {
-              const dueDateHistory = historyByTaskId[task.id] ?? {
-                dueDateUpdateCount: 0,
-                movedLaterCount: 0,
-                movedEarlierCount: 0,
-              };
-              const category = getCategoryDisplay(
-                task.category_id,
-                categoryLookup,
-              );
-              const categoryUnavailable =
-                task.category_id !== null && category === null;
-              const taskLabelIds = labelIdsByTaskId[task.id] ?? [];
-              const taskLabelDisplay = resolveTaskLabelDisplay(
-                taskLabelIds,
-                labelLookup,
-              );
-
-              return (
-                <TaskListItem
-                  key={task.id}
-                  id={task.id}
-                  title={task.title}
-                  description={task.description}
-                  dueAt={task.due_at}
-                  reminderAt={task.reminder_at}
-                  reminderMode={task.reminder_mode}
-                  reminderOffsetMinutes={task.reminder_offset_minutes}
-                  priority={task.priority}
-                  recurrence={task.recurrence}
-                  completed={task.completed}
-                  createdAt={task.created_at}
-                  categoryId={task.category_id}
-                  category={category}
-                  categoryUnavailable={categoryUnavailable}
-                  categories={activeCategories}
-                  labels={activeLabels}
-                  categoryIdsByLabelId={categoryIdsByLabelId}
-                  labelIds={taskLabelIds}
-                  taskLabels={taskLabelDisplay}
-                  dueDateHistory={dueDateHistory}
-                  subtasks={subtasksByTaskId[task.id] ?? []}
-                  initialEditing={editParam === task.id}
-                  taskUserId={task.user_id}
-                  currentUserId={currentUserId}
-                  creator={
-                    task.user_id !== currentUserId
-                      ? (creatorsByUserId[task.user_id] ?? null)
-                      : null
-                  }
-                  canDelete={canDeleteSharedTask({
-                    currentUserId,
-                    isAdmin,
-                    taskUserId: task.user_id,
-                    categoryId: task.category_id,
-                    categoryScope:
-                      categoryLookup.get(task.category_id ?? "")?.scope ?? null,
-                  })}
-                />
-              );
-            })}
-          </ul>
-        ) : allTasks.length > 0 && filterActive ? (
-          <div className="rounded-xl border border-dashed border-stone-300 bg-white p-8 text-center dark:border-stone-600 dark:bg-stone-900">
-            <h2 className="text-base font-semibold text-stone-900 dark:text-stone-100">
-              No matching tasks
-            </h2>
-            <p className="mx-auto mt-1.5 max-w-md text-sm text-stone-500 dark:text-stone-400">
-              {filterDescription
-                ? `No tasks match “${filterDescription}”. Try adjusting or clearing your filters.`
-                : "No tasks match these filters. Try adjusting or clearing your filters."}
-            </p>
-          </div>
-        ) : !error ? (
-          <div className="rounded-xl border border-dashed border-stone-300 bg-white p-8 text-center dark:border-stone-600 dark:bg-stone-900">
-            <h2 className="text-base font-semibold text-stone-900 dark:text-stone-100">
-              No tasks yet
-            </h2>
-            <p className="mx-auto mt-1.5 max-w-md text-sm text-stone-500 dark:text-stone-400">
-              Use quick add above to create your first task.
-            </p>
-          </div>
-        ) : null}
       </div>
     </>
   );
