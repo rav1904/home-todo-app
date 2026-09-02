@@ -332,7 +332,7 @@ export function LabelSelect({
 
             <div>
               <p className={formLabelClassName}>Colour</p>
-              <div className="flex flex-wrap gap-1.5">
+              <div className="flex min-w-0 max-w-full flex-wrap gap-1.5">
                 {CATEGORY_COLOUR_PRESETS.map((preset) => {
                   const isSelected = newColour === preset.value;
 
@@ -343,7 +343,7 @@ export function LabelSelect({
                       aria-label={`Select ${preset.label} colour`}
                       aria-pressed={isSelected}
                       onClick={() => setNewColour(preset.value)}
-                      className={`h-7 w-7 rounded-full border-2 transition ${
+                      className={`h-7 w-7 shrink-0 rounded-full border-2 transition ${
                         isSelected
                           ? "border-stone-900 dark:border-stone-100"
                           : "border-transparent"

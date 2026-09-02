@@ -135,7 +135,7 @@ export function CategoryFormFields({
 
       <div>
         <p className="mb-2 text-sm font-medium text-stone-700 dark:text-stone-300">Colour</p>
-        <div className="flex flex-wrap gap-2">
+        <div className="flex min-w-0 max-w-full flex-wrap gap-2">
           {CATEGORY_COLOUR_PRESETS.map((preset) => {
             const isSelected = values.colour === preset.value;
 
@@ -146,7 +146,7 @@ export function CategoryFormFields({
                 aria-label={`Select ${preset.label} colour`}
                 aria-pressed={isSelected}
                 onClick={() => onChange({ ...values, colour: preset.value })}
-                className={`h-8 w-8 rounded-full border-2 transition ${
+                className={`h-8 w-8 shrink-0 rounded-full border-2 transition ${
                   isSelected
                     ? "border-stone-900 dark:border-stone-100"
                     : "border-transparent"
