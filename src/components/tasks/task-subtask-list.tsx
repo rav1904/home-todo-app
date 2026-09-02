@@ -1,6 +1,11 @@
 "use client";
 
-import { fieldClassName } from "@/lib/ui/field-classes";
+import {
+  compactFieldClassName,
+  formErrorClassName,
+  formLabelClassName,
+  formPrimaryButtonClassName,
+} from "@/lib/ui/field-classes";
 import {
   getNextSubtaskSortOrder,
   moveSubtask,
@@ -17,12 +22,15 @@ type TaskSubtaskListProps = {
   subtasks: TaskSubtask[];
   /** Hide the Checklist heading when a parent already shows progress. */
   hideHeading?: boolean;
+  /** Slightly denser chrome for edit/add forms. */
+  compact?: boolean;
 };
 
 export function TaskSubtaskList({
   taskId,
   subtasks,
   hideHeading = false,
+  compact = false,
 }: TaskSubtaskListProps) {
   const router = useRouter();
   const [newTitle, setNewTitle] = useState("");
@@ -50,8 +58,7 @@ export function TaskSubtaskList({
     }
   }
 
-  async function handleAdd(event: React.FormEvent<HTMLFormElement>) {
-    event.preventDefault();
+  async function handleAdd() {
     const trimmedTitle = newTitle.trim();
 
     if (!trimmedTitle) {
@@ -154,7 +161,6 @@ export function TaskSubtaskList({
   function cancelEditing() {
     setEditingId(null);
     setEditTitle("");
-    setError(null);
   }
 
   async function handleSaveEdit(subtask: TaskSubtask) {
@@ -183,7 +189,8 @@ export function TaskSubtaskList({
       return;
     }
 
-    cancelEditing();
+    setEditingId(null);
+    setEditTitle("");
     setLoading(false);
     router.refresh();
   }
@@ -214,27 +221,34 @@ export function TaskSubtaskList({
 
   return (
     <div
-      className={
+      className={`min-w-0 ${
         hideHeading
           ? "mt-2"
-          : "mt-4 border-t border-stone-200 pt-4 dark:border-stone-700"
-      }
+          : compact
+            ? "rounded-lg border border-stone-200/80 p-2.5 dark:border-stone-700/80"
+            : "mt-4 border-t border-stone-200 pt-4 dark:border-stone-700"
+      }`}
     >
       {hideHeading ? null : (
-        <h3 className="text-sm font-medium text-stone-700 dark:text-stone-300">
-          Checklist
-        </h3>
+        <div className="mb-2">
+          <h3 className="text-sm font-medium text-stone-700 dark:text-stone-300">
+            Checklist
+          </h3>
+          <p className="text-xs text-stone-400 dark:text-stone-500">
+            Optional · break the task into steps
+          </p>
+        </div>
       )}
 
       {subtasks.length > 0 ? (
-        <ul className={hideHeading ? "space-y-2" : "mt-3 space-y-2"}>
+        <ul className="space-y-2">
           {subtasks.map((subtask, index) => {
             const isEditing = editingId === subtask.id;
 
             return (
               <li
                 key={subtask.id}
-                className="flex items-start gap-2 rounded-xl border border-stone-200 bg-stone-50 p-2 dark:border-stone-700 dark:bg-stone-800/50"
+                className="flex min-w-0 items-start gap-2 rounded-lg border border-stone-200 bg-stone-50 p-2 dark:border-stone-700 dark:bg-stone-800/50"
               >
                 <input
                   type="checkbox"
@@ -242,30 +256,25 @@ export function TaskSubtaskList({
                   onChange={() => void handleToggleComplete(subtask)}
                   disabled={loading}
                   aria-label={`Mark "${subtask.title}" as ${subtask.completed ? "incomplete" : "complete"}`}
-                  className="mt-1 h-4 w-4 shrink-0 cursor-pointer rounded border-stone-300 text-emerald-600 focus:ring-emerald-500/20 disabled:cursor-not-allowed disabled:opacity-60"
+                  className="mt-1 h-5 w-5 shrink-0 cursor-pointer rounded border-stone-300 text-emerald-600 focus:ring-emerald-500/20 disabled:cursor-not-allowed disabled:opacity-60"
                 />
 
                 <div className="min-w-0 flex-1">
                   {isEditing ? (
-                    <form
-                      onSubmit={(event) => {
-                        event.preventDefault();
-                        void handleSaveEdit(subtask);
-                      }}
-                      className="space-y-2"
-                    >
+                    <div className="space-y-2">
                       <input
                         type="text"
                         value={editTitle}
                         onChange={(event) => setEditTitle(event.target.value)}
-                        className={fieldClassName}
+                        className={`${compactFieldClassName} min-w-0`}
                         autoFocus
                       />
                       <div className="flex flex-wrap gap-2">
                         <button
-                          type="submit"
+                          type="button"
+                          onClick={() => void handleSaveEdit(subtask)}
                           disabled={loading}
-                          className="cursor-pointer rounded-lg bg-emerald-600 px-3 py-1 text-xs font-medium text-white transition hover:bg-emerald-700 disabled:cursor-not-allowed disabled:opacity-60"
+                          className="cursor-pointer rounded-lg bg-emerald-600 px-3 py-1.5 text-xs font-medium text-white transition hover:bg-emerald-700 disabled:cursor-not-allowed disabled:opacity-60"
                         >
                           Save
                         </button>
@@ -273,18 +282,18 @@ export function TaskSubtaskList({
                           type="button"
                           onClick={cancelEditing}
                           disabled={loading}
-                          className="cursor-pointer rounded-lg border border-stone-200 bg-white px-3 py-1 text-xs font-medium text-stone-600 transition hover:bg-stone-50 disabled:cursor-not-allowed disabled:opacity-60 dark:border-stone-600 dark:bg-stone-800 dark:text-stone-300 dark:hover:bg-stone-700"
+                          className="cursor-pointer rounded-lg border border-stone-200 bg-white px-3 py-1.5 text-xs font-medium text-stone-600 transition hover:bg-stone-50 disabled:cursor-not-allowed disabled:opacity-60 dark:border-stone-600 dark:bg-stone-800 dark:text-stone-300 dark:hover:bg-stone-700"
                         >
                           Cancel
                         </button>
                       </div>
-                    </form>
+                    </div>
                   ) : (
                     <button
                       type="button"
                       onClick={() => startEditing(subtask)}
                       disabled={loading}
-                      className={`w-full cursor-pointer text-left text-sm ${
+                      className={`w-full cursor-pointer text-left text-sm leading-snug break-words [overflow-wrap:anywhere] ${
                         subtask.completed
                           ? "text-stone-400 line-through dark:text-stone-500"
                           : "text-stone-800 dark:text-stone-100"
@@ -302,7 +311,7 @@ export function TaskSubtaskList({
                       onClick={() => void handleMove(subtask, "up")}
                       disabled={loading || index === 0}
                       aria-label={`Move "${subtask.title}" up`}
-                      className="cursor-pointer rounded border border-stone-200 bg-white p-0.5 text-stone-500 transition hover:bg-stone-50 disabled:cursor-not-allowed disabled:opacity-40 dark:border-stone-600 dark:bg-stone-800 dark:text-stone-400 dark:hover:bg-stone-700"
+                      className="inline-flex h-8 w-8 cursor-pointer items-center justify-center rounded-lg border border-stone-200 bg-white text-stone-500 transition hover:bg-stone-50 disabled:cursor-not-allowed disabled:opacity-40 dark:border-stone-600 dark:bg-stone-800 dark:text-stone-400 dark:hover:bg-stone-700"
                     >
                       <ChevronUp className="h-3.5 w-3.5" />
                     </button>
@@ -311,7 +320,7 @@ export function TaskSubtaskList({
                       onClick={() => void handleMove(subtask, "down")}
                       disabled={loading || index === subtasks.length - 1}
                       aria-label={`Move "${subtask.title}" down`}
-                      className="cursor-pointer rounded border border-stone-200 bg-white p-0.5 text-stone-500 transition hover:bg-stone-50 disabled:cursor-not-allowed disabled:opacity-40 dark:border-stone-600 dark:bg-stone-800 dark:text-stone-400 dark:hover:bg-stone-700"
+                      className="inline-flex h-8 w-8 cursor-pointer items-center justify-center rounded-lg border border-stone-200 bg-white text-stone-500 transition hover:bg-stone-50 disabled:cursor-not-allowed disabled:opacity-40 dark:border-stone-600 dark:bg-stone-800 dark:text-stone-400 dark:hover:bg-stone-700"
                     >
                       <ChevronDown className="h-3.5 w-3.5" />
                     </button>
@@ -320,7 +329,7 @@ export function TaskSubtaskList({
                       onClick={() => void handleDelete(subtask)}
                       disabled={loading}
                       aria-label={`Delete "${subtask.title}"`}
-                      className="cursor-pointer rounded border border-stone-200 bg-white p-0.5 text-stone-500 transition hover:border-red-200 hover:bg-red-50 hover:text-red-700 disabled:cursor-not-allowed disabled:opacity-40 dark:border-stone-600 dark:bg-stone-800 dark:text-stone-400 dark:hover:border-red-900/50 dark:hover:bg-red-950/40 dark:hover:text-red-400"
+                      className="inline-flex h-8 w-8 cursor-pointer items-center justify-center rounded-lg border border-stone-200 bg-white text-stone-500 transition hover:border-red-200 hover:bg-red-50 hover:text-red-700 disabled:cursor-not-allowed disabled:opacity-40 dark:border-stone-600 dark:bg-stone-800 dark:text-stone-400 dark:hover:border-red-900/50 dark:hover:bg-red-950/40 dark:hover:text-red-400"
                     >
                       <Trash2 className="h-3.5 w-3.5" />
                     </button>
@@ -332,29 +341,40 @@ export function TaskSubtaskList({
         </ul>
       ) : null}
 
-      <form onSubmit={handleAdd} className="mt-3 flex flex-col gap-2 sm:flex-row">
+      <div
+        className={`flex min-w-0 flex-col gap-2 sm:flex-row ${
+          subtasks.length > 0 ? "mt-3" : ""
+        }`}
+      >
+        <label htmlFor={`subtask-new-${taskId}`} className="sr-only">
+          New checklist item
+        </label>
         <input
+          id={`subtask-new-${taskId}`}
           type="text"
           value={newTitle}
           onChange={(event) => setNewTitle(event.target.value)}
-          placeholder="Add a subtask..."
-          className={fieldClassName}
+          onKeyDown={(event) => {
+            if (event.key === "Enter") {
+              event.preventDefault();
+              void handleAdd();
+            }
+          }}
+          placeholder="Add a subtask…"
+          className={`${compactFieldClassName} min-h-11 min-w-0 flex-1`}
           disabled={loading}
         />
         <button
-          type="submit"
+          type="button"
+          onClick={() => void handleAdd()}
           disabled={loading}
-          className="cursor-pointer shrink-0 rounded-xl bg-emerald-600 px-4 py-2.5 text-sm font-medium text-white transition hover:bg-emerald-700 disabled:cursor-not-allowed disabled:opacity-60"
+          className={`${formPrimaryButtonClassName} min-h-11 shrink-0`}
         >
-          Add
+          Add item
         </button>
-      </form>
+      </div>
 
-      {error ? (
-        <p className="mt-2 rounded-xl bg-red-50 px-3 py-2 text-sm text-red-700 dark:bg-red-950/40 dark:text-red-300">
-          {error}
-        </p>
-      ) : null}
+      {error ? <p className={`mt-2 ${formErrorClassName}`}>{error}</p> : null}
     </div>
   );
 }

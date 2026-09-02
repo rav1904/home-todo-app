@@ -1,6 +1,11 @@
 "use client";
 
 import { CategorySelect } from "@/components/tasks/category-select";
+import { ChecklistDraftPanel } from "@/components/tasks/checklist-draft-field";
+import {
+  ChecklistPanel,
+  ChecklistToolbarButton,
+} from "@/components/tasks/checklist-toggle";
 import { DueDatetimeFields } from "@/components/tasks/due-datetime-fields";
 import { LabelSelect } from "@/components/tasks/label-select";
 import { ReminderFields } from "@/components/tasks/reminder-fields";
@@ -57,7 +62,7 @@ type AddTaskFormProps = {
   onSuccess?: () => void;
 };
 
-type PanelKey = "priority" | "reminder" | "repeat" | "labels";
+type PanelKey = "priority" | "reminder" | "repeat" | "labels" | "checklist";
 
 function ToolbarButton({
   label,
@@ -134,6 +139,7 @@ export function AddTaskForm({
   );
   const [labelIds, setLabelIds] = useState<string[]>([]);
   const [extraLabels, setExtraLabels] = useState<Label[]>([]);
+  const [draftSubtasks, setDraftSubtasks] = useState<string[]>([]);
   const [openPanel, setOpenPanel] = useState<PanelKey | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -153,9 +159,17 @@ export function AddTaskForm({
   const hasPriority = priority !== DEFAULT_TASK_PRIORITY;
   const hasRepeat = recurrence !== DEFAULT_TASK_RECURRENCE;
   const hasLabels = labelIds.length > 0;
+  const hasChecklist = draftSubtasks.length > 0;
 
   function togglePanel(panel: PanelKey) {
     setOpenPanel((current) => (current === panel ? null : panel));
+  }
+
+  function handleDraftSubtasksChange(items: string[]) {
+    setDraftSubtasks(items);
+    if (items.length > 0) {
+      setOpenPanel("checklist");
+    }
   }
 
   function handleDueChange(nextDue: string) {
@@ -253,6 +267,29 @@ export function AddTaskForm({
       }
     }
 
+    if (draftSubtasks.length > 0) {
+      const timestamp = new Date().toISOString();
+      const { error: subtasksError } = await supabase
+        .from("task_subtasks")
+        .insert(
+          draftSubtasks.map((subtaskTitle, index) => ({
+            task_id: createdTask.id,
+            user_id: user.id,
+            title: subtaskTitle,
+            sort_order: index,
+            completed: false,
+            updated_at: timestamp,
+          })),
+        );
+
+      if (subtasksError) {
+        setError(subtasksError.message);
+        setLoading(false);
+        submittingRef.current = false;
+        return;
+      }
+    }
+
     setTitle("");
     setDescription("");
     setDueAt(initialDueAt);
@@ -262,6 +299,7 @@ export function AddTaskForm({
     setCategoryId(personalDefault);
     setLabelIds([]);
     setExtraLabels([]);
+    setDraftSubtasks([]);
     setOpenPanel(null);
     setLoading(false);
     submittingRef.current = false;
@@ -326,7 +364,7 @@ export function AddTaskForm({
         />
       </div>
 
-      <div className="flex flex-wrap items-center gap-1">
+      <div className="flex max-w-full flex-wrap items-center gap-1">
         <ToolbarButton
           label="Priority"
           active={openPanel === "priority"}
@@ -359,6 +397,14 @@ export function AddTaskForm({
         >
           <Tags className="h-4 w-4" aria-hidden />
         </ToolbarButton>
+        <ChecklistToolbarButton
+          open={openPanel === "checklist"}
+          populated={hasChecklist}
+          countLabel={
+            hasChecklist ? `0/${draftSubtasks.length}` : null
+          }
+          onClick={() => togglePanel("checklist")}
+        />
       </div>
 
       {openPanel === "priority" ? (
@@ -409,6 +455,13 @@ export function AddTaskForm({
           />
         </PanelShell>
       ) : null}
+
+      <ChecklistPanel open={openPanel === "checklist"}>
+        <ChecklistDraftPanel
+          items={draftSubtasks}
+          onChange={handleDraftSubtasksChange}
+        />
+      </ChecklistPanel>
 
       {error ? <p className={formErrorClassName}>{error}</p> : null}
     </form>

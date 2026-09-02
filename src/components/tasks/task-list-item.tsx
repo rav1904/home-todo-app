@@ -2,7 +2,10 @@
 
 import { TaskCompleteToggle } from "@/components/tasks/task-complete-toggle";
 import { TaskSubtaskList } from "@/components/tasks/task-subtask-list";
-import { TaskSubtaskProgress } from "@/components/tasks/task-subtask-progress";
+import {
+  ChecklistPanel,
+  ChecklistToolbarButton,
+} from "@/components/tasks/checklist-toggle";
 import { TaskDeleteButton } from "@/components/tasks/task-delete-button";
 import {
   CategoryBadge,
@@ -18,7 +21,6 @@ import {
 } from "@/components/tasks/priority-select";
 import { RecurrenceSelect } from "@/components/tasks/recurrence-select";
 import {
-  TaskFormMoreDetails,
   TaskNotesField,
   TaskTitleField,
 } from "@/components/tasks/task-form-shared";
@@ -68,6 +70,8 @@ import {
   formSecondaryButtonClassName,
   taskActionButtonClassName,
   taskRowClassName,
+  toolbarIconButtonActiveClassName,
+  toolbarIconButtonClassName,
 } from "@/lib/ui/field-classes";
 import { createClient } from "@/lib/supabase/client";
 import {
@@ -79,9 +83,54 @@ import {
 } from "@/lib/tasks/due-date-change";
 import { getSubtaskProgress } from "@/lib/tasks/subtasks/progress";
 import type { TaskSubtask } from "@/lib/tasks/subtasks/types";
-import { Bell, ListTodo, Repeat } from "lucide-react";
+import { Bell, Flag, ListTodo, Repeat, Tags } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { useEffect, useMemo, useRef, useState } from "react";
+import {
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  type ReactNode,
+} from "react";
+
+type EditPanelKey = "priority" | "reminder" | "repeat" | "labels" | "checklist";
+
+function EditToolbarButton({
+  label,
+  active,
+  populated,
+  onClick,
+  children,
+}: {
+  label: string;
+  active: boolean;
+  populated: boolean;
+  onClick: () => void;
+  children: ReactNode;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      aria-label={label}
+      aria-pressed={active}
+      title={label}
+      className={`${toolbarIconButtonClassName} ${
+        active || populated ? toolbarIconButtonActiveClassName : ""
+      }`}
+    >
+      {children}
+    </button>
+  );
+}
+
+function EditPanelShell({ children }: { children: ReactNode }) {
+  return (
+    <div className="min-w-0 rounded-lg border border-stone-200/80 p-2.5 dark:border-stone-700/80">
+      {children}
+    </div>
+  );
+}
 
 type TaskListItemProps = {
   id: string;
@@ -224,8 +273,8 @@ export function TaskListItem({
   const [editLabelIds, setEditLabelIds] = useState<string[]>(labelIds);
   const [extraLabels, setExtraLabels] = useState<Label[]>([]);
   const [editCompleted, setEditCompleted] = useState(completed);
-  const [detailsOpen, setDetailsOpen] = useState(
-    Boolean(categoryId) || labelIds.length > 0,
+  const [editPanel, setEditPanel] = useState<EditPanelKey | null>(
+    subtasks.length > 0 ? "checklist" : null,
   );
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -257,20 +306,9 @@ export function TaskListItem({
     return editLabelIds.filter((labelId) => allowedIds.has(labelId));
   }, [availableLabels, editLabelIds]);
 
-  const editDetailsSummary = useMemo(() => {
-    const parts: string[] = [];
-    if (editCategoryId) {
-      parts.push("category");
-    }
-    if (editLabelIds.length > 0) {
-      parts.push(
-        editLabelIds.length === 1
-          ? "1 label"
-          : `${editLabelIds.length} labels`,
-      );
-    }
-    return parts.join(", ");
-  }, [editCategoryId, editLabelIds.length]);
+  function toggleEditPanel(panel: EditPanelKey) {
+    setEditPanel((current) => (current === panel ? null : panel));
+  }
 
   function startEditing() {
     setEditTitle(title);
@@ -289,7 +327,7 @@ export function TaskListItem({
     setEditLabelIds(labelIds);
     setExtraLabels([]);
     setEditCompleted(completed);
-    setDetailsOpen(Boolean(categoryId) || labelIds.length > 0);
+    setEditPanel(subtasks.length > 0 ? "checklist" : null);
     setError(null);
     setIsEditing(true);
   }
@@ -316,6 +354,12 @@ export function TaskListItem({
 
     itemRef.current?.scrollIntoView({ behavior: "smooth", block: "center" });
   }, [initialEditing]);
+
+  useEffect(() => {
+    if (isEditing && subtasks.length > 0) {
+      setEditPanel((current) => current ?? "checklist");
+    }
+  }, [isEditing, subtasks.length]);
 
   async function handleSave(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -465,66 +509,123 @@ export function TaskListItem({
         />
 
         <div className="grid min-w-0 gap-3 sm:grid-cols-2">
+          <CategorySelect
+            id={`edit-category-${id}`}
+            categories={editableCategories}
+            value={editCategoryId}
+            onChange={setEditCategoryId}
+            className={compactFieldClassName}
+            compact
+          />
           <DueDatetimeFields
             id={`edit-due-at-${id}`}
             value={editDueAt}
             onChange={handleEditDueChange}
           />
-          <PrioritySelect
-            id={`edit-priority-${id}`}
-            value={editPriority}
-            onChange={setEditPriority}
-          />
-          <RecurrenceSelect
-            id={`edit-recurrence-${id}`}
-            value={editRecurrence}
-            onChange={setEditRecurrence}
-            dueLocal={editDueAt}
-          />
-          <ReminderFields
-            id={`edit-reminder-${id}`}
-            dueLocal={editDueAt}
-            value={editReminder}
-            onChange={setEditReminder}
+        </div>
+
+        <div className="flex max-w-full flex-wrap items-center gap-1">
+          <EditToolbarButton
+            label="Priority"
+            active={editPanel === "priority"}
+            populated={editPriority !== DEFAULT_TASK_PRIORITY}
+            onClick={() => toggleEditPanel("priority")}
+          >
+            <Flag className="h-4 w-4" aria-hidden />
+          </EditToolbarButton>
+          <EditToolbarButton
+            label="Reminder"
+            active={editPanel === "reminder"}
+            populated={Boolean(editReminder.mode)}
+            onClick={() => toggleEditPanel("reminder")}
+          >
+            <Bell className="h-4 w-4" aria-hidden />
+          </EditToolbarButton>
+          <EditToolbarButton
+            label="Repeat"
+            active={editPanel === "repeat"}
+            populated={editRecurrence !== DEFAULT_TASK_RECURRENCE}
+            onClick={() => toggleEditPanel("repeat")}
+          >
+            <Repeat className="h-4 w-4" aria-hidden />
+          </EditToolbarButton>
+          <EditToolbarButton
+            label="Labels"
+            active={editPanel === "labels"}
+            populated={editLabelIds.length > 0}
+            onClick={() => toggleEditPanel("labels")}
+          >
+            <Tags className="h-4 w-4" aria-hidden />
+          </EditToolbarButton>
+          <ChecklistToolbarButton
+            open={editPanel === "checklist"}
+            populated={subtasks.length > 0}
+            countLabel={
+              subtasks.length > 0
+                ? `${subtasks.filter((item) => item.completed).length}/${subtasks.length}`
+                : null
+            }
+            onClick={() => toggleEditPanel("checklist")}
           />
         </div>
 
-        <TaskFormMoreDetails
-          open={detailsOpen}
-          onToggle={() => setDetailsOpen((open) => !open)}
-          summary={editDetailsSummary}
-        >
-          <CategorySelect
-            id={`edit-category-${id}`}
-            categories={editableCategories}
-            value={editCategoryId}
-            onChange={(next) => {
-              setEditCategoryId(next);
-              if (next) {
-                setDetailsOpen(true);
+        {editPanel === "priority" ? (
+          <EditPanelShell>
+            <PrioritySelect
+              id={`edit-priority-${id}`}
+              value={editPriority}
+              onChange={setEditPriority}
+            />
+          </EditPanelShell>
+        ) : null}
+
+        {editPanel === "reminder" ? (
+          <EditPanelShell>
+            <ReminderFields
+              id={`edit-reminder-${id}`}
+              dueLocal={editDueAt}
+              value={editReminder}
+              onChange={setEditReminder}
+            />
+          </EditPanelShell>
+        ) : null}
+
+        {editPanel === "repeat" ? (
+          <EditPanelShell>
+            <RecurrenceSelect
+              id={`edit-recurrence-${id}`}
+              value={editRecurrence}
+              onChange={setEditRecurrence}
+              dueLocal={editDueAt}
+            />
+          </EditPanelShell>
+        ) : null}
+
+        {editPanel === "labels" ? (
+          <EditPanelShell>
+            <LabelSelect
+              id={`edit-labels-${id}`}
+              labels={availableLabels}
+              categories={editableCategories}
+              categoryId={editCategoryId}
+              categoryIdsByLabelId={categoryIdsByLabelId}
+              value={editLabelIds}
+              onChange={setEditLabelIds}
+              onLabelCreated={(label) =>
+                setExtraLabels((current) => [...current, label])
               }
-            }}
-            className={compactFieldClassName}
+            />
+          </EditPanelShell>
+        ) : null}
+
+        <ChecklistPanel open={editPanel === "checklist"}>
+          <TaskSubtaskList
+            taskId={id}
+            subtasks={subtasks}
+            hideHeading
             compact
           />
-          <LabelSelect
-            id={`edit-labels-${id}`}
-            labels={availableLabels}
-            categories={editableCategories}
-            categoryId={editCategoryId}
-            categoryIdsByLabelId={categoryIdsByLabelId}
-            value={editLabelIds}
-            onChange={(next) => {
-              setEditLabelIds(next);
-              if (next.length > 0) {
-                setDetailsOpen(true);
-              }
-            }}
-            onLabelCreated={(label) =>
-              setExtraLabels((current) => [...current, label])
-            }
-          />
-        </TaskFormMoreDetails>
+        </ChecklistPanel>
 
         <label className="flex cursor-pointer items-center gap-2 text-sm text-stone-700 dark:text-stone-300">
           <input
@@ -684,20 +785,28 @@ export function TaskListItem({
           ) : null}
 
           {hasChecklist && subtaskProgress ? (
-            <TaskSubtaskProgress
-              progress={subtaskProgress}
-              compact
-              expanded={checklistOpen}
-              onToggle={() => setChecklistOpen((open) => !open)}
-            />
-          ) : null}
-
-          {checklistOpen ? (
-            <TaskSubtaskList
-              taskId={id}
-              subtasks={subtasks}
-              hideHeading={hasChecklist}
-            />
+            <div className="min-w-0 space-y-2">
+              <button
+                type="button"
+                onClick={() => setChecklistOpen((open) => !open)}
+                aria-expanded={checklistOpen}
+                aria-label={`Checklist ${subtaskProgress.completedCount} of ${subtaskProgress.totalCount}${checklistOpen ? ", expanded" : ", collapsed"}`}
+                className="inline-flex min-h-9 max-w-full items-center gap-1.5 rounded-md bg-stone-100 px-2 py-1 text-xs font-medium text-stone-600 transition hover:bg-stone-200/80 dark:bg-stone-800 dark:text-stone-300 dark:hover:bg-stone-700"
+              >
+                <ListTodo className="h-3.5 w-3.5 shrink-0" aria-hidden />
+                <span className="tabular-nums">
+                  {subtaskProgress.completedCount}/{subtaskProgress.totalCount}
+                </span>
+              </button>
+              <ChecklistPanel open={checklistOpen}>
+                <TaskSubtaskList
+                  taskId={id}
+                  subtasks={subtasks}
+                  hideHeading
+                  compact
+                />
+              </ChecklistPanel>
+            </div>
           ) : null}
 
           <p className="sr-only">
@@ -718,17 +827,6 @@ export function TaskListItem({
                 size="sm"
               />
             </span>
-          ) : null}
-          {!hasChecklist ? (
-            <button
-              type="button"
-              onClick={() => setChecklistOpen(true)}
-              aria-label={`Add checklist to "${title}"`}
-              title="Checklist"
-              className={taskActionButtonClassName}
-            >
-              <ListTodo className="h-4 w-4" aria-hidden />
-            </button>
           ) : null}
           <button
             type="button"

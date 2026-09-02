@@ -50,7 +50,7 @@ export function TaskFormMoreDetails({
           ) : null}
         </span>
         <span className="shrink-0 text-xs font-normal text-stone-400 dark:text-stone-500">
-          Category & labels
+          Labels
         </span>
       </button>
       {open ? (

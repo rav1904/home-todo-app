@@ -1,5 +1,5 @@
 import type { SubtaskProgress } from "@/lib/tasks/subtasks/progress";
-import { ChevronDown, ChevronRight } from "lucide-react";
+import { ChevronDown, ChevronRight, ListTodo } from "lucide-react";
 
 type TaskSubtaskProgressProps = {
   progress: SubtaskProgress;
@@ -18,18 +18,20 @@ export function TaskSubtaskProgress({
   const interactive = typeof onToggle === "function";
   const body = (
     <>
-      <div className="mb-1 flex items-center justify-between gap-2 text-xs text-stone-500 dark:text-stone-400">
-        <span className="inline-flex items-center gap-1">
+      <div className="mb-1 flex min-w-0 items-center justify-between gap-2 text-xs text-stone-500 dark:text-stone-400">
+        <span className="inline-flex min-w-0 items-center gap-1 font-medium text-stone-600 dark:text-stone-300">
           {interactive ? (
             expanded ? (
-              <ChevronDown className="h-3.5 w-3.5" aria-hidden="true" />
+              <ChevronDown className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
             ) : (
-              <ChevronRight className="h-3.5 w-3.5" aria-hidden="true" />
+              <ChevronRight className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
             )
-          ) : null}
-          Checklist
+          ) : (
+            <ListTodo className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
+          )}
+          <span className="truncate">Checklist</span>
         </span>
-        <span className="font-medium text-stone-600 dark:text-stone-300">
+        <span className="shrink-0 tabular-nums font-semibold text-stone-700 dark:text-stone-200">
           {progress.completedCount}/{progress.totalCount}
         </span>
       </div>
@@ -55,8 +57,8 @@ export function TaskSubtaskProgress({
         type="button"
         onClick={onToggle}
         aria-expanded={expanded}
-        className={`w-full cursor-pointer rounded-lg text-left transition hover:bg-stone-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500/30 dark:hover:bg-stone-800/60 ${
-          compact ? "mt-2 p-1.5" : "mt-3 p-2"
+        className={`w-full min-w-0 cursor-pointer rounded-lg text-left transition hover:bg-stone-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500/30 dark:hover:bg-stone-800/60 ${
+          compact ? "mt-1.5 p-1.5" : "mt-3 p-2"
         }`}
       >
         {body}
@@ -64,5 +66,5 @@ export function TaskSubtaskProgress({
     );
   }
 
-  return <div className={compact ? "mt-2" : "mt-3"}>{body}</div>;
+  return <div className={compact ? "mt-1.5" : "mt-3"}>{body}</div>;
 }
