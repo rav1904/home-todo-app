@@ -23,7 +23,7 @@ import {
   shouldShowTaskCreator,
   type TaskCreatorProfile,
 } from "@/lib/tasks/creators";
-import { isoHasExplicitTime } from "@/lib/tasks/due-datetime";
+import { formatHomeDueDate } from "@/lib/tasks/local-dates";
 import {
   DEFAULT_TASK_PRIORITY,
   parseTaskPriority,
@@ -87,38 +87,7 @@ type TaskListItemProps = {
 };
 
 function formatDate(value: string) {
-  return new Date(value).toLocaleDateString(undefined, {
-    year: "numeric",
-    month: "short",
-    day: "numeric",
-  });
-}
-
-function formatDateTime(value: string) {
-  return new Date(value).toLocaleString(undefined, {
-    year: "numeric",
-    month: "short",
-    day: "numeric",
-    hour: "numeric",
-    minute: "2-digit",
-  });
-}
-
-function formatDueMeta(value: string) {
-  const date = new Date(value);
-  if (!isoHasExplicitTime(value)) {
-    return date.toLocaleDateString(undefined, {
-      month: "short",
-      day: "numeric",
-    });
-  }
-
-  return date.toLocaleString(undefined, {
-    month: "short",
-    day: "numeric",
-    hour: "numeric",
-    minute: "2-digit",
-  });
+  return formatHomeDueDate(value);
 }
 
 function PencilIcon() {
@@ -218,7 +187,6 @@ export function TaskListItem({
   const dueIsOverdue =
     Boolean(dueAt) && !completed && !isCancelled && isFocusDueOverdue(dueAt!);
   const hasChecklist = subtasks.length > 0;
-  const dueHasTime = isoHasExplicitTime(dueAt);
   const workspaceDisplay =
     category ??
     (categoryUnavailable ? null : NULL_CATEGORY_DISPLAY);
@@ -284,10 +252,7 @@ export function TaskListItem({
                 }`}
               >
                 {dueIsOverdue ? "Overdue · " : ""}
-                {formatDueMeta(dueAt)}
-                {dueHasTime ? (
-                  <span className="sr-only"> (includes time)</span>
-                ) : null}
+                {formatHomeDueDate(dueAt)}
               </span>
             ) : null}
           </div>
@@ -317,10 +282,7 @@ export function TaskListItem({
                   }`}
                 >
                   {dueIsOverdue ? "Overdue · " : ""}
-                  {formatDueMeta(dueAt)}
-                  {dueHasTime ? (
-                    <span className="sr-only"> (includes time)</span>
-                  ) : null}
+                  {formatHomeDueDate(dueAt)}
                 </span>
               ) : null}
               {isCancelled ? (
@@ -405,7 +367,7 @@ export function TaskListItem({
 
           <p className="sr-only">
             Created {formatDate(createdAt)}
-            {dueAt ? `. Due ${formatDateTime(dueAt)}` : ""}
+            {dueAt ? `. Due ${formatHomeDueDate(dueAt)}` : ""}
           </p>
         </div>
 

@@ -1,7 +1,6 @@
 "use client";
 
 import type { CalendarTask } from "@/lib/tasks/calendar";
-import { formatTaskTimeLabel } from "@/lib/tasks/local-dates";
 import { getPriorityChipDotClassName } from "@/lib/tasks/priority";
 import { DEFAULT_TASK_RECURRENCE } from "@/lib/tasks/recurrence";
 import { Bell, Repeat } from "lucide-react";
@@ -23,11 +22,9 @@ export function CalendarTaskChip({
   const categoryColour = task.category?.colour ?? FALLBACK_RAIL;
   const isRecurring = task.recurrence !== DEFAULT_TASK_RECURRENCE;
   const hasReminder = Boolean(task.reminderAt) && !task.completed;
-  const timeLabel = formatTaskTimeLabel(task.dueAt);
 
   const ariaBits = [
     task.title,
-    timeLabel,
     task.completed ? "completed" : null,
     isRecurring ? "repeats" : null,
     hasReminder ? "has reminder" : null,
@@ -86,15 +83,6 @@ export function CalendarTaskChip({
             aria-hidden="true"
             strokeWidth={2.25}
           />
-        ) : null}
-        {timeLabel ? (
-          <span
-            className={`shrink-0 tabular-nums text-stone-500 dark:text-stone-400 ${
-              compact ? "text-[10px]" : "text-xs"
-            }`}
-          >
-            {timeLabel}
-          </span>
         ) : null}
         {!compact && task.subtaskProgress ? (
           <span className="hidden shrink-0 text-[10px] text-stone-400 sm:inline dark:text-stone-500">

@@ -6,6 +6,7 @@ import {
   isFocusDueOverdue,
   isFocusDueToday,
 } from "@/lib/tasks/focus";
+import { formatHomeDueDate } from "@/lib/tasks/local-dates";
 import {
   DEFAULT_TASK_SORT,
   type TaskSortOption,
@@ -373,6 +374,9 @@ function buildTaskMeta(
   const category = getCategoryDisplay(task.category_id, categoryLookup);
   if (category) {
     parts.push(category.label);
+  }
+  if (task.due_at) {
+    parts.push(formatHomeDueDate(task.due_at));
   }
   if (task.assigned_to) {
     const assigneeName = assigneeNamesByUserId?.[task.assigned_to];

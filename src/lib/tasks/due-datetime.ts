@@ -184,4 +184,39 @@ export function datetimeLocalValueToIso(value: string): string | null {
   return new Date(normalized).toISOString();
 }
 
+function calendarDayFromIso(iso: string): string | null {
+  return splitDatetimeLocalValue(isoToDatetimeLocalValue(iso))?.date ?? null;
+}
+
+/**
+ * Keep the stored timestamp when the calendar day did not change, so existing
+ * times are not wiped by a date-only form. New or changed dates save as date-only.
+ */
+export function preserveIsoIfSameCalendarDay(
+  originalIso: string | null,
+  nextIso: string | null,
+): string | null {
+  if (!originalIso || !nextIso) {
+    return nextIso;
+  }
+
+  const originalDay = calendarDayFromIso(originalIso);
+  const nextDay = calendarDayFromIso(nextIso);
+  if (originalDay && nextDay && originalDay === nextDay) {
+    return originalIso;
+  }
+
+  return nextIso;
+}
+
+export function resolveDueAtForSave(
+  originalIso: string | null,
+  formLocalValue: string,
+): string | null {
+  return preserveIsoIfSameCalendarDay(
+    originalIso,
+    datetimeLocalValueToIso(formLocalValue),
+  );
+}
+
 export const DUE_TIME_OPTIONS = generateDueTimeOptions();

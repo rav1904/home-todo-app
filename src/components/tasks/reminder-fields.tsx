@@ -53,7 +53,7 @@ export function ReminderFields({
           className={className}
         >
           <option value="none">None</option>
-          <option value="custom">Custom time</option>
+          <option value="custom">Custom date</option>
           {REMINDER_OFFSET_OPTIONS.map((option) => (
             <option
               key={option.minutes}
@@ -66,7 +66,7 @@ export function ReminderFields({
         </select>
         {!hasDueDate ? (
           <p className="mt-1 text-xs text-stone-500 dark:text-stone-400">
-            Relative reminders need a due date. Custom times always work.
+            Relative reminders need a due date. Custom dates always work.
           </p>
         ) : null}
       </div>
@@ -74,7 +74,7 @@ export function ReminderFields({
       {value.mode === "custom" ? (
         <DueDatetimeFields
           id={`${id}-custom`}
-          label="Custom reminder"
+          label="Custom reminder date"
           optional={false}
           value={value.customLocal}
           onChange={(customLocal) =>

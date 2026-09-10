@@ -1,5 +1,3 @@
-import { isoHasExplicitTime } from "@/lib/tasks/due-datetime";
-
 export function startOfLocalDay(date: Date = new Date()) {
   const start = new Date(date);
   start.setHours(0, 0, 0, 0);
@@ -145,21 +143,6 @@ export function formatShortWeekday(date: Date) {
 
 export function formatDayNumber(date: Date) {
   return date.getDate();
-}
-
-export function formatTaskTime(value: string) {
-  return new Date(value).toLocaleTimeString(undefined, {
-    hour: "numeric",
-    minute: "2-digit",
-  });
-}
-
-/** Time label for calendar chips; empty for date-only dues. */
-export function formatTaskTimeLabel(value: string) {
-  if (!isoHasExplicitTime(value)) {
-    return null;
-  }
-  return formatTaskTime(value);
 }
 
 export function parseDateParam(

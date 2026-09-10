@@ -24,7 +24,7 @@ import type { Label } from "@/lib/labels/types";
 import { syncTaskLabels } from "@/lib/labels/sync-task-labels";
 import { completeTaskWithRecurrence } from "@/lib/tasks/complete-with-recurrence";
 import {
-  datetimeLocalValueToIso,
+  resolveDueAtForSave,
   isoToDatetimeLocalValue,
 } from "@/lib/tasks/due-datetime";
 import {
@@ -315,7 +315,7 @@ export function EditTaskModal({
 
     const trimmedTitle = editTitle.trim();
     const supabase = createClient();
-    const newDueAt = datetimeLocalValueToIso(editDueAt);
+    const newDueAt = resolveDueAtForSave(dueAt, editDueAt);
     const recurrenceError = validateRecurrenceDueAt(editRecurrence, newDueAt);
     if (recurrenceError) {
       setError(recurrenceError);
@@ -324,7 +324,7 @@ export function EditTaskModal({
       return;
     }
 
-    const reminderColumns = toReminderDbColumns(newDueAt, editReminder);
+    const reminderColumns = toReminderDbColumns(newDueAt, editReminder, reminderAt);
     const dueAtChanged = !dueAtValuesEqual(dueAt, newDueAt);
     const becomingComplete = !completed && !cancelledAt && editCompleted;
 

@@ -1,7 +1,9 @@
 import {
   datetimeLocalValueToIso,
   isoToDatetimeLocalValue,
+  preserveIsoIfSameCalendarDay,
 } from "@/lib/tasks/due-datetime";
+import { formatHomeDueDate } from "@/lib/tasks/local-dates";
 
 /** Active reminder: set and task not completed. */
 
@@ -13,7 +15,7 @@ export const REMINDER_OFFSET_OPTIONS: {
   minutes: ReminderOffsetMinutes;
   label: string;
 }[] = [
-  { minutes: 60, label: "1 hour before" },
+  { minutes: 60, label: "On due date" },
   { minutes: 1440, label: "1 day before" },
   { minutes: 10080, label: "1 week before" },
 ];
@@ -171,6 +173,7 @@ export function syncReminderFormWithDueLocal(
 export function toReminderDbColumns(
   dueAtIso: string | null,
   reminder: ReminderFormState,
+  originalReminderAt: string | null = null,
 ): ReminderDbColumns {
   if (!reminder.mode) {
     return {
@@ -191,7 +194,7 @@ export function toReminderDbColumns(
     }
 
     return {
-      reminder_at: reminderAt,
+      reminder_at: preserveIsoIfSameCalendarDay(originalReminderAt, reminderAt),
       reminder_mode: "custom",
       reminder_offset_minutes: null,
     };
@@ -239,14 +242,8 @@ export function isReminderUpcoming(
   return new Date(reminderAt).getTime() > now.getTime();
 }
 
-export function formatReminderDateTime(value: string): string {
-  return new Date(value).toLocaleString(undefined, {
-    year: "numeric",
-    month: "short",
-    day: "numeric",
-    hour: "numeric",
-    minute: "2-digit",
-  });
+export function formatReminderDate(value: string): string {
+  return formatHomeDueDate(value);
 }
 
 export function getReminderCardLabel(
@@ -264,33 +261,10 @@ export function getReminderCardLabel(
   }
 
   const now = options?.now ?? new Date();
-  const formatted = formatReminderDateTime(reminderAt);
   const overdue = isReminderDueOrOverdue(reminderAt, now);
+  const text = `Reminder: ${formatHomeDueDate(reminderAt)}`;
 
-  let prefix = "Reminder";
-  if (
-    options?.reminderMode === "relative_due" &&
-    isReminderOffsetMinutes(options.reminderOffsetMinutes ?? null)
-  ) {
-    const option = REMINDER_OFFSET_OPTIONS.find(
-      (entry) => entry.minutes === options.reminderOffsetMinutes,
-    );
-    if (option) {
-      prefix = `Reminder (${option.label.replace(" due date", "")})`;
-    }
-  }
-
-  if (overdue) {
-    return {
-      text: `${prefix} overdue · ${formatted}`,
-      overdue: true,
-    };
-  }
-
-  return {
-    text: `${prefix} · ${formatted}`,
-    overdue: false,
-  };
+  return { text, overdue };
 }
 
 export function partitionActiveReminders<T extends ReminderTaskLike>(
