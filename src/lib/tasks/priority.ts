@@ -49,6 +49,10 @@ export function getPriorityLabel(priority: TaskPriority): string {
   }
 }
 
+export function getPriorityAriaLabel(priority: TaskPriority): string {
+  return `${getPriorityLabel(priority)} priority`;
+}
+
 /** Badge styles for task cards — light and dark. */
 export function getPriorityBadgeClassName(priority: TaskPriority): string {
   switch (priority) {

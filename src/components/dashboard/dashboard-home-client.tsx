@@ -28,6 +28,7 @@ import {
   type TaskCreatorProfile,
 } from "@/lib/tasks/creators";
 import { TaskAttribution } from "@/components/tasks/task-attribution";
+import { TaskPriorityIcon } from "@/components/tasks/task-priority-icon";
 import { formatHomeDueDate } from "@/lib/tasks/local-dates";
 import type { TaskSubtask } from "@/lib/tasks/subtasks/types";
 import {
@@ -432,7 +433,7 @@ export function DashboardHomeClient({
                   <button
                     type="button"
                     onClick={() => openTask(task.id)}
-                    className="grid w-full min-w-0 cursor-pointer grid-cols-[auto_minmax(0,1fr)] items-start gap-x-2.5 gap-y-0.5 overflow-hidden py-2.5 text-left transition hover:bg-stone-50/80 sm:grid-cols-[6.5rem_minmax(0,1fr)_4.75rem] dark:hover:bg-stone-800/40"
+                    className="grid w-full min-w-0 cursor-pointer grid-cols-[auto_minmax(0,1fr)] items-start gap-x-2.5 gap-y-0.5 overflow-hidden py-2.5 text-left transition hover:bg-stone-50/80 sm:grid-cols-[6.5rem_minmax(0,1fr)_5.875rem] dark:hover:bg-stone-800/40"
                   >
                     <span className="min-w-0 max-w-[6.5rem] self-center sm:col-start-1 sm:row-start-1 sm:max-w-none sm:self-start sm:pt-0.5">
                       <CategoryBadge
@@ -442,15 +443,18 @@ export function DashboardHomeClient({
                         muted
                       />
                     </span>
-                    {dueLabel ? (
-                      <span
-                        className={`justify-self-end self-center whitespace-nowrap text-[11px] tabular-nums sm:col-start-3 sm:row-start-1 sm:self-start sm:pt-0.5 sm:w-full sm:text-right sm:text-xs ${dueClass}`}
-                      >
-                        {dueLabel}
-                      </span>
-                    ) : (
-                      <span className="hidden sm:col-start-3 sm:row-start-1 sm:block" />
-                    )}
+                    <span className="flex min-w-0 items-center justify-end gap-1 self-center sm:col-start-3 sm:row-start-1 sm:self-start sm:pt-0.5">
+                      <TaskPriorityIcon priority={task.priority} />
+                      {dueLabel ? (
+                        <span
+                          className={`w-[4.75rem] shrink-0 text-right text-[11px] tabular-nums sm:text-xs ${dueClass}`}
+                        >
+                          {dueLabel}
+                        </span>
+                      ) : (
+                        <span className="hidden w-[4.75rem] shrink-0 sm:block" />
+                      )}
+                    </span>
                     <p
                       className={`col-span-2 min-w-0 line-clamp-2 text-[15px] font-medium leading-snug break-words [overflow-wrap:anywhere] text-stone-900 dark:text-stone-100 sm:col-span-1 sm:col-start-2 sm:row-start-1 ${
                         task.completed
