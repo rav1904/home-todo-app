@@ -3,7 +3,7 @@ import { CalendarNav } from "@/components/calendar/calendar-nav";
 import { cardClassName } from "@/lib/ui/field-classes";
 import type { CalendarDayCell, CalendarTask } from "@/lib/tasks/calendar";
 import type { CalendarNavLinks } from "@/lib/tasks/calendar-params";
-import { formatShortDayLabel } from "@/lib/tasks/local-dates";
+import { formatWeekDayHeading } from "@/lib/tasks/local-dates";
 
 type WeekCalendarProps = {
   nav: CalendarNavLinks;
@@ -12,7 +12,7 @@ type WeekCalendarProps = {
   onTaskSelect?: (taskId: string) => void;
 };
 
-function WeekDayColumn({
+function WeekDaySection({
   day,
   tasks,
   onTaskSelect,
@@ -23,36 +23,28 @@ function WeekDayColumn({
 }) {
   return (
     <section
-      className={`flex min-h-[12rem] w-[9.75rem] shrink-0 snap-start flex-col border-r border-stone-200/80 p-2.5 last:border-r-0 sm:w-[11rem] lg:min-h-[16rem] lg:w-auto lg:min-w-0 lg:p-3 dark:border-stone-700/80 ${
-        day.isToday ? "bg-emerald-50/35 dark:bg-emerald-950/15" : ""
+      className={`${cardClassName} p-3 sm:p-4 ${
+        day.isToday ? "ring-1 ring-emerald-500/30 dark:ring-emerald-400/25" : ""
       }`}
     >
-      <div className="mb-2 flex items-center gap-2">
-        <span
-          className={`flex h-7 w-7 items-center justify-center rounded-full text-xs font-medium ${
-            day.isToday
-              ? "bg-emerald-600 text-white shadow-sm shadow-emerald-600/20"
-              : "bg-stone-100 text-stone-700 dark:bg-stone-800 dark:text-stone-300"
-          }`}
-        >
-          {day.dayNumber}
-        </span>
-        <h3 className="truncate text-sm font-semibold text-stone-900 dark:text-stone-100">
-          {formatShortDayLabel(day.dayKey)}
-        </h3>
-      </div>
+      <h3 className="text-sm font-semibold text-stone-900 dark:text-stone-100">
+        {formatWeekDayHeading(day.dayKey)}
+        {day.isToday ? (
+          <span className="ml-2 text-xs font-medium text-emerald-700 dark:text-emerald-400">
+            Today
+          </span>
+        ) : null}
+      </h3>
 
       {tasks.length === 0 ? (
-        <p className="text-xs text-stone-400 dark:text-stone-500">No tasks</p>
+        <p className="mt-2 text-sm text-stone-400 dark:text-stone-500">
+          No tasks
+        </p>
       ) : (
-        <ul className="space-y-1">
+        <ul className="mt-2 space-y-1.5">
           {tasks.map((task) => (
             <li key={task.id}>
-              <CalendarTaskChip
-                task={task}
-                compact
-                onTaskSelect={onTaskSelect}
-              />
+              <CalendarTaskChip task={task} onTaskSelect={onTaskSelect} />
             </li>
           ))}
         </ul>
@@ -68,20 +60,18 @@ export function WeekCalendar({
   onTaskSelect,
 }: WeekCalendarProps) {
   return (
-    <div className="space-y-3">
+    <div className="min-w-0 space-y-3">
       <CalendarNav nav={nav} />
 
-      <div className={`${cardClassName} overflow-hidden`}>
-        <div className="-mx-px flex snap-x snap-mandatory overflow-x-auto lg:grid lg:snap-none lg:grid-cols-7 lg:overflow-visible">
-          {days.map((day) => (
-            <WeekDayColumn
-              key={day.dayKey}
-              day={day}
-              tasks={tasksByDay[day.dayKey] ?? []}
-              onTaskSelect={onTaskSelect}
-            />
-          ))}
-        </div>
+      <div className="min-w-0 space-y-2.5">
+        {days.map((day) => (
+          <WeekDaySection
+            key={day.dayKey}
+            day={day}
+            tasks={tasksByDay[day.dayKey] ?? []}
+            onTaskSelect={onTaskSelect}
+          />
+        ))}
       </div>
     </div>
   );

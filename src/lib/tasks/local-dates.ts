@@ -211,40 +211,37 @@ export function shiftDayKey(dayKey: string, delta: number) {
 }
 
 export function formatDayLabel(dayKey: string) {
-  return localDayKeyToDate(dayKey).toLocaleDateString(undefined, {
-    weekday: "long",
-    month: "long",
-    day: "numeric",
-    year: "numeric",
-  });
+  const date = localDayKeyToDate(dayKey);
+  const weekday = date.toLocaleDateString(undefined, { weekday: "long" });
+  const month = HOME_DUE_MONTHS[date.getMonth()];
+  return `${weekday}, ${date.getDate()} ${month} ${date.getFullYear()}`;
+}
+
+/** Compact week-row heading: "Monday, 7 Sep". */
+export function formatWeekDayHeading(dayKey: string) {
+  const date = localDayKeyToDate(dayKey);
+  const weekday = date.toLocaleDateString(undefined, { weekday: "long" });
+  const month = HOME_DUE_MONTHS[date.getMonth()];
+  return `${weekday}, ${date.getDate()} ${month}`;
+}
+
+function formatDayAndMonth(date: Date, includeYear = false) {
+  const label = `${date.getDate()} ${HOME_DUE_MONTHS[date.getMonth()]}`;
+  return includeYear ? `${label} ${date.getFullYear()}` : label;
 }
 
 export function formatWeekLabel(weekStartDayKey: string) {
   const weekStart = localDayKeyToDate(weekStartDayKey);
   const weekEnd = addDays(weekStart, 6);
-  const sameMonth = weekStart.getMonth() === weekEnd.getMonth();
   const sameYear = weekStart.getFullYear() === weekEnd.getFullYear();
 
-  const startLabel = weekStart.toLocaleDateString(undefined, {
-    day: "numeric",
-    month: "short",
-    year: sameYear ? undefined : "numeric",
-  });
-  const endLabel = weekEnd.toLocaleDateString(undefined, {
-    day: "numeric",
-    month: sameMonth ? undefined : "short",
-    year: "numeric",
-  });
-
-  return `${startLabel} – ${endLabel}`;
+  return `${formatDayAndMonth(weekStart, !sameYear)} – ${formatDayAndMonth(weekEnd, true)}`;
 }
 
 export function formatShortDayLabel(dayKey: string) {
-  return localDayKeyToDate(dayKey).toLocaleDateString(undefined, {
-    weekday: "short",
-    month: "short",
-    day: "numeric",
-  });
+  const date = localDayKeyToDate(dayKey);
+  const weekday = date.toLocaleDateString(undefined, { weekday: "short" });
+  return `${weekday} ${formatDayAndMonth(date)}`;
 }
 
 export const LIST_UPCOMING_DAYS = 90;
