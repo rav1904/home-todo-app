@@ -42,14 +42,14 @@ export function LoadingButton({
       className={className}
     >
       <span
-        className={`inline-flex items-center justify-center gap-2 ${
+        className={`inline-flex min-w-0 items-center justify-center gap-3 ${
           minLabelWidthClassName ?? ""
         }`}
       >
         {loading && showSpinner ? (
           <Spinner className="h-4 w-4 shrink-0" />
         ) : null}
-        <span className="min-w-0 truncate">{label}</span>
+        {label}
       </span>
     </button>
   );

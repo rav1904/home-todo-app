@@ -60,10 +60,10 @@ export function AuthForm() {
           }
           className="flex min-h-11 w-full cursor-pointer items-center justify-center gap-3 rounded-xl border border-stone-200 bg-white px-4 py-2.5 text-sm font-medium text-stone-700 shadow-sm transition hover:bg-stone-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-stone-400/40 focus-visible:ring-offset-2 focus-visible:ring-offset-white disabled:cursor-not-allowed disabled:opacity-60 dark:border-stone-600 dark:bg-stone-800 dark:text-stone-200 dark:hover:bg-stone-700 dark:focus-visible:ring-stone-500/40 dark:focus-visible:ring-offset-stone-900"
           idleLabel={
-            <>
+            <span className="flex items-center justify-center gap-3">
               <GoogleGIcon className="h-5 w-5 shrink-0" />
               <span>Continue with Google</span>
-            </>
+            </span>
           }
           loadingLabel={<span>Signing in…</span>}
         />
