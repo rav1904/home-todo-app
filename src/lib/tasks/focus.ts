@@ -244,6 +244,72 @@ export function buildFocusSections<T extends FocusTaskLike>(
   };
 }
 
+export type FocusTowerSections<T extends FocusTaskLike> = {
+  overdue: T[];
+  dueToday: T[];
+  remindersDue: T[];
+  upNext: T[];
+};
+
+/**
+ * Exclusive buckets for one Kanban tower.
+ * Priority: Overdue → Due today → Reminders → Up next (remainder).
+ * A task appears in at most one section. Up next holds every leftover open task
+ * so tower section counts add up to the tower total.
+ */
+export function buildFocusTowerSections<T extends FocusTaskLike>(
+  tasks: T[],
+  now = new Date(),
+): FocusTowerSections<T> {
+  const openTasks = tasks.filter((task) => isTaskOpen(task));
+  const claimed = new Set<string>();
+  const overdue: T[] = [];
+  const dueToday: T[] = [];
+  const remindersDue: T[] = [];
+  const upNext: T[] = [];
+
+  for (const task of openTasks) {
+    if (task.due_at && isFocusDueOverdue(task.due_at, now)) {
+      overdue.push(task);
+      claimed.add(task.id);
+    }
+  }
+
+  for (const task of openTasks) {
+    if (claimed.has(task.id)) {
+      continue;
+    }
+    if (task.due_at && isFocusDueToday(task.due_at, now)) {
+      dueToday.push(task);
+      claimed.add(task.id);
+    }
+  }
+
+  for (const task of openTasks) {
+    if (claimed.has(task.id)) {
+      continue;
+    }
+    if (task.reminder_at && isReminderDueOrOverdue(task.reminder_at, now)) {
+      remindersDue.push(task);
+      claimed.add(task.id);
+    }
+  }
+
+  for (const task of openTasks) {
+    if (claimed.has(task.id)) {
+      continue;
+    }
+    upNext.push(task);
+  }
+
+  return {
+    overdue: sortOverdueOrDueToday(overdue),
+    dueToday: sortOverdueOrDueToday(dueToday),
+    remindersDue: sortRemindersDue(remindersDue),
+    upNext: sortUpNext(upNext),
+  };
+}
+
 export function focusSectionsAreEmpty<T extends FocusTaskLike>(
   sections: FocusSections<T>,
 ) {
