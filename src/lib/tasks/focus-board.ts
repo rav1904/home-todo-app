@@ -5,8 +5,8 @@ import {
   buildCategoryLookup,
   buildCategoryTree,
 } from "@/lib/categories/tree";
-import { collectAssigneeFilterPeople } from "@/lib/tasks/assignee-filter";
 import type { TaskCreatorProfile } from "@/lib/tasks/creators";
+import { focusAssigneeTowerOwner } from "@/lib/tasks/task-people";
 
 export type FocusBoardColumn<T> = {
   id: string;
@@ -72,7 +72,10 @@ export function groupFocusTasksByCategory<
 }
 
 export function groupFocusTasksByAssignee<
-  T extends { assigned_to?: string | null },
+  T extends {
+    assigned_to?: string | null;
+    support_assigned_to?: string | null;
+  },
 >(
   tasks: T[],
   peopleByUserId: Record<string, TaskCreatorProfile>,
@@ -91,37 +94,26 @@ export function groupFocusTasksByAssignee<
     tasks: [],
   };
 
-  const others = collectAssigneeFilterPeople(
-    tasks,
-    peopleByUserId,
-    currentUserId,
-  );
-  const otherColumns: FocusBoardColumn<T>[] = others.map((person) => ({
-    id: person.id,
-    title: person.displayName,
-    colour: null,
-    tasks: [],
-  }));
-  const otherById = new Map(
-    otherColumns.map((column) => [column.id, column]),
-  );
+  const otherColumns: FocusBoardColumn<T>[] = [];
+  const otherById = new Map<string, FocusBoardColumn<T>>();
 
   for (const task of tasks) {
-    if (!task.assigned_to) {
+    const ownerId = focusAssigneeTowerOwner(task);
+    if (!ownerId) {
       unassigned.tasks.push(task);
       continue;
     }
 
-    if (task.assigned_to === currentUserId) {
+    if (ownerId === currentUserId) {
       me.tasks.push(task);
       continue;
     }
 
-    let column = otherById.get(task.assigned_to);
+    let column = otherById.get(ownerId);
     if (!column) {
       column = {
-        id: task.assigned_to,
-        title: peopleByUserId[task.assigned_to]?.displayName ?? "Member",
+        id: ownerId,
+        title: peopleByUserId[ownerId]?.displayName ?? "Member",
         colour: null,
         tasks: [],
       };

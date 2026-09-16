@@ -43,6 +43,7 @@ export type GlobalSearchTask = {
   category_id: string | null;
   created_at: string;
   assigned_to?: string | null;
+  support_assigned_to?: string | null;
 };
 
 export type GlobalSearchSnapshot = {
@@ -382,6 +383,12 @@ function buildTaskMeta(
     const assigneeName = assigneeNamesByUserId?.[task.assigned_to];
     if (assigneeName) {
       parts.push(`Assigned to ${assigneeName}`);
+    }
+  }
+  if (task.support_assigned_to) {
+    const supportName = assigneeNamesByUserId?.[task.support_assigned_to];
+    if (supportName) {
+      parts.push(`Support: ${supportName}`);
     }
   }
   return parts.join(" · ");

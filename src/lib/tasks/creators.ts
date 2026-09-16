@@ -10,16 +10,23 @@ export type TaskCreatorProfile = {
 export type TaskUserProfile = TaskCreatorProfile;
 
 export function collectTaskPeopleIds(
-  tasks: Array<{ user_id: string; assigned_to?: string | null }>,
-  currentUserId: string | null,
+  tasks: Array<{
+    user_id: string;
+    assigned_to?: string | null;
+    support_assigned_to?: string | null;
+  }>,
+  _currentUserId?: string | null,
 ): string[] {
   const ids: string[] = [];
   for (const task of tasks) {
-    if (task.user_id && task.user_id !== currentUserId) {
+    if (task.user_id) {
       ids.push(task.user_id);
     }
     if (task.assigned_to) {
       ids.push(task.assigned_to);
+    }
+    if (task.support_assigned_to) {
+      ids.push(task.support_assigned_to);
     }
   }
   return ids;

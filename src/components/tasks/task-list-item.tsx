@@ -83,6 +83,8 @@ type TaskListItemProps = {
   creator?: TaskCreatorProfile | null;
   assignedTo?: string | null;
   assignee?: TaskCreatorProfile | null;
+  supportAssignedTo?: string | null;
+  supportAssignee?: TaskCreatorProfile | null;
   canDelete?: boolean;
 };
 
@@ -141,6 +143,8 @@ export function TaskListItem({
   creator = null,
   assignedTo = null,
   assignee = null,
+  supportAssignedTo = null,
+  supportAssignee = null,
   canDelete = true,
 }: TaskListItemProps) {
   const itemRef = useRef<HTMLLIElement>(null);
@@ -190,7 +194,8 @@ export function TaskListItem({
   const workspaceDisplay =
     category ??
     (categoryUnavailable ? null : NULL_CATEGORY_DISPLAY);
-  const hasPeople = showCreator || Boolean(assignedTo);
+  const hasPeople =
+    showCreator || Boolean(assignedTo) || Boolean(supportAssignedTo);
   const hasSecondary =
     isCancelled ||
     taskPriority !== DEFAULT_TASK_PRIORITY ||
@@ -271,6 +276,8 @@ export function TaskListItem({
                 creatorId={taskUserId}
                 assigneeId={assignedTo}
                 assigneeName={assignee?.displayName ?? null}
+                supportId={supportAssignedTo}
+                supportName={supportAssignee?.displayName ?? null}
                 currentUserId={currentUserId}
               />
               {dueAt ? (
@@ -421,6 +428,8 @@ export function TaskListItem({
         taskUserId={taskUserId}
         currentUserId={currentUserId}
         assignedTo={assignedTo}
+        supportAssignedTo={supportAssignedTo}
+        creatorName={creator?.displayName ?? (taskUserId === currentUserId ? "you" : null)}
         canDelete={canDelete}
         onSuccess={onSuccess}
         onDeleted={onDeleted}

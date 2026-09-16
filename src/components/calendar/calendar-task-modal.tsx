@@ -102,6 +102,8 @@ export function CalendarTaskModal({
             creator={task.creator}
             assignedTo={task.assignedTo}
             assignee={task.assignee}
+            supportAssignedTo={task.supportAssignedTo}
+            supportAssignee={task.supportAssignee}
             canDelete={task.canDelete}
             embedded
             onSuccess={onClose}

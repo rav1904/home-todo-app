@@ -70,7 +70,7 @@ export function GlobalSearch({ open, onClose }: GlobalSearchProps) {
       supabase
         .from("tasks")
         .select(
-          "id, title, description, due_at, reminder_at, priority, recurrence, completed, cancelled_at, category_id, created_at, assigned_to",
+          "id, title, description, due_at, reminder_at, priority, recurrence, completed, cancelled_at, category_id, created_at, assigned_to, support_assigned_to",
         )
         .order("created_at", { ascending: false }),
       supabase
@@ -113,9 +113,12 @@ export function GlobalSearch({ open, onClose }: GlobalSearchProps) {
 
     const assigneeIds = [
       ...new Set(
-        (tasks ?? [])
-          .map((task) => (task as GlobalSearchTask).assigned_to)
-          .filter((id): id is string => Boolean(id)),
+        (tasks ?? []).flatMap((task) => {
+          const row = task as GlobalSearchTask;
+          return [row.assigned_to, row.support_assigned_to].filter(
+            (id): id is string => Boolean(id),
+          );
+        }),
       ),
     ];
     const assigneeProfiles = await loadTaskCreatorProfiles(

@@ -3,6 +3,7 @@
 import { CategoryBadge } from "@/components/tasks/category-select";
 import { EditTaskModal } from "@/components/tasks/edit-task-modal";
 import { AssigneeFilterChips } from "@/components/tasks/assignee-filter-chips";
+import { TaskPeopleLegend } from "@/components/tasks/task-people-legend";
 import { WorkspaceFilterChips } from "@/components/tasks/workspace-filter-chips";
 import { UserAvatar } from "@/components/ui/user-avatar";
 import {
@@ -55,6 +56,7 @@ export type DashboardHomeTask = {
   category_id: string | null;
   user_id: string;
   assigned_to: string | null;
+  support_assigned_to: string | null;
 };
 
 type HomeStatusFilter = "open" | "today" | "overdue" | "done";
@@ -371,6 +373,7 @@ export function DashboardHomeClient({
           people={assigneePeople}
           onSelect={setAssigneeFilter}
         />
+        <TaskPeopleLegend />
       </div>
 
       <section className="min-w-0">
@@ -422,7 +425,10 @@ export function DashboardHomeClient({
                 categoryScope:
                   categoryLookup.get(task.category_id ?? "")?.scope ?? null,
               });
-              const hasPeople = showAuthor || Boolean(task.assigned_to);
+              const hasPeople =
+                showAuthor ||
+                Boolean(task.assigned_to) ||
+                Boolean(task.support_assigned_to);
               const dueClass = homeDueClass(overdue, dueToday);
               const dueLabel = task.due_at
                 ? formatHomeDueDate(task.due_at)
@@ -483,6 +489,13 @@ export function DashboardHomeClient({
                                   ?.displayName ?? null)
                               : null
                           }
+                          supportId={task.support_assigned_to}
+                          supportName={
+                            task.support_assigned_to
+                              ? (peopleByUserId[task.support_assigned_to]
+                                  ?.displayName ?? null)
+                              : null
+                          }
                           currentUserId={currentUserId}
                         />
                       </div>
@@ -519,6 +532,10 @@ export function DashboardHomeClient({
           taskUserId={editingTask.user_id}
           currentUserId={currentUserId}
           assignedTo={editingTask.assigned_to}
+          supportAssignedTo={editingTask.support_assigned_to}
+          creatorName={
+            peopleByUserId[editingTask.user_id]?.displayName ?? null
+          }
           canDelete={canDeleteSharedTask({
             currentUserId,
             isAdmin,

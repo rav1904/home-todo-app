@@ -39,7 +39,7 @@ export default async function DashboardPage({ searchParams }: DashboardPageProps
     supabase
       .from("tasks")
       .select(
-        "id, title, description, due_at, reminder_at, reminder_mode, reminder_offset_minutes, priority, recurrence, completed, cancelled_at, created_at, category_id, user_id, assigned_to",
+        "id, title, description, due_at, reminder_at, reminder_mode, reminder_offset_minutes, priority, recurrence, completed, cancelled_at, created_at, category_id, user_id, assigned_to, support_assigned_to",
       )
       .order("created_at", { ascending: false }),
     loadAccessibleCategories(supabase),
@@ -69,6 +69,7 @@ export default async function DashboardPage({ searchParams }: DashboardPageProps
     category_id: string | null;
     user_id: string;
     assigned_to: string | null;
+    support_assigned_to: string | null;
   }>;
 
   let labelIdsByTaskId: Record<string, string[]> = {};

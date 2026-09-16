@@ -4,6 +4,7 @@ import { FocusBoard } from "@/components/focus/focus-board";
 import { FocusSummary } from "@/components/focus/focus-summary";
 import { FocusTaskCard } from "@/components/focus/focus-task-card";
 import { EditTaskModal } from "@/components/tasks/edit-task-modal";
+import { TaskPeopleLegend } from "@/components/tasks/task-people-legend";
 import { NULL_CATEGORY_DISPLAY } from "@/lib/categories/display";
 import type { Category } from "@/lib/categories/types";
 import {
@@ -36,6 +37,7 @@ export type FocusClientTask = FocusTaskLike & {
   category_id: string | null;
   user_id: string;
   assigned_to: string | null;
+  support_assigned_to: string | null;
 };
 
 type FocusView = "category" | "assignee";
@@ -148,10 +150,16 @@ export function FocusClient({
             : null
         }
         creatorId={task.user_id}
-        assignedTo={view === "assignee" ? null : task.assigned_to}
+        assignedTo={task.assigned_to}
         assigneeName={
           task.assigned_to
             ? (peopleByUserId[task.assigned_to]?.displayName ?? null)
+            : null
+        }
+        supportAssignedTo={task.support_assigned_to}
+        supportName={
+          task.support_assigned_to
+            ? (peopleByUserId[task.support_assigned_to]?.displayName ?? null)
             : null
         }
         currentUserId={currentUserId}
@@ -249,6 +257,8 @@ export function FocusClient({
           ) : null}
         </div>
 
+        <TaskPeopleLegend />
+
         <FocusBoard columns={boardColumns} renderCard={renderCard} />
       </div>
 
@@ -276,6 +286,10 @@ export function FocusClient({
           taskUserId={editingTask.user_id}
           currentUserId={currentUserId}
           assignedTo={editingTask.assigned_to}
+          supportAssignedTo={editingTask.support_assigned_to}
+          creatorName={
+            peopleByUserId[editingTask.user_id]?.displayName ?? null
+          }
           canDelete={canDeleteSharedTask({
             currentUserId,
             isAdmin,

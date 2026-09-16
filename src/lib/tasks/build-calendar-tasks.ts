@@ -47,10 +47,11 @@ type RawTaskRow = {
   category_id: string | null;
   user_id: string;
   assigned_to: string | null;
+  support_assigned_to: string | null;
 };
 
 const TASK_SELECT =
-  "id, title, description, due_at, reminder_at, reminder_mode, reminder_offset_minutes, priority, recurrence, completed, cancelled_at, created_at, category_id, user_id, assigned_to";
+  "id, title, description, due_at, reminder_at, reminder_mode, reminder_offset_minutes, priority, recurrence, completed, cancelled_at, created_at, category_id, user_id, assigned_to, support_assigned_to";
 
 export type CalendarFetchResult = {
   calendarTasks: CalendarTask[];
@@ -254,13 +255,14 @@ export async function fetchCalendarPageData(
       subtasks: taskSubtasks,
       taskUserId: task.user_id,
       canDelete,
-      creator:
-        task.user_id !== currentUserId
-          ? (creatorsByUserId[task.user_id] ?? null)
-          : null,
+      creator: creatorsByUserId[task.user_id] ?? null,
       assignedTo: task.assigned_to,
       assignee: task.assigned_to
         ? (creatorsByUserId[task.assigned_to] ?? null)
+        : null,
+      supportAssignedTo: task.support_assigned_to,
+      supportAssignee: task.support_assigned_to
+        ? (creatorsByUserId[task.support_assigned_to] ?? null)
         : null,
     };
   }

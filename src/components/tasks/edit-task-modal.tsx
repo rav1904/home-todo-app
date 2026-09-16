@@ -9,6 +9,7 @@ import {
 import { TaskDeleteButton } from "@/components/tasks/task-delete-button";
 import { CategorySelect } from "@/components/tasks/category-select";
 import { AssigneeSelect } from "@/components/tasks/assignee-select";
+import { TaskPeopleLegend } from "@/components/tasks/task-people-legend";
 import { LabelSelect } from "@/components/tasks/label-select";
 import { DueDatetimeFields } from "@/components/tasks/due-datetime-fields";
 import { ReminderFields } from "@/components/tasks/reminder-fields";
@@ -23,6 +24,10 @@ import type { Category } from "@/lib/categories/types";
 import type { Label } from "@/lib/labels/types";
 import { syncTaskLabels } from "@/lib/labels/sync-task-labels";
 import { completeTaskWithRecurrence } from "@/lib/tasks/complete-with-recurrence";
+import {
+  mapTaskPeopleSaveError,
+  messageIfAssignedSupportConflict,
+} from "@/lib/tasks/task-people";
 import {
   resolveDueAtForSave,
   isoToDatetimeLocalValue,
@@ -95,6 +100,8 @@ type EditTaskModalProps = {
   taskUserId: string;
   currentUserId: string;
   assignedTo?: string | null;
+  supportAssignedTo?: string | null;
+  creatorName?: string | null;
   canDelete?: boolean;
   onSuccess?: () => void;
   onDeleted?: () => void;
@@ -160,6 +167,8 @@ export function EditTaskModal({
   taskUserId,
   currentUserId,
   assignedTo = null,
+  supportAssignedTo = null,
+  creatorName = null,
   canDelete = true,
   onSuccess,
   onDeleted,
@@ -183,7 +192,11 @@ export function EditTaskModal({
   );
   const [editCategoryId, setEditCategoryId] = useState<string | null>(categoryId);
   const [editAssignedTo, setEditAssignedTo] = useState<string | null>(assignedTo);
+  const [editSupportAssignedTo, setEditSupportAssignedTo] = useState<
+    string | null
+  >(supportAssignedTo);
   const [assigneeResetHint, setAssigneeResetHint] = useState(false);
+  const [supportResetHint, setSupportResetHint] = useState(false);
   const [editLabelIds, setEditLabelIds] = useState<string[]>(labelIds);
   const [extraLabels, setExtraLabels] = useState<Label[]>([]);
   const [editCompleted, setEditCompleted] = useState(completed);
@@ -241,7 +254,9 @@ export function EditTaskModal({
     setEditRecurrence(parseTaskRecurrence(recurrence));
     setEditCategoryId(categoryId);
     setEditAssignedTo(assignedTo);
+    setEditSupportAssignedTo(supportAssignedTo);
     setAssigneeResetHint(false);
+    setSupportResetHint(false);
     setEditLabelIds(labelIds);
     setExtraLabels([]);
     setEditCompleted(completed);
@@ -261,6 +276,7 @@ export function EditTaskModal({
     recurrence,
     categoryId,
     assignedTo,
+    supportAssignedTo,
     labelIds,
     completed,
     subtasks.length,
@@ -327,6 +343,16 @@ export function EditTaskModal({
     const reminderColumns = toReminderDbColumns(newDueAt, editReminder, reminderAt);
     const dueAtChanged = !dueAtValuesEqual(dueAt, newDueAt);
     const becomingComplete = !completed && !cancelledAt && editCompleted;
+    const peopleConflict = messageIfAssignedSupportConflict(
+      editAssignedTo,
+      editSupportAssignedTo,
+    );
+    if (peopleConflict) {
+      setError(peopleConflict);
+      setLoading(false);
+      savingRef.current = false;
+      return;
+    }
 
     const { error: updateError } = await supabase
       .from("tasks")
@@ -339,12 +365,13 @@ export function EditTaskModal({
         recurrence: editRecurrence,
         category_id: editCategoryId,
         assigned_to: editAssignedTo,
+        support_assigned_to: editSupportAssignedTo,
         ...(becomingComplete ? {} : { completed: editCompleted }),
       })
       .eq("id", id);
 
     if (updateError) {
-      setError(updateError.message);
+      setError(mapTaskPeopleSaveError(updateError.message));
       setLoading(false);
       savingRef.current = false;
       return;
@@ -483,6 +510,7 @@ export function EditTaskModal({
                 onChange={(next) => {
                   setEditCategoryId(next);
                   setAssigneeResetHint(false);
+                  setSupportResetHint(false);
                 }}
                 className={compactFieldClassName}
                 compact
@@ -494,20 +522,59 @@ export function EditTaskModal({
               />
             </div>
 
-            <AssigneeSelect
-              id={`edit-assignee-${id}`}
-              categoryId={editCategoryId}
-              value={editAssignedTo}
-              currentUserId={currentUserId}
-              onChange={(next) => {
-                setEditAssignedTo(next);
-                setAssigneeResetHint(false);
-              }}
-              onInvalidated={() => setAssigneeResetHint(true)}
-            />
+            <p className="text-xs text-stone-400 dark:text-stone-500">
+              Created by {creatorName ?? (isOwnTask ? "you" : "Member")}
+            </p>
+
+            <div className="grid min-w-0 gap-3 sm:grid-cols-2">
+              <AssigneeSelect
+                id={`edit-assignee-${id}`}
+                categoryId={editCategoryId}
+                value={editAssignedTo}
+                currentUserId={currentUserId}
+                onChange={(next) => {
+                  setEditAssignedTo(next);
+                  setAssigneeResetHint(false);
+                  setError(null);
+                }}
+                onInvalidated={() => setAssigneeResetHint(true)}
+              />
+              <AssigneeSelect
+                id={`edit-support-${id}`}
+                categoryId={editCategoryId}
+                value={editSupportAssignedTo}
+                currentUserId={currentUserId}
+                label="Support"
+                emptyOptionLabel="None"
+                missingValueLabel="Support"
+                onChange={(next) => {
+                  setEditSupportAssignedTo(next);
+                  setSupportResetHint(false);
+                  setError(null);
+                }}
+                onInvalidated={() => setSupportResetHint(true)}
+              />
+            </div>
+            <TaskPeopleLegend />
             {assigneeResetHint ? (
               <p className="text-xs text-amber-700 dark:text-amber-400">
-                Assignee was cleared because they are not in this workspace.
+                Assigned to was cleared because they are not in this workspace.
+              </p>
+            ) : null}
+            {supportResetHint ? (
+              <p className="text-xs text-amber-700 dark:text-amber-400">
+                Support was cleared because they are not in this workspace.
+              </p>
+            ) : null}
+            {messageIfAssignedSupportConflict(
+              editAssignedTo,
+              editSupportAssignedTo,
+            ) ? (
+              <p className="text-xs text-red-700 dark:text-red-300">
+                {messageIfAssignedSupportConflict(
+                  editAssignedTo,
+                  editSupportAssignedTo,
+                )}
               </p>
             ) : null}
 

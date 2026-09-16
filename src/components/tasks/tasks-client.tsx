@@ -2,6 +2,7 @@
 
 import { TaskListItem } from "@/components/tasks/task-list-item";
 import { AssigneeFilterChips } from "@/components/tasks/assignee-filter-chips";
+import { TaskPeopleLegend } from "@/components/tasks/task-people-legend";
 import { WorkspaceFilterChips } from "@/components/tasks/workspace-filter-chips";
 import {
   filterTasksByCategory,
@@ -73,6 +74,7 @@ export type TasksClientTask = {
   category_id: string | null;
   user_id: string;
   assigned_to: string | null;
+  support_assigned_to: string | null;
 };
 
 type TasksClientProps = {
@@ -317,6 +319,7 @@ export function TasksClient({
         people={assigneePeople}
         onSelect={setAssigneeFilter}
       />
+      <TaskPeopleLegend />
 
       <div
         className="flex max-w-full gap-2 overflow-x-auto overscroll-x-contain pb-0.5 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
@@ -581,15 +584,17 @@ export function TasksClient({
                 initialEditing={editTaskId === task.id}
                 taskUserId={task.user_id}
                 currentUserId={currentUserId}
-                creator={
-                  task.user_id !== currentUserId
-                    ? (creatorsByUserId[task.user_id] ?? null)
-                    : null
-                }
+                creator={creatorsByUserId[task.user_id] ?? null}
                 assignedTo={task.assigned_to}
                 assignee={
                   task.assigned_to
                     ? (creatorsByUserId[task.assigned_to] ?? null)
+                    : null
+                }
+                supportAssignedTo={task.support_assigned_to}
+                supportAssignee={
+                  task.support_assigned_to
+                    ? (creatorsByUserId[task.support_assigned_to] ?? null)
                     : null
                 }
                 canDelete={canDeleteSharedTask({

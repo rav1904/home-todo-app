@@ -16,6 +16,7 @@
 -- Display names: admin override on allowlist (sql/user_display_name_overrides.sql)
 -- Shared workspaces: global categories share tasks with members (sql/shared_workspace_tasks.sql)
 -- Assignees: tasks.assigned_to optional (sql/tasks_assigned_to.sql)
+-- Support: tasks.support_assigned_to optional (sql/tasks_support_assigned_to.sql)
 
 -- =============================================================================
 -- categories (global admin tree + per-user Personal)
@@ -132,6 +133,7 @@ create table if not exists public.tasks (
   cancelled_by uuid references auth.users (id) on delete set null,
   category_id uuid references public.categories (id) on delete set null,
   assigned_to uuid references auth.users (id) on delete set null, -- optional assignee; never grants visibility
+  support_assigned_to uuid references auth.users (id) on delete set null, -- optional Support; never grants visibility
   created_at timestamptz not null default now()
 );
 
@@ -160,12 +162,17 @@ create table if not exists public.tasks (
 --   tasks_recurrence_requires_due_at_check (recurrence = 'none' OR due_at IS NOT NULL)
 --   UNIQUE (spawned_from_task_id) WHERE spawned_from_task_id IS NOT NULL
 -- RPC: complete_task_with_recurrence(task_id) — complete + spawn next occurrence
---   spawn keeps parent.user_id; copies assigned_to only if still eligible
+--   spawn keeps parent.user_id; copies assigned_to and support_assigned_to only if still eligible
 -- Assignee (sql/tasks_assigned_to.sql):
 --   assigned_to null = unassigned
 --   Personal / null-category: assigned_to is null or creator (user_id)
 --   Shared: assigned_to must be an approved user with workspace access
 --   Trigger tasks_enforce_assigned_to; user_id remains immutable creator
+-- Support (sql/tasks_support_assigned_to.sql):
+--   support_assigned_to null = none
+--   Same eligibility as assigned_to
+--   Must differ from assigned_to (max two people: Assigned to + Support)
+--   Does not grant visibility; recurrence copies if eligible else clears
 
 -- =============================================================================
 -- labels (hybrid: global + personal)

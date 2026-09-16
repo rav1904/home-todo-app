@@ -17,6 +17,9 @@ type AssigneeSelectProps = {
   onChange: (userId: string | null) => void;
   onInvalidated?: () => void;
   disabled?: boolean;
+  label?: string;
+  emptyOptionLabel?: string;
+  missingValueLabel?: string;
 };
 
 export function AssigneeSelect({
@@ -27,6 +30,9 @@ export function AssigneeSelect({
   onChange,
   onInvalidated,
   disabled = false,
+  label = "Assigned to",
+  emptyOptionLabel = "Unassigned",
+  missingValueLabel = "Assigned",
 }: AssigneeSelectProps) {
   const [options, setOptions] = useState<TaskUserProfile[]>([]);
   const [loading, setLoading] = useState(false);
@@ -78,7 +84,7 @@ export function AssigneeSelect({
   return (
     <div className="min-w-0">
       <label htmlFor={id} className={formLabelClassName}>
-        Assignee
+        {label}
         <span className="font-normal text-stone-400 dark:text-stone-500">
           {" "}
           · optional
@@ -93,9 +99,9 @@ export function AssigneeSelect({
         }
         className={compactFieldClassName}
       >
-        <option value="">Unassigned</option>
+        <option value="">{emptyOptionLabel}</option>
         {value && !options.some((user) => user.id === value) ? (
-          <option value={value}>Assigned</option>
+          <option value={value}>{missingValueLabel}</option>
         ) : null}
         {options.map((user) => {
           const isMe = currentUserId !== null && user.id === currentUserId;

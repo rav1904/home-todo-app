@@ -126,6 +126,26 @@ Prerequisite: `sql/tasks_assigned_to.sql` (after shared workspace + display name
 - [ ] Mobile has no horizontal overflow
 - [ ] `npm run build` passes
 
+## Task Support person
+
+Prerequisite: `sql/tasks_support_assigned_to.sql` (after `sql/tasks_assigned_to.sql`).
+
+- [ ] Existing tasks load with `support_assigned_to` null
+- [ ] Rows show distinct icons: Creator (`UserRoundPen`), Assigned (`UserCheck`), Support (`Users`)
+- [ ] Rows do not show “Created by” / “Assigned to” / “Support” / “By” / “Backup” labels
+- [ ] Tooltips: “Created by …”, “Assigned to …”, “Support: …”
+- [ ] Add/Edit fields labelled Assigned to and Support; creator is read-only “Created by …”
+- [ ] Assigned to and Support cannot be the same person; message “Support must be different from Assigned to.”
+- [ ] Either field may be empty
+- [ ] Support uses the same eligibility as Assigned to (Personal = creator only; Shared = workspace members)
+- [ ] Being Support does not grant visibility without category/workspace access
+- [ ] Me / person assignee filters include Assigned or Support; Unassigned = both null; creator-only does not match
+- [ ] Focus Assignee towers: Assigned to first, else Support, else Unassigned; cards still show all three icons
+- [ ] Recurring complete copies `support_assigned_to` if eligible, else clears it
+- [ ] No “backup” wording anywhere
+- [ ] Date-only UI unchanged
+- [ ] `npm run build` passes
+
 ## Shared workspaces
 
 - [ ] Apply `sql/shared_workspace_tasks.sql` (after app access + category access SQL)

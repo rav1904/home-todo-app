@@ -32,7 +32,7 @@ export default async function FocusPage() {
     supabase
       .from("tasks")
       .select(
-        "id, title, description, due_at, reminder_at, reminder_mode, reminder_offset_minutes, priority, recurrence, completed, cancelled_at, created_at, category_id, user_id, assigned_to",
+        "id, title, description, due_at, reminder_at, reminder_mode, reminder_offset_minutes, priority, recurrence, completed, cancelled_at, created_at, category_id, user_id, assigned_to, support_assigned_to",
       )
       .eq("completed", false)
       .is("cancelled_at", null)

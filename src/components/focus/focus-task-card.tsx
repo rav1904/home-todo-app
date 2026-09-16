@@ -33,6 +33,8 @@ export type FocusTaskCardProps = {
   creatorId: string;
   assignedTo: string | null;
   assigneeName: string | null;
+  supportAssignedTo: string | null;
+  supportName: string | null;
   currentUserId: string;
   checklist: { completedCount: number; totalCount: number } | null;
   onClick: () => void;
@@ -54,6 +56,8 @@ export function FocusTaskCard({
   creatorId,
   assignedTo,
   assigneeName,
+  supportAssignedTo,
+  supportName,
   currentUserId,
   checklist,
   onClick,
@@ -146,6 +150,8 @@ export function FocusTaskCard({
         creatorId={creatorId}
         assigneeId={assignedTo}
         assigneeName={assigneeName}
+        supportId={supportAssignedTo}
+        supportName={supportName}
         currentUserId={currentUserId}
       />
     </button>

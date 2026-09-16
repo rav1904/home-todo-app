@@ -2,6 +2,7 @@
 
 import { CategorySelect } from "@/components/tasks/category-select";
 import { AssigneeSelect } from "@/components/tasks/assignee-select";
+import { TaskPeopleLegend } from "@/components/tasks/task-people-legend";
 import { ChecklistDraftPanel } from "@/components/tasks/checklist-draft-field";
 import {
   ChecklistPanel,
@@ -36,6 +37,10 @@ import {
   toReminderDbColumns,
   type ReminderFormState,
 } from "@/lib/tasks/reminder";
+import {
+  mapTaskPeopleSaveError,
+  messageIfAssignedSupportConflict,
+} from "@/lib/tasks/task-people";
 import { validateTaskTitle } from "@/lib/tasks/title";
 import {
   compactFieldClassName,
@@ -139,7 +144,11 @@ export function AddTaskForm({
     () => personalDefault,
   );
   const [assignedTo, setAssignedTo] = useState<string | null>(null);
+  const [supportAssignedTo, setSupportAssignedTo] = useState<string | null>(
+    null,
+  );
   const [assigneeResetHint, setAssigneeResetHint] = useState(false);
+  const [supportResetHint, setSupportResetHint] = useState(false);
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
   const [labelIds, setLabelIds] = useState<string[]>([]);
   const [extraLabels, setExtraLabels] = useState<Label[]>([]);
@@ -245,6 +254,16 @@ export function AddTaskForm({
     }
 
     const reminderColumns = toReminderDbColumns(dueAtIso, reminder);
+    const peopleConflict = messageIfAssignedSupportConflict(
+      assignedTo,
+      supportAssignedTo,
+    );
+    if (peopleConflict) {
+      setError(peopleConflict);
+      setLoading(false);
+      submittingRef.current = false;
+      return;
+    }
 
     const { data: createdTask, error: insertError } = await supabase
       .from("tasks")
@@ -258,12 +277,13 @@ export function AddTaskForm({
         recurrence,
         category_id: categoryId,
         assigned_to: assignedTo,
+        support_assigned_to: supportAssignedTo,
       })
       .select("id")
       .single();
 
     if (insertError || !createdTask) {
-      setError(insertError?.message ?? "Could not create task.");
+      setError(mapTaskPeopleSaveError(insertError?.message ?? "Could not create task."));
       setLoading(false);
       submittingRef.current = false;
       return;
@@ -320,7 +340,9 @@ export function AddTaskForm({
     setRecurrence(DEFAULT_TASK_RECURRENCE);
     setCategoryId(personalDefault);
     setAssignedTo(null);
+    setSupportAssignedTo(null);
     setAssigneeResetHint(false);
+    setSupportResetHint(false);
     setLabelIds([]);
     setExtraLabels([]);
     setDraftSubtasks([]);
@@ -380,6 +402,7 @@ export function AddTaskForm({
           onChange={(next) => {
             setCategoryId(next);
             setAssigneeResetHint(false);
+            setSupportResetHint(false);
           }}
           className={`${compactFieldClassName} min-h-11`}
           compact
@@ -391,20 +414,49 @@ export function AddTaskForm({
         />
       </div>
 
-      <AssigneeSelect
-        id="task-assignee"
-        categoryId={categoryId}
-        value={assignedTo}
-        currentUserId={currentUserId}
-        onChange={(next) => {
-          setAssignedTo(next);
-          setAssigneeResetHint(false);
-        }}
-        onInvalidated={() => setAssigneeResetHint(true)}
-      />
+      <div className="grid min-w-0 gap-2.5 sm:grid-cols-2">
+        <AssigneeSelect
+          id="task-assignee"
+          categoryId={categoryId}
+          value={assignedTo}
+          currentUserId={currentUserId}
+          onChange={(next) => {
+            setAssignedTo(next);
+            setAssigneeResetHint(false);
+            setError(null);
+          }}
+          onInvalidated={() => setAssigneeResetHint(true)}
+        />
+        <AssigneeSelect
+          id="task-support"
+          categoryId={categoryId}
+          value={supportAssignedTo}
+          currentUserId={currentUserId}
+          label="Support"
+          emptyOptionLabel="None"
+          missingValueLabel="Support"
+          onChange={(next) => {
+            setSupportAssignedTo(next);
+            setSupportResetHint(false);
+            setError(null);
+          }}
+          onInvalidated={() => setSupportResetHint(true)}
+        />
+      </div>
+      <TaskPeopleLegend />
       {assigneeResetHint ? (
         <p className="text-xs text-amber-700 dark:text-amber-400">
-          Assignee was cleared because they are not in this workspace.
+          Assigned to was cleared because they are not in this workspace.
+        </p>
+      ) : null}
+      {supportResetHint ? (
+        <p className="text-xs text-amber-700 dark:text-amber-400">
+          Support was cleared because they are not in this workspace.
+        </p>
+      ) : null}
+      {messageIfAssignedSupportConflict(assignedTo, supportAssignedTo) ? (
+        <p className="text-xs text-red-700 dark:text-red-300">
+          {messageIfAssignedSupportConflict(assignedTo, supportAssignedTo)}
         </p>
       ) : null}
 

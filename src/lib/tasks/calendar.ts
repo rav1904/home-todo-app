@@ -58,6 +58,8 @@ export type CalendarModalTask = {
   creator: TaskCreatorProfile | null;
   assignedTo: string | null;
   assignee: TaskCreatorProfile | null;
+  supportAssignedTo: string | null;
+  supportAssignee: TaskCreatorProfile | null;
 };
 
 export type CalendarDayCell = {

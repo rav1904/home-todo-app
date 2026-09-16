@@ -54,7 +54,7 @@ Preferred mutations: `submit_access_request`, `admin_approve_access_request`, `a
 
 Policies: `"Users select accessible tasks"`, `"Users insert own tasks"`, `"Users update accessible tasks"`, `"Users delete deletable tasks"`. Related `task_labels` / `task_subtasks` / `task_due_date_changes` follow parent task access/mutate.
 
-Recurrence RPC: mutate access; spawned row keeps **parent `user_id`**; copies **`assigned_to`** only if still eligible.
+Recurrence RPC: mutate access; spawned row keeps **parent `user_id`**; copies **`assigned_to`** and **`support_assigned_to`** only if still eligible (Support is cleared if ineligible or would duplicate Assigned to).
 
 ---
 
@@ -73,10 +73,11 @@ Recurrence RPC: mutate access; spawned row keeps **parent `user_id`**; copies **
 |--------|------|
 | `user_id` | Immutable creator/author. Not editable from the app. |
 | `assigned_to` | Optional. Null = unassigned. **Does not grant SELECT.** |
+| `support_assigned_to` | Optional Support. Null = none. Same eligibility as `assigned_to`. Must differ from `assigned_to`. **Does not grant SELECT.** |
 
-Trigger `tasks_enforce_assigned_to`: Personal/null-category → `assigned_to` is null or equals `user_id`. Shared → approved user with workspace access (`user_can_assign_task_to_category`). Existing task RLS is unchanged — assignment never opens Personal/private tasks.
+Trigger `tasks_enforce_assigned_to`: Personal/null-category → `assigned_to` / `support_assigned_to` is null or equals `user_id`. Shared → approved user with workspace access (`user_can_assign_task_to_category`). Also rejects Assigned to === Support. Existing task RLS is unchanged — assignment never opens Personal/private tasks.
 
-RPC `complete_task_with_recurrence(uuid)` runs as **SECURITY DEFINER** with `is_app_allowed()`, `user_can_mutate_task`, and spawn **`user_id = parent.user_id`** (creator preserved). Copies `assigned_to` only when still eligible; otherwise null. Idempotent via unique `spawned_from_task_id`. Apply `sql/shared_workspace_tasks.sql` after earlier recurrence scripts. Apply `sql/tasks_assigned_to.sql` for assignee.
+RPC `complete_task_with_recurrence(uuid)` runs as **SECURITY DEFINER** with `is_app_allowed()`, `user_can_mutate_task`, and spawn **`user_id = parent.user_id`** (creator preserved). Copies `assigned_to` and `support_assigned_to` only when still eligible; otherwise null. If Support would equal Assigned to, Support is cleared. Idempotent via unique `spawned_from_task_id`. Apply `sql/shared_workspace_tasks.sql` after earlier recurrence scripts. Apply `sql/tasks_assigned_to.sql` for assignee. Apply `sql/tasks_support_assigned_to.sql` for Support.
 
 Admin does **not** get blanket SELECT on all tasks.
 
@@ -108,7 +109,7 @@ Open views = `completed = false` AND `cancelled_at IS NULL`. Cancel is **not** c
 | `recurrence` | `none` / interval values; recurring requires `due_at` |
 | `spawned_from_task_id` | Parent occurrence; unique when set (dedup) |
 
-RPC `complete_task_with_recurrence(uuid)` runs as **SECURITY DEFINER** with `is_app_allowed()`, `user_can_mutate_task`, and spawn **`user_id = parent.user_id`** (creator preserved). Copies `assigned_to` only if still eligible (`sql/tasks_assigned_to.sql`). Idempotent via unique `spawned_from_task_id`. Apply `sql/shared_workspace_tasks.sql` after earlier recurrence scripts.
+RPC `complete_task_with_recurrence(uuid)` runs as **SECURITY DEFINER** with `is_app_allowed()`, `user_can_mutate_task`, and spawn **`user_id = parent.user_id`** (creator preserved). Copies `assigned_to` and `support_assigned_to` only if still eligible (`sql/tasks_assigned_to.sql`, `sql/tasks_support_assigned_to.sql`). Idempotent via unique `spawned_from_task_id`. Apply `sql/shared_workspace_tasks.sql` after earlier recurrence scripts.
 
 ---
 

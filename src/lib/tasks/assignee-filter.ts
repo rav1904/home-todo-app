@@ -13,7 +13,16 @@ const UUID_PATTERN =
 
 type AssignedTaskLike = {
   assigned_to?: string | null;
+  support_assigned_to?: string | null;
 };
+
+function taskHasAssigneeRole(task: AssignedTaskLike, userId: string) {
+  return task.assigned_to === userId || task.support_assigned_to === userId;
+}
+
+function taskHasNoAssignees(task: AssignedTaskLike) {
+  return !task.assigned_to && !task.support_assigned_to;
+}
 
 export function parseAssigneeFilterParam(
   param: string | undefined,
@@ -61,11 +70,11 @@ export function filterTasksByAssignee<T extends AssignedTaskLike>(
     case "all":
       return tasks;
     case "unassigned":
-      return tasks.filter((task) => !task.assigned_to);
+      return tasks.filter((task) => taskHasNoAssignees(task));
     case "me":
-      return tasks.filter((task) => task.assigned_to === currentUserId);
+      return tasks.filter((task) => taskHasAssigneeRole(task, currentUserId));
     case "user":
-      return tasks.filter((task) => task.assigned_to === filter.userId);
+      return tasks.filter((task) => taskHasAssigneeRole(task, filter.userId));
   }
 }
 
@@ -79,6 +88,9 @@ export function collectAssigneeFilterPeople(
   for (const task of tasks) {
     if (task.assigned_to && task.assigned_to !== currentUserId) {
       ids.add(task.assigned_to);
+    }
+    if (task.support_assigned_to && task.support_assigned_to !== currentUserId) {
+      ids.add(task.support_assigned_to);
     }
   }
 
