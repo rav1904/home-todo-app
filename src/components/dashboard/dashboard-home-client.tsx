@@ -29,6 +29,7 @@ import {
   type TaskCreatorProfile,
 } from "@/lib/tasks/creators";
 import { TaskAttribution } from "@/components/tasks/task-attribution";
+import { SwipeToComplete } from "@/components/tasks/swipe-to-complete";
 import { TaskPriorityIcon } from "@/components/tasks/task-priority-icon";
 import { formatHomeDueDate } from "@/lib/tasks/local-dates";
 import type { TaskSubtask } from "@/lib/tasks/subtasks/types";
@@ -439,7 +440,11 @@ export function DashboardHomeClient({
 
               return (
                 <li key={task.id} className="min-w-0">
-                  <button
+                  <SwipeToComplete
+                    enabled={isTaskOpen(task)}
+                    taskId={task.id}
+                  >
+                    <button
                     type="button"
                     onClick={() => openTask(task.id)}
                     className="grid w-full min-w-0 cursor-pointer grid-cols-[auto_minmax(0,1fr)] items-start gap-x-2.5 gap-y-0.5 overflow-hidden py-2.5 text-left transition hover:bg-stone-50/80 sm:grid-cols-[6.5rem_minmax(0,1fr)_5.875rem] dark:hover:bg-stone-800/40"
@@ -504,6 +509,7 @@ export function DashboardHomeClient({
                       </div>
                     ) : null}
                   </button>
+                  </SwipeToComplete>
                 </li>
               );
             })}

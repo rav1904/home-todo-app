@@ -14,6 +14,7 @@ import {
   PriorityBadge,
 } from "@/components/tasks/priority-select";
 import { TaskAttribution } from "@/components/tasks/task-attribution";
+import { SwipeToComplete } from "@/components/tasks/swipe-to-complete";
 import { NULL_CATEGORY_DISPLAY } from "@/lib/categories/display";
 import type { CategoryDisplay } from "@/lib/categories/tree";
 import type { Category } from "@/lib/categories/types";
@@ -440,14 +441,24 @@ export function TaskListItem({
   if (embedded) {
     return (
       <div id={`task-${id}`} className={wrapperClassName}>
-        {readContent}
+        <SwipeToComplete
+          enabled={!completed && !isCancelled}
+          taskId={id}
+        >
+          {readContent}
+        </SwipeToComplete>
       </div>
     );
   }
 
   return (
-    <li ref={itemRef} id={`task-${id}`} className={wrapperClassName}>
-      {readContent}
+    <li ref={itemRef} id={`task-${id}`} className={`${wrapperClassName} overflow-hidden`}>
+      <SwipeToComplete
+        enabled={!completed && !isCancelled}
+        taskId={id}
+      >
+        {readContent}
+      </SwipeToComplete>
     </li>
   );
 }

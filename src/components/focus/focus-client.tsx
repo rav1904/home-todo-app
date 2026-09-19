@@ -4,6 +4,7 @@ import { FocusBoard } from "@/components/focus/focus-board";
 import { FocusSummary } from "@/components/focus/focus-summary";
 import { FocusTaskCard } from "@/components/focus/focus-task-card";
 import { EditTaskModal } from "@/components/tasks/edit-task-modal";
+import { SwipeToComplete } from "@/components/tasks/swipe-to-complete";
 import { TaskPeopleLegend } from "@/components/tasks/task-people-legend";
 import { NULL_CATEGORY_DISPLAY } from "@/lib/categories/display";
 import type { Category } from "@/lib/categories/types";
@@ -24,6 +25,7 @@ import {
 import type { FocusTaskLike } from "@/lib/tasks/focus";
 import { getSubtaskProgress } from "@/lib/tasks/subtasks/progress";
 import type { TaskSubtask } from "@/lib/tasks/subtasks/types";
+import { isTaskOpen } from "@/lib/tasks/cancel";
 import { compactFieldClassName, formLabelClassName } from "@/lib/ui/field-classes";
 import { useMemo, useState } from "react";
 
@@ -129,7 +131,13 @@ export function FocusClient({
     const progress = getSubtaskProgress(subtasksByTaskId[task.id] ?? []);
 
     return (
-      <FocusTaskCard
+      <SwipeToComplete
+        enabled={isTaskOpen(task)}
+        taskId={task.id}
+        className="rounded-lg"
+        surfaceClassName="rounded-lg bg-white dark:bg-stone-900"
+      >
+        <FocusTaskCard
         title={task.title}
         dueAt={task.due_at}
         priority={task.priority}
@@ -166,6 +174,7 @@ export function FocusClient({
         checklist={progress}
         onClick={() => setEditingTaskId(task.id)}
       />
+      </SwipeToComplete>
     );
   }
 
