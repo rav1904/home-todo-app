@@ -238,28 +238,7 @@ export function DashboardHomeClient({
     setEditingTaskId(null);
   }
 
-  const openTasks = useMemo(
-    () => tasks.filter((task) => isTaskOpen(task)),
-    [tasks],
-  );
-  const completedTasks = useMemo(
-    () => tasks.filter((task) => task.completed),
-    [tasks],
-  );
-  const dueTodayCount = useMemo(
-    () =>
-      openTasks.filter((task) => task.due_at && isDueToday(task.due_at, today))
-        .length,
-    [openTasks, today],
-  );
-  const overdueCount = useMemo(
-    () =>
-      openTasks.filter((task) => task.due_at && isOverdue(task.due_at, today))
-        .length,
-    [openTasks, today],
-  );
-
-  const filteredTasks = useMemo(() => {
+  const scopedTasks = useMemo(() => {
     const byWorkspace = filterTasksByCategory(
       tasks,
       workspaceId === "all"
@@ -267,40 +246,64 @@ export function DashboardHomeClient({
         : { type: "main", mainCategoryId: workspaceId },
       subsByParent,
     );
+    return filterTasksByAssignee(byWorkspace, assigneeFilter, currentUserId);
+  }, [tasks, workspaceId, assigneeFilter, subsByParent, currentUserId]);
 
-    let next = byWorkspace;
+  const openTasks = useMemo(
+    () => scopedTasks.filter((task) => isTaskOpen(task)),
+    [scopedTasks],
+  );
+  const completedTasks = useMemo(
+    () => scopedTasks.filter((task) => task.completed),
+    [scopedTasks],
+  );
+  const dueTodayTasks = useMemo(
+    () =>
+      openTasks.filter((task) => task.due_at && isDueToday(task.due_at, today)),
+    [openTasks, today],
+  );
+  const overdueTasks = useMemo(
+    () =>
+      openTasks.filter((task) => task.due_at && isOverdue(task.due_at, today)),
+    [openTasks, today],
+  );
+  const dueTodayCount = dueTodayTasks.length;
+  const overdueCount = overdueTasks.length;
+
+  const filteredTasks = useMemo(() => {
+    let next = scopedTasks;
     switch (statusFilter) {
       case "open":
-        next = byWorkspace.filter((task) => isTaskOpen(task));
+        next = openTasks;
         break;
       case "today":
-        next = byWorkspace.filter(
-          (task) =>
-            isTaskOpen(task) && task.due_at && isDueToday(task.due_at, today),
-        );
+        next = dueTodayTasks;
         break;
       case "overdue":
-        next = byWorkspace.filter(
-          (task) =>
-            isTaskOpen(task) && task.due_at && isOverdue(task.due_at, today),
-        );
+        next = overdueTasks;
         break;
       case "done":
-        next = byWorkspace.filter((task) => task.completed);
+        next = completedTasks;
         break;
     }
 
     if (statusFilter === "done") {
-      next = [...next].sort(
+      return [...next].sort(
         (a, b) =>
           new Date(b.created_at).getTime() - new Date(a.created_at).getTime(),
       );
-    } else {
-      next = sortOpenTasksForHome(next, today);
     }
 
-    return filterTasksByAssignee(next, assigneeFilter, currentUserId);
-  }, [tasks, workspaceId, statusFilter, assigneeFilter, subsByParent, today, currentUserId]);
+    return sortOpenTasksForHome(next, today);
+  }, [
+    scopedTasks,
+    openTasks,
+    dueTodayTasks,
+    overdueTasks,
+    completedTasks,
+    statusFilter,
+    today,
+  ]);
 
   const assigneePeople = useMemo(
     () => collectAssigneeFilterPeople(tasks, peopleByUserId, currentUserId),
