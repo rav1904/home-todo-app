@@ -17,6 +17,7 @@ import { createClient } from "@/lib/supabase/client";
 import { Plus, X } from "lucide-react";
 import { usePathname, useSearchParams } from "next/navigation";
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCreateTaskDefaults } from "@/components/tasks/create-task-defaults-context";
 
 function readCalendarDayDefaultDue(
   pathname: string,
@@ -41,12 +42,16 @@ function readCalendarDayDefaultDue(
 export function QuickAddTaskLauncher() {
   const pathname = usePathname();
   const searchParams = useSearchParams();
+  const { initialCategoryId } = useCreateTaskDefaults();
   const defaultDueAt = useMemo(
     () => readCalendarDayDefaultDue(pathname, searchParams),
     [pathname, searchParams],
   );
 
   const [open, setOpen] = useState(false);
+  const [sessionCategoryId, setSessionCategoryId] = useState<string | null>(
+    null,
+  );
   const [categories, setCategories] = useState<Category[]>([]);
   const [personalCategoryId, setPersonalCategoryId] = useState<string | null>(
     null,
@@ -143,11 +148,26 @@ export function QuickAddTaskLauncher() {
     return () => document.removeEventListener("keydown", handleKeyDown);
   }, [open]);
 
+  const resolvedDefaultCategoryId = useMemo(() => {
+    if (
+      sessionCategoryId &&
+      categories.some((category) => category.id === sessionCategoryId)
+    ) {
+      return sessionCategoryId;
+    }
+    return personalCategoryId;
+  }, [sessionCategoryId, categories, personalCategoryId]);
+
+  function openComposer() {
+    setSessionCategoryId(initialCategoryId);
+    setOpen(true);
+  }
+
   return (
     <>
       <button
         type="button"
-        onClick={() => setOpen(true)}
+        onClick={openComposer}
         aria-label="Add task"
         title="Add task"
         className="fixed z-40 flex h-14 w-14 shrink-0 cursor-pointer items-center justify-center rounded-full bg-emerald-600 text-white shadow-lg shadow-emerald-600/30 transition hover:bg-emerald-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 focus-visible:ring-offset-2 focus-visible:ring-offset-stone-50 dark:shadow-emerald-900/40 dark:focus-visible:ring-offset-stone-950"
@@ -199,11 +219,11 @@ export function QuickAddTaskLauncher() {
               </p>
             ) : (
               <AddTaskForm
-                key={defaultDueAt ?? "no-default-due"}
+                key={`${resolvedDefaultCategoryId ?? "no-category"}-${defaultDueAt ?? "no-default-due"}`}
                 categories={categories}
                 labels={labels}
                 categoryIdsByLabelId={categoryIdsByLabelId}
-                defaultCategoryId={personalCategoryId}
+                defaultCategoryId={resolvedDefaultCategoryId}
                 defaultDueAt={defaultDueAt}
                 showHeading={false}
                 embedded

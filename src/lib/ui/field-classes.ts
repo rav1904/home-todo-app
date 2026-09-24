@@ -33,6 +33,10 @@ export const taskRowClassName =
 export const filterChipClassName =
   "inline-flex min-h-9 shrink-0 cursor-pointer items-center gap-1.5 rounded-full border px-3 py-1.5 text-sm font-medium transition";
 
+/** Compact workspace/category filter pills (secondary to status chips). */
+export const compactFilterChipClassName =
+  "inline-flex min-h-7 shrink-0 cursor-pointer items-center gap-1 rounded-full border px-2 py-0.5 text-[11px] font-medium leading-none transition";
+
 export const filterChipActiveClassName =
   "border-emerald-600 bg-emerald-600 text-white dark:border-emerald-500 dark:bg-emerald-600";
 

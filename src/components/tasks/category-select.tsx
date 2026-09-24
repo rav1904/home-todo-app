@@ -2,6 +2,7 @@
 
 import { CategoryIcon } from "@/lib/categories/icons";
 import { formatCategoryNameForDisplay } from "@/lib/categories/display";
+import { sortCategoriesByDisplayName } from "@/lib/categories/sort";
 import type { Category } from "@/lib/categories/types";
 import {
   buildCategoryLookup,
@@ -10,6 +11,7 @@ import {
   splitCategorySelection,
 } from "@/lib/categories/tree";
 import { fieldClassName, formLabelClassName } from "@/lib/ui/field-classes";
+import { useMemo } from "react";
 
 type CategorySelectProps = {
   id: string;
@@ -30,7 +32,17 @@ export function CategorySelect({
   className,
   compact = false,
 }: CategorySelectProps) {
-  const { mains, subsByParent } = buildCategoryTree(categories);
+  const { mains, subsByParent } = useMemo(() => {
+    const tree = buildCategoryTree(categories);
+    const sortedSubs: Record<string, Category[]> = {};
+    for (const [parentId, subs] of Object.entries(tree.subsByParent)) {
+      sortedSubs[parentId] = sortCategoriesByDisplayName(subs);
+    }
+    return {
+      mains: sortCategoriesByDisplayName(tree.mains),
+      subsByParent: sortedSubs,
+    };
+  }, [categories]);
   const lookup = buildCategoryLookup(categories);
   const { mainCategoryId, subCategoryId } = splitCategorySelection(value, lookup);
   const subcategories = mainCategoryId

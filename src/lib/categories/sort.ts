@@ -1,6 +1,20 @@
+import { formatCategoryNameForDisplay } from "@/lib/categories/display";
 import type { Category } from "@/lib/categories/types";
 
 export type CategorySortMode = "custom" | "az" | "za";
+
+/** Case-insensitive compare by the name shown in the UI. Stable when names match. */
+export function compareCategoryDisplayName(left: Category, right: Category) {
+  return formatCategoryNameForDisplay(left.name).localeCompare(
+    formatCategoryNameForDisplay(right.name),
+    undefined,
+    { sensitivity: "base", numeric: true },
+  );
+}
+
+export function sortCategoriesByDisplayName(categories: Category[]) {
+  return [...categories].sort(compareCategoryDisplayName);
+}
 
 export function sortCategories(
   categories: Category[],
@@ -9,11 +23,11 @@ export function sortCategories(
   const copy = [...categories];
 
   if (mode === "az") {
-    return copy.sort((a, b) => a.name.localeCompare(b.name));
+    return copy.sort(compareCategoryDisplayName);
   }
 
   if (mode === "za") {
-    return copy.sort((a, b) => b.name.localeCompare(a.name));
+    return copy.sort((left, right) => compareCategoryDisplayName(right, left));
   }
 
   return copy.sort(

@@ -30,6 +30,7 @@ import {
 } from "@/lib/tasks/creators";
 import { TaskAttribution } from "@/components/tasks/task-attribution";
 import { SwipeToComplete } from "@/components/tasks/swipe-to-complete";
+import { useCreateTaskDefaults } from "@/components/tasks/create-task-defaults-context";
 import { TaskPriorityIcon } from "@/components/tasks/task-priority-icon";
 import { formatHomeDueDate } from "@/lib/tasks/local-dates";
 import type { TaskSubtask } from "@/lib/tasks/subtasks/types";
@@ -190,6 +191,7 @@ export function DashboardHomeClient({
   loadError = null,
 }: DashboardHomeClientProps) {
   const pathname = usePathname();
+  const { setInitialCategoryId } = useCreateTaskDefaults();
   const today = useMemo(() => new Date(), []);
   const [workspaceId, setWorkspaceId] = useState<string>("all");
   const [statusFilter, setStatusFilter] = useState<HomeStatusFilter>("open");
@@ -208,6 +210,17 @@ export function DashboardHomeClient({
     () => buildCategoryTree(categories),
     [categories],
   );
+
+  useEffect(() => {
+    const next =
+      workspaceId === "all"
+        ? null
+        : categories.some((category) => category.id === workspaceId)
+          ? workspaceId
+          : null;
+    setInitialCategoryId(next);
+    return () => setInitialCategoryId(null);
+  }, [workspaceId, categories, setInitialCategoryId]);
 
   const tasksById = useMemo(() => {
     const map = new Map<string, DashboardHomeTask>();
